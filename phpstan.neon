@@ -1,0 +1,35 @@
+includes:
+    - vendor/larastan/larastan/extension.neon
+
+parameters:
+    level: 8
+    paths:
+        - src
+    excludePaths:
+        - vendor
+    ignoreErrors:
+        # Generic array value types in docblocks are not enforced (the public
+        # API uses plain `array` throughout); not a correctness concern.
+        -
+            identifier: missingType.iterableValue
+        # `Has*`/`Interacts*` traits are exposed for consumer models/classes;
+        # they have no internal callers in this library by design.
+        -
+            identifier: trait.unused
+        # SQL restore runs statements parsed from a backup file; they are
+        # intentionally dynamic, not literal-string.
+        -
+            identifier: argument.type
+            path: src/Backup/SqlFileRestorer.php
+        # The archive scope dispatches builder/model methods supplied by the
+        # HasArchiver trait at runtime (the same pattern as Laravel's own
+        # SoftDeletingScope) — not statically resolvable.
+        -
+            identifier: method.notFound
+            path: src/Schema/Scopes/ArchiveScope.php
+        # addSeoFields() delegates to the sibling addMetaFields() Blueprint macro
+        # registered alongside it; macro methods are invisible to the analyser.
+        -
+            identifier: method.notFound
+            path: src/Schema/FieldGroupMacros.php
+    treatPhpDocTypesAsCertain: false

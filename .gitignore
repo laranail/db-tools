@@ -1,0 +1,36 @@
+# Composer
+/vendor/
+
+# IDE
+/.idea/
+/.vscode/
+*.swp
+*~
+
+# macOS / Windows
+.DS_Store
+Thumbs.db
+
+# PHP test/lint caches
+/.phpunit.cache/
+/.phpstan-cache/
+/.psalm_cache/
+/.php-cs-fixer.cache
+/coverage/
+
+# Local environment & artifacts
+/.env
+/.env.local
+/.env.*.local
+/.artifacts/
+
+# Build artifacts
+/build/
+/dist/
+
+# Logs
+*.log
+
+# Local IDE-agent settings
+/.claude/
+/composer.lock

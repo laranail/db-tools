@@ -1,0 +1,36 @@
+name: Bug report
+description: Report a bug in laranail/db-tools
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: Thanks for filing a bug. Please complete the sections below so it can be reproduced.
+  - type: input
+    id: package-version
+    attributes:
+      label: Package version
+      placeholder: e.g. v0.1.0
+    validations:
+      required: true
+  - type: input
+    id: env
+    attributes:
+      label: PHP / Laravel version
+      placeholder: e.g. PHP 8.4, Laravel 13.2
+    validations:
+      required: true
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: A clear description of the bug and what you expected instead.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+      description: Minimal steps or a code snippet that reproduces the issue.
+      render: php
+    validations:
+      required: true

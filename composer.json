@@ -1,0 +1,107 @@
+{
+    "name": "laranail/db-tools",
+    "description": "Independent Laravel database utilities \u2014 model traits (UUID/NanoID/ULID, audit log, soft-deletes-with-undo, soft-archive, JSON accessors), casts (money, datetime), schema macros & field groups, backup/restore, a database CLI command, connection & table inspection, a session read-model, and cursor + offset pagination.",
+    "keywords": [
+        "laravel",
+        "database",
+        "uuid",
+        "nanoid",
+        "ulid",
+        "audit",
+        "soft-deletes",
+        "soft-archive",
+        "schema-macros",
+        "backup",
+        "pagination",
+        "cli",
+        "laranail"
+    ],
+    "homepage": "https://opensource.simtabi.com/products/laranail/db-tools",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Simtabi LLC",
+            "email": "opensource@simtabi.com",
+            "homepage": "https://opensource.simtabi.com",
+            "role": "Organization"
+        },
+        {
+            "name": "Imani Manyara",
+            "email": "imani@simtabi.com",
+            "role": "Maintainer"
+        }
+    ],
+    "support": {
+        "issues": "https://github.com/laranail/db-tools/issues",
+        "source": "https://github.com/laranail/db-tools",
+        "docs": "https://opensource.simtabi.com/documentation/laranail/db-tools/"
+    },
+    "require": {
+        "php": "^8.4 || ^8.5",
+        "brick/money": "^0.13",
+        "illuminate/database": "^13.0",
+        "illuminate/support": "^13.0",
+        "ramsey/uuid": "^4.7",
+        "spatie/laravel-sluggable": "^4.0",
+        "symfony/uid": "^7.0 || ^8.0"
+    },
+    "require-dev": {
+        "larastan/larastan": "^3.0",
+        "laravel/pint": "^1.18",
+        "mockery/mockery": "^1.6",
+        "orchestra/testbench": "^11.0",
+        "pestphp/pest": "^4.0",
+        "phpstan/phpstan": "^2.0",
+        "phpunit/phpunit": "^12.5",
+        "rector/rector": "^2.0",
+        "roave/security-advisories": "dev-latest"
+    },
+    "autoload": {
+        "psr-4": {
+            "Simtabi\\Laranail\\DbTools\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Simtabi\\Laranail\\DbTools\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "branch-alias": {
+            "dev-main": "0.1.x-dev"
+        },
+        "laravel": {
+            "providers": [
+                "Simtabi\\Laranail\\DbTools\\Providers\\DbToolsServiceProvider"
+            ],
+            "aliases": {
+                "DbTools": "Simtabi\\Laranail\\DbTools\\Facades\\DbToolsFacade"
+            }
+        }
+    },
+    "scripts": {
+        "setup": "bash .scripts/init.sh",
+        "test": "vendor/bin/pest --colors=always --no-coverage",
+        "test-coverage": "vendor/bin/pest --colors=always --coverage",
+        "test-dirty": "@test --dirty --compact",
+        "lint": [
+            "@pint",
+            "@phpstan",
+            "@rector"
+        ],
+        "pint": "vendor/bin/pint --test",
+        "pint-fix": "vendor/bin/pint",
+        "phpstan": "vendor/bin/phpstan analyse --no-progress",
+        "rector": "vendor/bin/rector process --dry-run",
+        "rector-fix": "vendor/bin/rector process",
+        "audit": "@composer audit"
+    },
+    "config": {
+        "sort-packages": true,
+        "allow-plugins": {
+            "pestphp/pest-plugin": true
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}

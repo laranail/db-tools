@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security vulnerability
+    url: https://github.com/laranail/db-tools/security/policy
+    about: Report security issues privately per SECURITY.md (opensource@simtabi.com). Do not open a public issue.
+  - name: Documentation
+    url: https://opensource.simtabi.com/db-tools/docs/
+    about: Read the docs before filing — your question may already be answered.
