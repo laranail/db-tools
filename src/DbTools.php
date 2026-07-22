@@ -7,6 +7,7 @@ namespace Simtabi\Laranail\DbTools;
 use Closure;
 use Illuminate\Support\Facades\Schema;
 use Simtabi\Laranail\DbTools\Backup\Contracts\BackupManagerInterface;
+use Simtabi\Laranail\DbTools\Guard\Contracts\DatabaseAvailabilityInterface;
 use Simtabi\Laranail\DbTools\Schema\Contracts\DatabaseConnectionTesterInterface;
 use Simtabi\Laranail\DbTools\Schema\Contracts\DatabaseSchemaInspectorInterface;
 use Simtabi\Laranail\DbTools\Schema\Contracts\DatabaseTableVerifierInterface;
@@ -255,6 +256,44 @@ class DbTools
     // =========================================================================
     // Service Accessors
     // =========================================================================
+
+    /**
+     * Get the boot-safe availability guard instance.
+     */
+    public static function guard(): DatabaseAvailabilityInterface
+    {
+        return app(DatabaseAvailabilityInterface::class);
+    }
+
+    /**
+     * True when the connection (or default) is reachable — never throws.
+     */
+    public static function isAvailable(?string $connection = null): bool
+    {
+        return self::guard()->isAvailable($connection);
+    }
+
+    /**
+     * True when the connection is reachable AND the table exists — never throws.
+     */
+    public static function tableExists(string $table, ?string $connection = null): bool
+    {
+        return self::guard()->hasTable($table, $connection);
+    }
+
+    /**
+     * Run $callback only when the database is available; otherwise return $default.
+     *
+     * @template TValue
+     *
+     * @param  callable():TValue  $callback
+     * @param  TValue  $default
+     * @return TValue
+     */
+    public static function whenAvailable(callable $callback, mixed $default = null, ?string $connection = null): mixed
+    {
+        return self::guard()->whenAvailable($callback, $default, $connection);
+    }
 
     /**
      * Get connection tester instance

@@ -88,4 +88,19 @@ return [
         'table' => 'soft_delete_history',
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Availability guard
+    |--------------------------------------------------------------------------
+    |
+    | The boot-safe DatabaseGuard memoizes each connection's availability probe
+    | for the lifetime of the guard instance (per request / command). Disable to
+    | re-probe on every call.
+    |
+    */
+
+    'guard' => [
+        'memoize' => env('DB_TOOLS_GUARD_MEMOIZE', true),
+    ],
+
 ];

@@ -14,6 +14,8 @@ use Simtabi\Laranail\DbTools\Console\DbToolsCommand;
 use Simtabi\Laranail\DbTools\DbTools;
 use Simtabi\Laranail\DbTools\Files\Contracts\DatabaseFileServiceInterface;
 use Simtabi\Laranail\DbTools\Files\DatabaseFileService;
+use Simtabi\Laranail\DbTools\Guard\Contracts\DatabaseAvailabilityInterface;
+use Simtabi\Laranail\DbTools\Guard\DatabaseGuard;
 use Simtabi\Laranail\DbTools\Schema\AuditColumnsMacro;
 use Simtabi\Laranail\DbTools\Schema\BlueprintMacros;
 use Simtabi\Laranail\DbTools\Schema\ConfiguredMorphsMacro;
@@ -48,6 +50,13 @@ final class DbToolsServiceProvider extends ServiceProvider
         $this->app->singleton(DatabaseSchemaInspectorInterface::class, DatabaseSchemaInspector::class);
         $this->app->singleton(DatabaseTableVerifierInterface::class, DatabaseTableVerifier::class);
         $this->app->singleton(DatabaseConnectionTesterInterface::class, DatabaseConnectionTester::class);
+
+        // Boot-safe availability guard (never-throws), layered on the tester + inspector.
+        $this->app->singleton(DatabaseAvailabilityInterface::class, fn ($app): DatabaseGuard => new DatabaseGuard(
+            $app->make(DatabaseConnectionTesterInterface::class),
+            $app->make(DatabaseSchemaInspectorInterface::class),
+            (bool) $app->make('config')->get('db-tools.guard.memoize', true),
+        ));
 
         // General DB service
         $this->app->singleton(DatabaseServiceInterface::class, DatabaseService::class);
