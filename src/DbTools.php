@@ -11,6 +11,8 @@ use Simtabi\Laranail\DbTools\Guard\Contracts\DatabaseAvailabilityInterface;
 use Simtabi\Laranail\DbTools\Schema\Contracts\DatabaseConnectionTesterInterface;
 use Simtabi\Laranail\DbTools\Schema\Contracts\DatabaseSchemaInspectorInterface;
 use Simtabi\Laranail\DbTools\Schema\Contracts\DatabaseTableVerifierInterface;
+use Simtabi\Laranail\DbTools\Schema\Contracts\SchemaReadinessInterface;
+use Simtabi\Laranail\DbTools\Schema\SchemaReadinessReport;
 
 /**
  * Database Facade
@@ -293,6 +295,55 @@ class DbTools
     public static function whenAvailable(callable $callback, mixed $default = null, ?string $connection = null): mixed
     {
         return self::guard()->whenAvailable($callback, $default, $connection);
+    }
+
+    /**
+     * Run $callback only when $table exists — never throws.
+     *
+     * @template TValue
+     *
+     * @param  callable():TValue  $callback
+     * @param  TValue  $default
+     * @return TValue
+     */
+    public static function whenTable(string $table, callable $callback, mixed $default = null, ?string $connection = null): mixed
+    {
+        return self::guard()->whenTable($table, $callback, $default, $connection);
+    }
+
+    /**
+     * Assume the database is unavailable and stop probing (install / first-boot
+     * window). Returns the guard for chaining.
+     */
+    public static function suspend(): DatabaseAvailabilityInterface
+    {
+        return self::guard()->suspend();
+    }
+
+    /**
+     * Lift a suspend() so the next check probes for real.
+     */
+    public static function resume(): DatabaseAvailabilityInterface
+    {
+        return self::guard()->resume();
+    }
+
+    /**
+     * The schema-readiness reporter (reachable / migrated / ready) — never throws.
+     */
+    public static function schemaReadiness(): SchemaReadinessInterface
+    {
+        return app(SchemaReadinessInterface::class);
+    }
+
+    /**
+     * Convenience: the readiness report for the given required tables.
+     *
+     * @param  list<string>  $requiredTables
+     */
+    public static function schemaReport(array $requiredTables = [], ?string $connection = null): SchemaReadinessReport
+    {
+        return self::schemaReadiness()->report($requiredTables, $connection);
     }
 
     /**

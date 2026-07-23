@@ -27,24 +27,52 @@ app(DatabaseAvailabilityInterface::class)->isAvailable('reporting');
 if (! DatabaseGuard::tableExists('global_settings')) {
     return; // safe in a service provider boot() during package:discover with no DB
 }
+
+// Guarded table access:
+DbTools::whenTable('global_settings', fn () => Setting::current()->value, default: 'fallback');
+
+// Install / first-boot window: stop probing entirely until the schema exists.
+DbTools::suspend();     // isAvailable()/hasTable() now return false without touching the DB
+// ... run the installer / migrations ...
+DbTools::resume();      // re-probe from here on
 ```
 
 ## API — `DatabaseAvailabilityInterface`
 
 | Method | Returns | Description |
 |--------|---------|-------------|
-| `isAvailable(?string $connection = null)` | `bool` | PDO probe (memoized); false on any failure. |
+| `isAvailable(?string $connection = null)` | `bool` | Bounded PDO probe (memoized); false on any failure. |
 | `hasTable(string $table, ?string $connection = null)` | `bool` | False when unreachable **or** the table is missing. |
 | `whenAvailable(callable $cb, mixed $default = null, ?string $connection = null)` | `mixed` | Runs `$cb` if available, else returns `$default`. |
+| `whenTable(string $table, callable $cb, mixed $default = null, ?string $connection = null)` | `mixed` | Runs `$cb` if the table exists, else `$default`. |
+| `suspend()` | `static` | Assume unavailable and stop probing (install/first-boot). Preserves any custom prober. |
+| `resume()` | `static` | Lift a suspension and flush the memo so the next check probes for real. |
+| `isSuspended()` | `bool` | Whether probing is currently suspended. |
 | `flush(?string $connection = null)` | `void` | Forget the memoized probe for one/all connections. |
 
 Concrete extras on `DatabaseGuard`: `probeUsing(?callable $prober)` (runtime-swappable strategy —
 e.g. a TCP ping or cached flag; `null` restores the default probe), `Macroable`, and the static
 `reachable()` / `tableExists()` / `resolve()` self-bootstrapping entry points.
 
+## Fast-fail probe
+
+The built-in availability probe is bounded by a short connect timeout so an unreachable or
+blackholed host fails in ~2 s instead of blocking for the driver default (~30 s). It opens a
+throwaway connection (a clone of the target config with the timeout overlaid) so the real
+connection is never mutated and real query time is never capped; when the target connection is
+already live this request, the probe reuses it and opens nothing. Tune with
+`config('db-tools.guard.probe_timeout')` (seconds, default `2`).
+
+## Events
+
+When a probe finds a connection unreachable, the guard fires
+`Simtabi\Laranail\DbTools\Events\DatabaseUnavailable` (once per connection per request, never while
+suspended). A default listener logs it; opt out with `config('db-tools.guard.log_events')` and
+listen yourself. Disable emission entirely with `config('db-tools.guard.emit_events')`.
+
 ## How it works
 
-The guard layers on the existing `DatabaseConnectionTester` (getPdo probe → `isAvailable`) and
+The guard layers on the existing `DatabaseConnectionTester` (bounded probe → `isAvailable`) and
 `DatabaseSchemaInspector` (`hasTable`), memoizing each connection's availability. It is bound as a
 singleton (`DatabaseAvailabilityInterface`) and honours `config('db-tools.guard.memoize')`.
 

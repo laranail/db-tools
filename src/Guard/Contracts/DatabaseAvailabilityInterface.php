@@ -39,7 +39,41 @@ interface DatabaseAvailabilityInterface
     public function whenAvailable(callable $callback, mixed $default = null, ?string $connection = null): mixed;
 
     /**
+     * Run $callback only when $table exists (and the connection is reachable);
+     * otherwise return $default.
+     *
+     * @template TValue
+     *
+     * @param  callable():TValue  $callback
+     * @param  TValue  $default
+     * @return TValue
+     */
+    public function whenTable(string $table, callable $callback, mixed $default = null, ?string $connection = null): mixed;
+
+    /**
      * Forget the memoized availability result for a connection (or all of them).
      */
     public function flush(?string $connection = null): void;
+
+    /**
+     * Assume every connection is unavailable and stop probing entirely.
+     *
+     * For the window before a database exists — installers, first boot,
+     * maintenance — when even a doomed connection attempt is wasteful. While
+     * suspended, isAvailable()/hasTable() return false without touching the
+     * database. Distinct from probeUsing(): a custom prober is preserved and
+     * restored by resume().
+     */
+    public function suspend(): static;
+
+    /**
+     * Lift a suspend() and flush the memo so the next check probes for real.
+     * Leaves any custom prober untouched.
+     */
+    public function resume(): static;
+
+    /**
+     * Whether availability probing is currently suspended.
+     */
+    public function isSuspended(): bool;
 }

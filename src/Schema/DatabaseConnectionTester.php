@@ -6,8 +6,10 @@ namespace Simtabi\Laranail\DbTools\Schema;
 
 use Exception;
 use Illuminate\Database\Connection;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
+use PDO;
 use PDOException;
 use Simtabi\Laranail\DbTools\Schema\Contracts\DatabaseConnectionTesterInterface;
 
@@ -35,6 +37,86 @@ class DatabaseConnectionTester implements DatabaseConnectionTesterInterface
         } catch (Exception) {
             return false;
         }
+    }
+
+    /**
+     * Reserved name for the throwaway connection used by {@see probe()}.
+     */
+    private const string PROBE_CONNECTION = '__db_tools_probe__';
+
+    public function probe(?string $connection = null, ?int $timeout = null): bool
+    {
+        $name = $connection ?? (string) config('database.default');
+
+        // Fast path: if the connection already has a live PDO (the app has
+        // queried it this request), it is trivially available — no need to open
+        // a throwaway probe connection. getRawPdo() is a Closure until the
+        // connection is actually opened, so only a real PDO counts.
+        try {
+            if ($this->getConnection($connection)->getRawPdo() instanceof PDO) {
+                return true;
+            }
+        } catch (Exception) {
+            // Fall through to the bounded probe below.
+        }
+
+        $config = config("database.connections.{$name}");
+
+        // Unknown/undefined connection: nothing to clone, so bound the real one
+        // as best we can and fall back to a plain test.
+        if (! is_array($config)) {
+            return $this->test($connection);
+        }
+
+        $timeout ??= (int) config('db-tools.guard.probe_timeout', 2);
+        $timeout = max(1, $timeout);
+
+        Config::set(
+            'database.connections.'.self::PROBE_CONNECTION,
+            $this->withConnectTimeout($config, $timeout),
+        );
+
+        try {
+            DB::connection(self::PROBE_CONNECTION)->getPdo();
+
+            return true;
+        } catch (Exception) {
+            return false;
+        } finally {
+            DB::purge(self::PROBE_CONNECTION);
+
+            $connections = (array) config('database.connections', []);
+            unset($connections[self::PROBE_CONNECTION]);
+            Config::set('database.connections', $connections);
+        }
+    }
+
+    /**
+     * Overlay a short connect timeout onto a connection config, per driver.
+     * mysql/mariadb/sqlsrv honour PDO::ATTR_TIMEOUT as the connect timeout;
+     * pgsql reads a connect_timeout DSN param; sqlite is always local (no-op).
+     *
+     * @param  array<string, mixed>  $config
+     * @return array<string, mixed>
+     */
+    private function withConnectTimeout(array $config, int $timeout): array
+    {
+        $driver = $config['driver'] ?? null;
+        $options = $config['options'] ?? [];
+
+        if (in_array($driver, ['mysql', 'mariadb', 'sqlsrv'], true)) {
+            $options[PDO::ATTR_TIMEOUT] = $timeout;
+        }
+
+        if ($driver === 'pgsql') {
+            // Best-effort across Laravel versions: DSN param + attr.
+            $config['connect_timeout'] = $timeout;
+            $options[PDO::ATTR_TIMEOUT] = $timeout;
+        }
+
+        $config['options'] = $options;
+
+        return $config;
     }
 
     /**

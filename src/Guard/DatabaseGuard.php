@@ -7,11 +7,13 @@ namespace Simtabi\Laranail\DbTools\Guard;
 use Closure;
 use Illuminate\Container\Container;
 use Illuminate\Support\Traits\Macroable;
+use Simtabi\Laranail\DbTools\Events\DatabaseUnavailable;
 use Simtabi\Laranail\DbTools\Guard\Contracts\DatabaseAvailabilityInterface;
 use Simtabi\Laranail\DbTools\Schema\Contracts\DatabaseConnectionTesterInterface;
 use Simtabi\Laranail\DbTools\Schema\Contracts\DatabaseSchemaInspectorInterface;
 use Simtabi\Laranail\DbTools\Schema\DatabaseConnectionTester;
 use Simtabi\Laranail\DbTools\Schema\DatabaseSchemaInspector;
+use Simtabi\Laranail\DbTools\Support\SafeEvent;
 use Throwable;
 
 /**
@@ -43,14 +45,25 @@ final class DatabaseGuard implements DatabaseAvailabilityInterface
      */
     private ?Closure $prober = null;
 
+    /**
+     * When true, every availability check short-circuits to false without
+     * probing. See {@see suspend()}.
+     */
+    private bool $suspended = false;
+
     public function __construct(
         private readonly DatabaseConnectionTesterInterface $tester,
         private readonly DatabaseSchemaInspectorInterface $inspector,
         private readonly bool $memoize = true,
+        private readonly bool $emitEvents = true,
     ) {}
 
     public function isAvailable(?string $connection = null): bool
     {
+        if ($this->suspended) {
+            return false;
+        }
+
         $key = $connection ?? '__default__';
 
         if ($this->memoize && array_key_exists($key, $this->available)) {
@@ -58,9 +71,9 @@ final class DatabaseGuard implements DatabaseAvailabilityInterface
         }
 
         try {
-            $result = $this->prober !== null
+            $result = $this->prober instanceof Closure
                 ? (bool) ($this->prober)($connection)
-                : $this->tester->test($connection);
+                : $this->probeDefault($connection);
         } catch (Throwable) {
             $result = false;
         }
@@ -69,7 +82,21 @@ final class DatabaseGuard implements DatabaseAvailabilityInterface
             $this->available[$key] = $result;
         }
 
+        if (! $result && $this->emitEvents) {
+            SafeEvent::dispatch(new DatabaseUnavailable($connection));
+        }
+
         return $result;
+    }
+
+    /**
+     * The built-in probe: a bounded-timeout connection attempt so an
+     * unreachable or blackholed host fails fast instead of blocking for the
+     * driver's default connect timeout.
+     */
+    private function probeDefault(?string $connection): bool
+    {
+        return $this->tester->probe($connection);
     }
 
     public function hasTable(string $table, ?string $connection = null): bool
@@ -88,6 +115,41 @@ final class DatabaseGuard implements DatabaseAvailabilityInterface
     public function whenAvailable(callable $callback, mixed $default = null, ?string $connection = null): mixed
     {
         return $this->isAvailable($connection) ? $callback() : $default;
+    }
+
+    /**
+     * Run $callback only when $table exists (and the connection is reachable);
+     * otherwise return $default. The common "guarded table access" shape.
+     *
+     * @template TValue
+     *
+     * @param  callable():TValue  $callback
+     * @param  TValue  $default
+     * @return TValue
+     */
+    public function whenTable(string $table, callable $callback, mixed $default = null, ?string $connection = null): mixed
+    {
+        return $this->hasTable($table, $connection) ? $callback() : $default;
+    }
+
+    public function suspend(): static
+    {
+        $this->suspended = true;
+
+        return $this;
+    }
+
+    public function resume(): static
+    {
+        $this->suspended = false;
+        $this->available = [];
+
+        return $this;
+    }
+
+    public function isSuspended(): bool
+    {
+        return $this->suspended;
     }
 
     public function flush(?string $connection = null): void
@@ -120,7 +182,7 @@ final class DatabaseGuard implements DatabaseAvailabilityInterface
      */
     public static function reachable(?string $connection = null): bool
     {
-        return static::resolve()->isAvailable($connection);
+        return self::resolve()->isAvailable($connection);
     }
 
     /**
@@ -130,7 +192,7 @@ final class DatabaseGuard implements DatabaseAvailabilityInterface
      */
     public static function tableExists(string $table, ?string $connection = null): bool
     {
-        return static::resolve()->hasTable($table, $connection);
+        return self::resolve()->hasTable($table, $connection);
     }
 
     /**

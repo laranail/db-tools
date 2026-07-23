@@ -11,21 +11,27 @@ use Psr\Log\LoggerInterface;
 use Simtabi\Laranail\DbTools\Backup\BackupManager;
 use Simtabi\Laranail\DbTools\Backup\Contracts\BackupManagerInterface;
 use Simtabi\Laranail\DbTools\Console\DbToolsCommand;
+use Simtabi\Laranail\DbTools\Console\HealthCommand;
 use Simtabi\Laranail\DbTools\DbTools;
+use Simtabi\Laranail\DbTools\Events\DatabaseUnavailable;
+use Simtabi\Laranail\DbTools\Events\SchemaNotReady;
 use Simtabi\Laranail\DbTools\Files\Contracts\DatabaseFileServiceInterface;
 use Simtabi\Laranail\DbTools\Files\DatabaseFileService;
 use Simtabi\Laranail\DbTools\Guard\Contracts\DatabaseAvailabilityInterface;
 use Simtabi\Laranail\DbTools\Guard\DatabaseGuard;
+use Simtabi\Laranail\DbTools\Listeners\LogDatabaseIssues;
 use Simtabi\Laranail\DbTools\Schema\AuditColumnsMacro;
 use Simtabi\Laranail\DbTools\Schema\BlueprintMacros;
 use Simtabi\Laranail\DbTools\Schema\ConfiguredMorphsMacro;
 use Simtabi\Laranail\DbTools\Schema\Contracts\DatabaseConnectionTesterInterface;
 use Simtabi\Laranail\DbTools\Schema\Contracts\DatabaseSchemaInspectorInterface;
 use Simtabi\Laranail\DbTools\Schema\Contracts\DatabaseTableVerifierInterface;
+use Simtabi\Laranail\DbTools\Schema\Contracts\SchemaReadinessInterface;
 use Simtabi\Laranail\DbTools\Schema\DatabaseConnectionTester;
 use Simtabi\Laranail\DbTools\Schema\DatabaseSchemaInspector;
 use Simtabi\Laranail\DbTools\Schema\DatabaseTableVerifier;
 use Simtabi\Laranail\DbTools\Schema\FieldGroupMacros;
+use Simtabi\Laranail\DbTools\Schema\SchemaReadiness;
 use Simtabi\Laranail\DbTools\Schema\SoftDeleteHistoryMacro;
 use Simtabi\Laranail\DbTools\Schema\SoftDeletesWithUndoMacro;
 use Simtabi\Laranail\DbTools\Services\Contracts\DatabaseServiceInterface;
@@ -56,6 +62,14 @@ final class DbToolsServiceProvider extends ServiceProvider
             $app->make(DatabaseConnectionTesterInterface::class),
             $app->make(DatabaseSchemaInspectorInterface::class),
             (bool) $app->make('config')->get('db-tools.guard.memoize', true),
+            (bool) $app->make('config')->get('db-tools.guard.emit_events', true),
+        ));
+
+        // Boot-safe schema-readiness reporter (reachable | migrated | ready).
+        $this->app->singleton(SchemaReadinessInterface::class, fn ($app): SchemaReadiness => new SchemaReadiness(
+            $app->make(DatabaseAvailabilityInterface::class),
+            $app->make(DatabaseTableVerifierInterface::class),
+            (bool) $app->make('config')->get('db-tools.guard.emit_events', true),
         ));
 
         // General DB service
@@ -74,9 +88,12 @@ final class DbToolsServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        $this->registerEventListeners();
+
         if ($this->app->runningInConsole()) {
             $this->commands([
                 DbToolsCommand::class,
+                HealthCommand::class,
             ]);
 
             $this->publishes([
@@ -97,5 +114,20 @@ final class DbToolsServiceProvider extends ServiceProvider
         ConfiguredMorphsMacro::register();
         SoftDeleteHistoryMacro::register();
         FieldGroupMacros::register();
+    }
+
+    /**
+     * Wire the default log listener for the availability/readiness events.
+     * Opt-out via `db-tools.guard.log_events`; apps can always listen directly.
+     */
+    private function registerEventListeners(): void
+    {
+        if (! (bool) $this->app->make('config')->get('db-tools.guard.log_events', true)) {
+            return;
+        }
+
+        $events = $this->app->make('events');
+        $events->listen(DatabaseUnavailable::class, [LogDatabaseIssues::class, 'handleDatabaseUnavailable']);
+        $events->listen(SchemaNotReady::class, [LogDatabaseIssues::class, 'handleSchemaNotReady']);
     }
 }

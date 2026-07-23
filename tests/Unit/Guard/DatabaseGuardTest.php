@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Simtabi\Laranail\DbTools\Tests\Unit\Guard;
 
 use Illuminate\Support\Facades\Schema;
+use Override;
+use PDO;
 use Simtabi\Laranail\DbTools\DbTools;
 use Simtabi\Laranail\DbTools\Guard\Contracts\DatabaseAvailabilityInterface;
 use Simtabi\Laranail\DbTools\Guard\DatabaseGuard;
@@ -12,6 +14,7 @@ use Simtabi\Laranail\DbTools\Tests\TestCase;
 
 final class DatabaseGuardTest extends TestCase
 {
+    #[Override]
     protected function defineEnvironment($app): void
     {
         parent::defineEnvironment($app);
@@ -25,7 +28,19 @@ final class DatabaseGuardTest extends TestCase
             'database' => 'nope',
             'username' => 'nope',
             'password' => 'nope',
-            'options' => [\PDO::ATTR_TIMEOUT => 1],
+            'options' => [PDO::ATTR_TIMEOUT => 1],
+        ]);
+
+        // A blackholed host: packets are dropped, so the connect would block
+        // for the driver default without a bounded probe. probe_timeout caps it.
+        $app['config']->set('db-tools.guard.probe_timeout', 1);
+        $app['config']->set('database.connections.blackhole', [
+            'driver' => 'mysql',
+            'host' => '10.255.255.1',
+            'port' => 3306,
+            'database' => 'nope',
+            'username' => 'nope',
+            'password' => 'nope',
         ]);
     }
 
@@ -75,5 +90,55 @@ final class DatabaseGuardTest extends TestCase
         self::assertTrue(DatabaseGuard::reachable());
         self::assertTrue(DatabaseGuard::tableExists('gadgets'));
         self::assertFalse(DatabaseGuard::tableExists('gadgets', 'down'));
+    }
+
+    public function test_suspend_short_circuits_without_probing_and_resume_restores(): void
+    {
+        Schema::create('sprockets', fn ($t) => $t->id());
+
+        /** @var DatabaseGuard $guard */
+        $guard = app(DatabaseAvailabilityInterface::class);
+
+        self::assertTrue($guard->isAvailable());
+
+        $guard->suspend();
+        self::assertTrue($guard->isSuspended());
+        self::assertFalse($guard->isAvailable(), 'A suspended guard reports unavailable.');
+        self::assertFalse($guard->hasTable('sprockets'), 'A suspended guard finds no tables.');
+
+        $guard->resume();
+        self::assertFalse($guard->isSuspended());
+        self::assertTrue($guard->isAvailable());
+        self::assertTrue($guard->hasTable('sprockets'));
+    }
+
+    public function test_resume_preserves_a_custom_prober(): void
+    {
+        /** @var DatabaseGuard $guard */
+        $guard = app(DatabaseAvailabilityInterface::class);
+        $guard->probeUsing(fn (?string $c): bool => $c === 'testing');
+
+        $guard->suspend();
+        self::assertFalse($guard->isAvailable('testing'), 'Suspension overrides even a custom prober.');
+
+        $guard->resume();
+        self::assertTrue($guard->isAvailable('testing'), 'The custom prober survives resume().');
+    }
+
+    public function test_when_table_runs_callback_only_when_the_table_exists(): void
+    {
+        Schema::create('cogs', fn ($t) => $t->id());
+
+        self::assertSame('yes', DbTools::whenTable('cogs', fn (): string => 'yes', 'no'));
+        self::assertSame('no', DbTools::whenTable('missing', fn (): string => 'yes', 'no'));
+    }
+
+    public function test_probe_fails_fast_on_an_unreachable_host(): void
+    {
+        // The blackhole connection below has a 1s probe timeout; without a
+        // bounded probe this would block for the driver default (~30s).
+        $start = microtime(true);
+        self::assertFalse(DatabaseGuard::reachable('blackhole'));
+        self::assertLessThan(10.0, microtime(true) - $start, 'The probe must fail fast, not hang.');
     }
 }

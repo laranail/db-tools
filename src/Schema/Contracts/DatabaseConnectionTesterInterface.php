@@ -20,6 +20,18 @@ interface DatabaseConnectionTesterInterface
     public function test(?string $connection = null): bool;
 
     /**
+     * Boot-safe availability probe: like test(), but bounded by a short connect
+     * timeout so an unreachable or blackholed host fails fast instead of blocking
+     * for the driver's default connect timeout. Never mutates the real connection
+     * and never throws.
+     *
+     * @param  string|null  $connection  Connection name (null for default)
+     * @param  int|null  $timeout  Connect timeout in seconds (null = config default)
+     * @return bool True if a connection could be opened within the timeout
+     */
+    public function probe(?string $connection = null, ?int $timeout = null): bool;
+
+    /**
      * Test connection and return detailed information
      *
      * @param  string|null  $connection  Connection name (null for default)

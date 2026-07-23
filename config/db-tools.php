@@ -97,10 +97,52 @@ return [
     | for the lifetime of the guard instance (per request / command). Disable to
     | re-probe on every call.
     |
+    | probe_timeout bounds the built-in availability probe (in seconds) so an
+    | unreachable or blackholed host fails fast instead of blocking for the
+    | driver's default connect timeout (~30s). emit_events toggles the
+    | DatabaseUnavailable / SchemaNotReady events.
+    |
     */
 
     'guard' => [
         'memoize' => env('DB_TOOLS_GUARD_MEMOIZE', true),
+        'probe_timeout' => (int) env('DB_TOOLS_GUARD_PROBE_TIMEOUT', 2),
+        'emit_events' => env('DB_TOOLS_GUARD_EMIT_EVENTS', true),
+        'log_events' => env('DB_TOOLS_GUARD_LOG_EVENTS', true),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Schema readiness
+    |--------------------------------------------------------------------------
+    |
+    | SchemaReadiness reports whether the database is reachable, migrated, and
+    | has the tables an app needs. required_tables is the default set consulted
+    | when a caller does not pass its own; keep it to the framework essentials.
+    |
+    */
+
+    'readiness' => [
+        'required_tables' => ['migrations'],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Boot without a database
+    |--------------------------------------------------------------------------
+    |
+    | BootWithoutDatabase::degradeToFilesystem() swaps database-backed drivers
+    | to filesystem/sync equivalents so the app can boot before its schema
+    | exists (installers, first boot). The map is {config key: [from => to]}.
+    |
+    */
+
+    'boot_without_database' => [
+        'drivers' => [
+            'session.driver' => ['database' => 'file'],
+            'cache.default' => ['database' => 'file'],
+            // 'queue.default' => ['database' => 'sync'],
+        ],
     ],
 
 ];

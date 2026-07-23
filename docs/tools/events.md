@@ -62,5 +62,20 @@ The abstract base (`Events\BaseEvent`) holds the shared fields — `firedAt`,
 overrides. Subclass it for your own event families: call `createEvent()` from a
 static factory to populate the shared fields.
 
+## Availability / readiness events
+
+Two dispatchable events (Laravel's `Dispatchable`, fired via the event dispatcher, listenable the
+usual way) report database health, both emitted best-effort — a missing dispatcher or a throwing
+listener never breaks the check that raised them:
+
+| Event | Fired when | Payload |
+|-------|-----------|---------|
+| `Events\DatabaseUnavailable` | The [availability guard](availability-guard.md) probes a connection and finds it unreachable (once per connection per request; never while suspended). | `?string $connection` |
+| `Events\SchemaNotReady` | A [schema-readiness](schema-readiness.md) report comes back as anything but `ready`. | `SchemaReadinessReport $report` |
+
+A default listener (`Listeners\LogDatabaseIssues`) logs both at `warning`; opt out with
+`config('db-tools.guard.log_events')`. Turn off emission entirely with
+`config('db-tools.guard.emit_events')`.
+
 ---
 [← Docs index](../../README.md#documentation)
