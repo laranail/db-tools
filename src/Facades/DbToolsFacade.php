@@ -6,14 +6,22 @@ namespace Simtabi\Laranail\DbTools\Facades;
 
 use Illuminate\Support\Facades\Facade;
 use Simtabi\Laranail\DbTools\DbTools;
+use Simtabi\Laranail\DbTools\Guard\Contracts\DatabaseAvailabilityInterface;
+use Simtabi\Laranail\DbTools\Schema\Contracts\SchemaReadinessInterface;
+use Simtabi\Laranail\DbTools\Schema\SchemaReadinessReport;
 
 /**
- * @method static \Simtabi\Laranail\DbTools\Guard\Contracts\DatabaseAvailabilityInterface guard()
+ * @method static DatabaseAvailabilityInterface guard()
  * @method static bool isAvailable(?string $connection = null)
  * @method static bool tableExists(string $table, ?string $connection = null)
  * @method static mixed whenAvailable(callable $callback, mixed $default = null, ?string $connection = null)
+ * @method static mixed whenTable(string $table, callable $callback, mixed $default = null, ?string $connection = null)
+ * @method static DatabaseAvailabilityInterface suspend()
+ * @method static DatabaseAvailabilityInterface resume()
+ * @method static SchemaReadinessInterface schemaReadiness()
+ * @method static SchemaReadinessReport schemaReport(array $requiredTables = [], ?string $connection = null)
  *
- * @see \Simtabi\Laranail\DbTools\DbTools
+ * @see DbTools
  */
 class DbToolsFacade extends Facade
 {
