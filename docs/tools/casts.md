@@ -25,7 +25,7 @@ value object. This avoids the rounding pitfalls of float money.
 ### Currency resolution
 
 The currency comes from the cast argument first, falling back to
-`config('db-tools.money.default_currency')` (which itself defaults to
+`config('laranail.db-tools.money.default_currency')` (which itself defaults to
 `USD`). See [Configuration](../configuration.md#money).
 
 ```php

@@ -52,7 +52,7 @@ final class CastMoneyTest extends TestCase
 
     public function test_get_uses_config_default_currency_when_none_given(): void
     {
-        config()->set('db-tools.money.default_currency', 'EUR');
+        config()->set('laranail.db-tools.money.default_currency', 'EUR');
 
         $money = (new CastMoney)->get($this->model(), 'price', 500, []);
 
@@ -62,7 +62,7 @@ final class CastMoneyTest extends TestCase
 
     public function test_get_falls_back_to_usd_without_config(): void
     {
-        config()->set('db-tools.money.default_currency');
+        config()->set('laranail.db-tools.money.default_currency');
 
         $money = (new CastMoney)->get($this->model(), 'price', 100, []);
 

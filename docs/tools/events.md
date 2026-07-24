@@ -74,8 +74,8 @@ listener never breaks the check that raised them:
 | `Events\SchemaNotReady` | A [schema-readiness](schema-readiness.md) report comes back as anything but `ready`. | `SchemaReadinessReport $report` |
 
 A default listener (`Listeners\LogDatabaseIssues`) logs both at `warning`; opt out with
-`config('db-tools.guard.log_events')`. Turn off emission entirely with
-`config('db-tools.guard.emit_events')`.
+`config('laranail.db-tools.guard.log_events')`. Turn off emission entirely with
+`config('laranail.db-tools.guard.emit_events')`.
 
 ---
 [← Docs index](../../README.md#documentation)

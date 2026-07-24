@@ -112,7 +112,7 @@ final class SchemaReadiness implements SchemaReadinessInterface
             return array_values(array_unique($requiredTables));
         }
 
-        $configured = Config::get('db-tools.readiness.required_tables', [self::MIGRATIONS_TABLE]);
+        $configured = Config::get('laranail.db-tools.readiness.required_tables', [self::MIGRATIONS_TABLE]);
         $configured = is_array($configured) ? $configured : [self::MIGRATIONS_TABLE];
 
         // Always ensure the migrations table is part of the required set so the

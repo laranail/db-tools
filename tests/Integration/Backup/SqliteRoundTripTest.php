@@ -88,7 +88,7 @@ final class SqliteRoundTripTest extends TestCase
 
     public function test_gzip_backup_and_restore_round_trip(): void
     {
-        config()->set('db-tools.backup.gzip', true);
+        config()->set('laranail.db-tools.backup.gzip', true);
 
         $this->backupPath = tempnam(sys_get_temp_dir(), 'dbt-backup-').'.sqlite.gz';
 

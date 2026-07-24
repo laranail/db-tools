@@ -12,18 +12,18 @@ use RuntimeException;
  * and excluded-table list, all read from the package's "backup" config.
  *
  * Keeping these in one trait means every driver honours the same
- * config('db-tools.backup.*') keys consistently.
+ * config('laranail.db-tools.backup.*') keys consistently.
  */
 trait ResolvesBackupOptions
 {
     /**
      * Resolve a CLI binary, honouring an optional absolute path override from
-     * config('db-tools.backup.binaries.*') and otherwise falling back to
+     * config('laranail.db-tools.backup.binaries.*') and otherwise falling back to
      * the bare name (resolved via PATH by the process runner).
      */
     protected function binary(string $name): string
     {
-        $configured = Config::get("db-tools.backup.binaries.{$name}");
+        $configured = Config::get("laranail.db-tools.backup.binaries.{$name}");
 
         return is_string($configured) && $configured !== '' ? $configured : $name;
     }
@@ -33,7 +33,7 @@ trait ResolvesBackupOptions
      */
     protected function gzipEnabled(): bool
     {
-        return (bool) Config::get('db-tools.backup.gzip', false);
+        return (bool) Config::get('laranail.db-tools.backup.gzip', false);
     }
 
     /**
@@ -43,7 +43,7 @@ trait ResolvesBackupOptions
      */
     protected function excludedTables(): array
     {
-        $tables = Config::get('db-tools.backup.exclude', []);
+        $tables = Config::get('laranail.db-tools.backup.exclude', []);
 
         if (! is_array($tables)) {
             return [];

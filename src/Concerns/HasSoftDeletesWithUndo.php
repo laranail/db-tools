@@ -148,7 +148,7 @@ trait HasSoftDeletesWithUndo
      */
     protected function softDeleteHistoryTable(): string
     {
-        $table = config('db-tools.soft_delete_history.table', 'soft_delete_history');
+        $table = config('laranail.db-tools.soft_delete_history.table', 'soft_delete_history');
 
         return is_string($table) && $table !== '' ? $table : 'soft_delete_history';
     }

@@ -14,7 +14,7 @@ use Illuminate\Support\Facades\Config;
  * that would create those tables. This swaps those drivers to filesystem/sync
  * equivalents for the current process only — nothing is written to .env.
  *
- * The swap map is config-driven ({@see Config('db-tools.boot_without_database')})
+ * The swap map is config-driven ({@see Config('laranail.db-tools.boot_without_database')})
  * and each entry only fires when the live value matches the "from" driver, so a
  * deployment already on redis/file is left untouched.
  */
@@ -59,7 +59,7 @@ final class BootWithoutDatabase
      */
     private static function configuredMap(): array
     {
-        $configured = Config::get('db-tools.boot_without_database.drivers');
+        $configured = Config::get('laranail.db-tools.boot_without_database.drivers');
 
         return is_array($configured) && $configured !== []
             ? $configured

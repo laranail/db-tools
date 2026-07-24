@@ -78,7 +78,7 @@ final class HasUuidsOrIntegerIdsTest extends TestCase
 
     public function test_uuid_boolean_flag_selects_uuid_keys(): void
     {
-        config(['db-tools.using_uuids_for_id' => true]);
+        config(['laranail.db-tools.using_uuids_for_id' => true]);
 
         $model = new HasUuidsOrIntegerIdsStringModel;
 
@@ -97,7 +97,7 @@ final class HasUuidsOrIntegerIdsTest extends TestCase
 
     public function test_creating_hook_assigns_a_uuid_key(): void
     {
-        config(['db-tools.using_uuids_for_id' => true]);
+        config(['laranail.db-tools.using_uuids_for_id' => true]);
 
         $model = HasUuidsOrIntegerIdsStringModel::create(['name' => 'foo']);
 
@@ -108,7 +108,7 @@ final class HasUuidsOrIntegerIdsTest extends TestCase
 
     public function test_ulid_boolean_flag_selects_ulid_keys(): void
     {
-        config(['db-tools.using_ulids_for_id' => true]);
+        config(['laranail.db-tools.using_ulids_for_id' => true]);
 
         $model = new HasUuidsOrIntegerIdsStringModel;
 
@@ -124,7 +124,7 @@ final class HasUuidsOrIntegerIdsTest extends TestCase
 
     public function test_creating_hook_assigns_a_ulid_key(): void
     {
-        config(['db-tools.using_ulids_for_id' => true]);
+        config(['laranail.db-tools.using_ulids_for_id' => true]);
 
         $model = HasUuidsOrIntegerIdsStringModel::create(['name' => 'foo']);
 
@@ -134,7 +134,7 @@ final class HasUuidsOrIntegerIdsTest extends TestCase
 
     public function test_id_type_string_form_resolves_to_uuid(): void
     {
-        config(['db-tools.id_type' => 'UUID']);
+        config(['laranail.db-tools.id_type' => 'UUID']);
 
         self::assertSame('UUID', HasUuidsOrIntegerIdsStringModel::getTypeOfId());
         self::assertTrue(HasUuidsOrIntegerIdsStringModel::isUsingStringId());
@@ -146,7 +146,7 @@ final class HasUuidsOrIntegerIdsTest extends TestCase
 
     public function test_id_type_string_form_is_uppercased(): void
     {
-        config(['db-tools.id_type' => 'ulid']);
+        config(['laranail.db-tools.id_type' => 'ulid']);
 
         self::assertSame('ULID', HasUuidsOrIntegerIdsStringModel::getTypeOfId());
     }
@@ -154,8 +154,8 @@ final class HasUuidsOrIntegerIdsTest extends TestCase
     public function test_boolean_flags_take_precedence_over_id_type(): void
     {
         config([
-            'db-tools.id_type' => 'BIGINT',
-            'db-tools.using_uuids_for_id' => true,
+            'laranail.db-tools.id_type' => 'BIGINT',
+            'laranail.db-tools.using_uuids_for_id' => true,
         ]);
 
         self::assertSame('UUID', HasUuidsOrIntegerIdsStringModel::getTypeOfId());

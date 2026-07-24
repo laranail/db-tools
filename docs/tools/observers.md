@@ -60,7 +60,7 @@ leaves the nullable audit columns untouched rather than stamping `null`. A
 column is considered applicable when it is in the model's `$fillable`, already
 present in its attributes, or otherwise fillable (`modelHasColumn()`). The
 column names are read from
-[`config('db-tools.audit.*')`](../configuration.md#audit).
+[`config('laranail.db-tools.audit.*')`](../configuration.md#audit).
 
 ## Customizing the identifier
 

@@ -68,7 +68,7 @@ class DatabaseConnectionTester implements DatabaseConnectionTesterInterface
             return $this->test($connection);
         }
 
-        $timeout ??= (int) config('db-tools.guard.probe_timeout', 2);
+        $timeout ??= (int) config('laranail.db-tools.guard.probe_timeout', 2);
         $timeout = max(1, $timeout);
 
         Config::set(

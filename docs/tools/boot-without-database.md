@@ -24,7 +24,7 @@ probing until the install completes.
 
 ## Configuration
 
-The swap map is `config('db-tools.boot_without_database.drivers')`, shaped `{config key: {from => to}}`:
+The swap map is `config('laranail.db-tools.boot_without_database.drivers')`, shaped `{config key: {from => to}}`:
 
 ```php
 'boot_without_database' => [

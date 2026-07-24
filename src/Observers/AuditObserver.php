@@ -109,7 +109,7 @@ class AuditObserver
      */
     protected function auditColumn(string $key): string
     {
-        $name = config("db-tools.audit.{$key}", $key);
+        $name = config("laranail.db-tools.audit.{$key}", $key);
 
         return is_string($name) && $name !== '' ? $name : $key;
     }
