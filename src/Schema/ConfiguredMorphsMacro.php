@@ -60,14 +60,14 @@ final class ConfiguredMorphsMacro
      */
     public static function idType(): string
     {
-        if (config('db-tools.using_uuids_for_id', false)) {
+        if (config('laranail.db-tools.using_uuids_for_id', false)) {
             return 'UUID';
         }
 
-        if (config('db-tools.using_ulids_for_id', false)) {
+        if (config('laranail.db-tools.using_ulids_for_id', false)) {
             return 'ULID';
         }
 
-        return Str::upper((string) config('db-tools.id_type', 'BIGINT'));
+        return Str::upper((string) config('laranail.db-tools.id_type', 'BIGINT'));
     }
 }

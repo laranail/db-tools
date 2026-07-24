@@ -35,16 +35,16 @@ final class SchemaMacrosTest extends TestCase
 
     public function test_audit_columns_default_tracks_configured_id_type(): void
     {
-        config()->set('db-tools.using_uuids_for_id', false);
-        config()->set('db-tools.using_ulids_for_id', false);
-        config()->set('db-tools.id_type', 'BIGINT');
+        config()->set('laranail.db-tools.using_uuids_for_id', false);
+        config()->set('laranail.db-tools.using_ulids_for_id', false);
+        config()->set('laranail.db-tools.id_type', 'BIGINT');
         Schema::create('audit_int', function ($t): void {
             $t->id();
             $t->auditColumns();
         });
         self::assertSame('integer', Schema::getColumnType('audit_int', 'created_by'));
 
-        config()->set('db-tools.using_uuids_for_id', true);
+        config()->set('laranail.db-tools.using_uuids_for_id', true);
         Schema::create('audit_uuid', function ($t): void {
             $t->id();
             $t->auditColumns();
@@ -54,7 +54,7 @@ final class SchemaMacrosTest extends TestCase
 
     public function test_audit_columns_explicit_foreign_key_overrides_config(): void
     {
-        config()->set('db-tools.using_uuids_for_id', true);
+        config()->set('laranail.db-tools.using_uuids_for_id', true);
 
         Schema::create('audit_override', function ($t): void {
             $t->id();

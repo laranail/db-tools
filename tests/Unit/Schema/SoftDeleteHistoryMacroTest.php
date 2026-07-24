@@ -36,9 +36,9 @@ final class SoftDeleteHistoryMacroTest extends TestCase
 
     public function test_record_morphs_default_to_integer_id(): void
     {
-        config()->set('db-tools.id_type', 'BIGINT');
-        config()->set('db-tools.using_uuids_for_id', false);
-        config()->set('db-tools.using_ulids_for_id', false);
+        config()->set('laranail.db-tools.id_type', 'BIGINT');
+        config()->set('laranail.db-tools.using_uuids_for_id', false);
+        config()->set('laranail.db-tools.using_ulids_for_id', false);
 
         Schema::create('sdh_int', function (Blueprint $t): void {
             $t->softDeleteHistory();
@@ -49,7 +49,7 @@ final class SoftDeleteHistoryMacroTest extends TestCase
 
     public function test_record_morphs_use_uuid_when_configured(): void
     {
-        config()->set('db-tools.using_uuids_for_id', true);
+        config()->set('laranail.db-tools.using_uuids_for_id', true);
 
         Schema::create('sdh_uuid', function (Blueprint $t): void {
             $t->softDeleteHistory();
@@ -62,11 +62,11 @@ final class SoftDeleteHistoryMacroTest extends TestCase
     public function test_published_table_name_follows_config(): void
     {
         // The macro itself does not name the table — the migration that uses it
-        // does, reading config('db-tools.soft_delete_history.table'). We
+        // does, reading config('laranail.db-tools.soft_delete_history.table'). We
         // mirror that resolution here and assert the macro builds onto it.
-        config()->set('db-tools.soft_delete_history.table', 'custom_undo_log');
+        config()->set('laranail.db-tools.soft_delete_history.table', 'custom_undo_log');
 
-        $table = (string) config('db-tools.soft_delete_history.table');
+        $table = (string) config('laranail.db-tools.soft_delete_history.table');
         self::assertSame('custom_undo_log', $table);
 
         Schema::create($table, function (Blueprint $t): void {
@@ -94,15 +94,15 @@ final class SoftDeleteHistoryMacroTest extends TestCase
 
     public function test_actor_id_tracks_configured_id_type(): void
     {
-        config()->set('db-tools.using_uuids_for_id', false);
-        config()->set('db-tools.using_ulids_for_id', false);
-        config()->set('db-tools.id_type', 'BIGINT');
+        config()->set('laranail.db-tools.using_uuids_for_id', false);
+        config()->set('laranail.db-tools.using_ulids_for_id', false);
+        config()->set('laranail.db-tools.id_type', 'BIGINT');
         Schema::create('sdh_actor_int', function (Blueprint $t): void {
             $t->softDeleteHistory();
         });
         self::assertSame('integer', Schema::getColumnType('sdh_actor_int', 'actor_id'));
 
-        config()->set('db-tools.using_uuids_for_id', true);
+        config()->set('laranail.db-tools.using_uuids_for_id', true);
         Schema::create('sdh_actor_uuid', function (Blueprint $t): void {
             $t->softDeleteHistory();
         });

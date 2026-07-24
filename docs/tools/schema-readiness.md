@@ -28,7 +28,7 @@ $report->toArray();           // for logs / JSON
 DbTools::schemaReadiness()->whenReady(fn () => Setting::current(), default: null);
 ```
 
-Required tables default to `config('db-tools.readiness.required_tables')` when you pass none.
+Required tables default to `config('laranail.db-tools.readiness.required_tables')` when you pass none.
 
 ## Statuses
 
@@ -45,8 +45,8 @@ are pending (counting those couples to migration paths and is left to the applic
 ## Events
 
 Any non-`ready` report fires `Simtabi\Laranail\DbTools\Events\SchemaNotReady`, carrying the report.
-A default listener logs it (`config('db-tools.guard.log_events')`); toggle emission with
-`config('db-tools.guard.emit_events')`.
+A default listener logs it (`config('laranail.db-tools.guard.log_events')`); toggle emission with
+`config('laranail.db-tools.guard.emit_events')`.
 
 ## CLI
 

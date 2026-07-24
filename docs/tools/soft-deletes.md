@@ -99,7 +99,7 @@ protected function softDeleteHistoryActor(): int|string|null;  // override point
 protected function softDeleteHistoryTable(): string;
 ```
 
-The table name comes from `config('db-tools.soft_delete_history.table')`
+The table name comes from `config('laranail.db-tools.soft_delete_history.table')`
 (default `soft_delete_history`) — see [Configuration](../configuration.md#soft_delete_history).
 
 ---

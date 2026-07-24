@@ -92,7 +92,7 @@ class CastMoney implements CastsAttributes, SerializesCastableAttributes
      */
     private function currency(): string
     {
-        $currency = $this->currency ?? config('db-tools.money.default_currency', 'USD');
+        $currency = $this->currency ?? config('laranail.db-tools.money.default_currency', 'USD');
 
         return is_string($currency) && $currency !== '' ? $currency : 'USD';
     }

@@ -6,15 +6,29 @@ works out of the box — but publishing them lets you tune the primary-key type,
 audit column names, money currency, backup behavior, and the soft-delete
 history table.
 
+## The config namespace
+
+Per the laranail convention, this package's config is namespaced under
+`laranail`: read every value as **`config('laranail.db-tools.*')`** (e.g.
+`config('laranail.db-tools.guard.probe_timeout')`). The provider
+`mergeConfigFrom()`s the package default under that key, so it resolves whether
+or not you publish.
+
+> Migrated in v0.4.0 from the flat `config('db-tools.*')` key. If you are
+> upgrading from ≤ 0.3, update your `config()` calls and any published file
+> location (below).
+
 ## Publishing the config
 
 ```bash
 php artisan vendor:publish --tag=db-tools-config
 ```
 
-This copies `config/db-tools.php` into your app's `config/` directory.
-The provider already `mergeConfigFrom()`s the package default, so unpublished
-keys still resolve.
+This copies the package default to **`config/laranail/db-tools.php`** in your
+app. Laravel loads nested config directories, so a file at
+`config/laranail/db-tools.php` is exposed as `config('laranail.db-tools.*')` —
+matching the merged default. Unpublished keys still resolve via
+`mergeConfigFrom()`.
 
 ## Publishing the soft-delete history migration
 

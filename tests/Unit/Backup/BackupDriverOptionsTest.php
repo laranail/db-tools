@@ -48,7 +48,7 @@ final class BackupDriverOptionsTest extends TestCase
 
         self::assertFalse($probe->callGzipEnabled());
 
-        config()->set('db-tools.backup.gzip', true);
+        config()->set('laranail.db-tools.backup.gzip', true);
 
         self::assertTrue($probe->callGzipEnabled());
     }
@@ -68,7 +68,7 @@ final class BackupDriverOptionsTest extends TestCase
 
         self::assertSame([], $probe->callExcludedTables());
 
-        config()->set('db-tools.backup.exclude', ['sessions', 'cache', '', 'jobs']);
+        config()->set('laranail.db-tools.backup.exclude', ['sessions', 'cache', '', 'jobs']);
 
         // Empty entries are dropped and the list is re-indexed.
         self::assertSame(['sessions', 'cache', 'jobs'], $probe->callExcludedTables());
@@ -76,28 +76,28 @@ final class BackupDriverOptionsTest extends TestCase
 
     public function test_excluded_tables_returns_empty_when_config_not_an_array(): void
     {
-        config()->set('db-tools.backup.exclude', 'not-an-array');
+        config()->set('laranail.db-tools.backup.exclude', 'not-an-array');
 
         self::assertSame([], $this->probe()->callExcludedTables());
     }
 
     public function test_binary_falls_back_to_bare_name_without_override(): void
     {
-        config()->set('db-tools.backup.binaries.mysqldump');
+        config()->set('laranail.db-tools.backup.binaries.mysqldump');
 
         self::assertSame('mysqldump', $this->probe()->callBinary('mysqldump'));
     }
 
     public function test_binary_honours_configured_absolute_path(): void
     {
-        config()->set('db-tools.backup.binaries.pg_dump', '/usr/local/bin/pg_dump');
+        config()->set('laranail.db-tools.backup.binaries.pg_dump', '/usr/local/bin/pg_dump');
 
         self::assertSame('/usr/local/bin/pg_dump', $this->probe()->callBinary('pg_dump'));
     }
 
     public function test_binary_ignores_empty_string_override(): void
     {
-        config()->set('db-tools.backup.binaries.psql', '');
+        config()->set('laranail.db-tools.backup.binaries.psql', '');
 
         self::assertSame('psql', $this->probe()->callBinary('psql'));
     }

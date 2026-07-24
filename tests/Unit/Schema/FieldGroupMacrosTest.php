@@ -104,9 +104,9 @@ final class FieldGroupMacrosTest extends TestCase
      */
     public function test_user_and_morph_columns_are_bigint_by_default(): void
     {
-        config()->set('db-tools.using_uuids_for_id', false);
-        config()->set('db-tools.using_ulids_for_id', false);
-        config()->set('db-tools.id_type', 'BIGINT');
+        config()->set('laranail.db-tools.using_uuids_for_id', false);
+        config()->set('laranail.db-tools.using_ulids_for_id', false);
+        config()->set('laranail.db-tools.id_type', 'BIGINT');
 
         Schema::create('fg_int', function (Blueprint $t): void {
             $t->id();
@@ -122,7 +122,7 @@ final class FieldGroupMacrosTest extends TestCase
 
     public function test_user_and_morph_columns_track_uuid_config(): void
     {
-        config()->set('db-tools.using_uuids_for_id', true);
+        config()->set('laranail.db-tools.using_uuids_for_id', true);
 
         Schema::create('fg_uuid', function (Blueprint $t): void {
             $t->id();
@@ -138,8 +138,8 @@ final class FieldGroupMacrosTest extends TestCase
 
     public function test_user_and_morph_columns_track_ulid_config(): void
     {
-        config()->set('db-tools.using_uuids_for_id', false);
-        config()->set('db-tools.using_ulids_for_id', true);
+        config()->set('laranail.db-tools.using_uuids_for_id', false);
+        config()->set('laranail.db-tools.using_ulids_for_id', true);
 
         Schema::create('fg_ulid', function (Blueprint $t): void {
             $t->id();

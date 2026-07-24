@@ -44,7 +44,7 @@ final class DbToolsServiceProvider extends ServiceProvider
     #[Override]
     public function register(): void
     {
-        $this->mergeConfigFrom(__DIR__.'/../../config/db-tools.php', 'db-tools');
+        $this->mergeConfigFrom(__DIR__.'/../../config/db-tools.php', 'laranail.db-tools');
 
         // Backup
         $this->app->singleton(BackupManagerInterface::class, BackupManager::class);
@@ -61,15 +61,15 @@ final class DbToolsServiceProvider extends ServiceProvider
         $this->app->singleton(DatabaseAvailabilityInterface::class, fn ($app): DatabaseGuard => new DatabaseGuard(
             $app->make(DatabaseConnectionTesterInterface::class),
             $app->make(DatabaseSchemaInspectorInterface::class),
-            (bool) $app->make('config')->get('db-tools.guard.memoize', true),
-            (bool) $app->make('config')->get('db-tools.guard.emit_events', true),
+            (bool) $app->make('config')->get('laranail.db-tools.guard.memoize', true),
+            (bool) $app->make('config')->get('laranail.db-tools.guard.emit_events', true),
         ));
 
         // Boot-safe schema-readiness reporter (reachable | migrated | ready).
         $this->app->singleton(SchemaReadinessInterface::class, fn ($app): SchemaReadiness => new SchemaReadiness(
             $app->make(DatabaseAvailabilityInterface::class),
             $app->make(DatabaseTableVerifierInterface::class),
-            (bool) $app->make('config')->get('db-tools.guard.emit_events', true),
+            (bool) $app->make('config')->get('laranail.db-tools.guard.emit_events', true),
         ));
 
         // General DB service
@@ -97,7 +97,7 @@ final class DbToolsServiceProvider extends ServiceProvider
             ]);
 
             $this->publishes([
-                __DIR__.'/../../config/db-tools.php' => config_path('db-tools.php'),
+                __DIR__.'/../../config/db-tools.php' => config_path('laranail/db-tools.php'),
             ], 'db-tools-config');
 
             $this->publishes([
@@ -122,7 +122,7 @@ final class DbToolsServiceProvider extends ServiceProvider
      */
     private function registerEventListeners(): void
     {
-        if (! (bool) $this->app->make('config')->get('db-tools.guard.log_events', true)) {
+        if (! (bool) $this->app->make('config')->get('laranail.db-tools.guard.log_events', true)) {
             return;
         }
 

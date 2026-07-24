@@ -33,7 +33,7 @@ final class DatabaseGuardTest extends TestCase
 
         // A blackholed host: packets are dropped, so the connect would block
         // for the driver default without a bounded probe. probe_timeout caps it.
-        $app['config']->set('db-tools.guard.probe_timeout', 1);
+        $app['config']->set('laranail.db-tools.guard.probe_timeout', 1);
         $app['config']->set('database.connections.blackhole', [
             'driver' => 'mysql',
             'host' => '10.255.255.1',

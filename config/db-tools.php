@@ -2,6 +2,13 @@
 
 declare(strict_types=1);
 
+/*
+ * Merged under the namespaced key "laranail.db-tools" per the laranail
+ * convention: read every value as config('laranail.db-tools.*'). When
+ * published, this file lands at config/laranail/db-tools.php so Laravel loads
+ * it under the same key.
+ */
+
 return [
 
     /*

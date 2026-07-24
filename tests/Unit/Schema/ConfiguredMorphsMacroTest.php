@@ -11,9 +11,9 @@ final class ConfiguredMorphsMacroTest extends TestCase
 {
     public function test_configured_morphs_creates_id_and_type_columns_by_default(): void
     {
-        config()->set('db-tools.id_type', 'BIGINT');
-        config()->set('db-tools.using_uuids_for_id', false);
-        config()->set('db-tools.using_ulids_for_id', false);
+        config()->set('laranail.db-tools.id_type', 'BIGINT');
+        config()->set('laranail.db-tools.using_uuids_for_id', false);
+        config()->set('laranail.db-tools.using_ulids_for_id', false);
 
         Schema::create('cm_default', function ($t): void {
             $t->id();
@@ -27,7 +27,7 @@ final class ConfiguredMorphsMacroTest extends TestCase
 
     public function test_configured_morphs_creates_uuid_columns_when_uuid_configured(): void
     {
-        config()->set('db-tools.using_uuids_for_id', true);
+        config()->set('laranail.db-tools.using_uuids_for_id', true);
 
         Schema::create('cm_uuid', function ($t): void {
             $t->id();
@@ -42,7 +42,7 @@ final class ConfiguredMorphsMacroTest extends TestCase
 
     public function test_configured_morphs_creates_ulid_columns_when_ulid_configured(): void
     {
-        config()->set('db-tools.using_ulids_for_id', true);
+        config()->set('laranail.db-tools.using_ulids_for_id', true);
 
         Schema::create('cm_ulid', function ($t): void {
             $t->id();
@@ -56,9 +56,9 @@ final class ConfiguredMorphsMacroTest extends TestCase
 
     public function test_id_type_string_drives_uuid_columns(): void
     {
-        config()->set('db-tools.using_uuids_for_id', false);
-        config()->set('db-tools.using_ulids_for_id', false);
-        config()->set('db-tools.id_type', 'uuid');
+        config()->set('laranail.db-tools.using_uuids_for_id', false);
+        config()->set('laranail.db-tools.using_ulids_for_id', false);
+        config()->set('laranail.db-tools.id_type', 'uuid');
 
         Schema::create('cm_idtype_uuid', function ($t): void {
             $t->id();
@@ -71,9 +71,9 @@ final class ConfiguredMorphsMacroTest extends TestCase
 
     public function test_configured_nullable_morphs_creates_columns(): void
     {
-        config()->set('db-tools.id_type', 'BIGINT');
-        config()->set('db-tools.using_uuids_for_id', false);
-        config()->set('db-tools.using_ulids_for_id', false);
+        config()->set('laranail.db-tools.id_type', 'BIGINT');
+        config()->set('laranail.db-tools.using_uuids_for_id', false);
+        config()->set('laranail.db-tools.using_ulids_for_id', false);
 
         Schema::create('cm_nullable', function ($t): void {
             $t->id();

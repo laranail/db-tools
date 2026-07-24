@@ -61,20 +61,20 @@ blackholed host fails in ~2 s instead of blocking for the driver default (~30 s)
 throwaway connection (a clone of the target config with the timeout overlaid) so the real
 connection is never mutated and real query time is never capped; when the target connection is
 already live this request, the probe reuses it and opens nothing. Tune with
-`config('db-tools.guard.probe_timeout')` (seconds, default `2`).
+`config('laranail.db-tools.guard.probe_timeout')` (seconds, default `2`).
 
 ## Events
 
 When a probe finds a connection unreachable, the guard fires
 `Simtabi\Laranail\DbTools\Events\DatabaseUnavailable` (once per connection per request, never while
-suspended). A default listener logs it; opt out with `config('db-tools.guard.log_events')` and
-listen yourself. Disable emission entirely with `config('db-tools.guard.emit_events')`.
+suspended). A default listener logs it; opt out with `config('laranail.db-tools.guard.log_events')` and
+listen yourself. Disable emission entirely with `config('laranail.db-tools.guard.emit_events')`.
 
 ## How it works
 
 The guard layers on the existing `DatabaseConnectionTester` (bounded probe → `isAvailable`) and
 `DatabaseSchemaInspector` (`hasTable`), memoizing each connection's availability. It is bound as a
-singleton (`DatabaseAvailabilityInterface`) and honours `config('db-tools.guard.memoize')`.
+singleton (`DatabaseAvailabilityInterface`) and honours `config('laranail.db-tools.guard.memoize')`.
 
 ---
 
