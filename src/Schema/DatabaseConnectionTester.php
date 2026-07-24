@@ -43,18 +43,6 @@ class DatabaseConnectionTester implements DatabaseConnectionTesterInterface
     {
         $name = $connection ?? (string) config('database.default');
 
-        // Fast path: if the connection already has a live PDO (the app has
-        // queried it this request), it is trivially available — reuse it.
-        // getRawPdo() is a Closure until the connection is opened, so only a
-        // real PDO counts.
-        try {
-            if ($this->getConnection($connection)->getRawPdo() instanceof PDO) {
-                return true;
-            }
-        } catch (Exception) {
-            // Fall through to the bounded probe below.
-        }
-
         $config = config("database.connections.{$name}");
 
         if (! is_array($config)) {
@@ -62,8 +50,7 @@ class DatabaseConnectionTester implements DatabaseConnectionTesterInterface
         }
 
         // SQLite (and any local driver) cannot hang on connect, so just open
-        // the real connection and reuse it — no timeout machinery, and never a
-        // purge (purging a :memory: connection would wipe the database).
+        // the real connection and reuse it — no timeout machinery.
         if (($config['driver'] ?? null) === 'sqlite') {
             return $this->test($connection);
         }
@@ -71,24 +58,32 @@ class DatabaseConnectionTester implements DatabaseConnectionTesterInterface
         $timeout ??= (int) config('laranail.db-tools.guard.probe_timeout', 2);
         $timeout = max(1, $timeout);
 
-        // Warm the *real* connection with a bounded, connect-only timeout so a
-        // dead host fails fast (instead of the driver's ~30s default) AND the
-        // opened connection is reused for the rest of the request — no throwaway
-        // probe connection. The connection is known unconnected here (the fast
-        // path returned above otherwise), so purging only drops a stale, idle
-        // connection object; it never closes a live PDO. The global config is
-        // restored afterwards, leaving no persistent footprint.
-        Config::set("database.connections.{$name}", $this->withConnectTimeout($config, $timeout));
-        DB::purge($name);
+        // Give the *real* connection a bounded, connect-only timeout so a dead
+        // host fails fast (~timeout) instead of blocking for the driver's ~30s
+        // default — but only while the connection has not been resolved yet, so
+        // the option takes effect when it is first built. We never purge (that
+        // would close a live PDO, and wipe a :memory: sqlite database) and never
+        // clone: probing opens the real connection once and every later query
+        // reuses it, so a healthy check costs a single connection.
+        if (! array_key_exists($name, $this->resolvedConnections())) {
+            Config::set("database.connections.{$name}", $this->withConnectTimeout($config, $timeout));
+        }
 
+        // test() opens the real connection (reused thereafter) and never throws.
+        return $this->test($connection);
+    }
+
+    /**
+     * The database connections already resolved this request, keyed by name.
+     *
+     * @return array<string, mixed>
+     */
+    private function resolvedConnections(): array
+    {
         try {
-            $this->getConnection($connection)->getPdo();
-
-            return true;
+            return DB::getConnections();
         } catch (Exception) {
-            return false;
-        } finally {
-            Config::set("database.connections.{$name}", $config);
+            return [];
         }
     }
 
