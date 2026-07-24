@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Simtabi\Laranail\DbTools\Tests\Unit\Guard;
 
+use Illuminate\Database\Events\ConnectionEstablished;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Schema;
 use Override;
 use PDO;
@@ -140,5 +143,47 @@ final class DatabaseGuardTest extends TestCase
         $start = microtime(true);
         self::assertFalse(DatabaseGuard::reachable('blackhole'));
         self::assertLessThan(10.0, microtime(true) - $start, 'The probe must fail fast, not hang.');
+    }
+
+    public function test_probe_does_not_wipe_a_sqlite_memory_database(): void
+    {
+        Schema::create('trinkets', fn ($t) => $t->id());
+        DB::table('trinkets')->insert(['id' => 1]);
+
+        // A probe of the default (:memory:) connection must reuse it, never
+        // purge it — purging :memory: would drop the table and the row.
+        self::assertTrue(DatabaseGuard::reachable());
+
+        self::assertTrue(Schema::hasTable('trinkets'));
+        self::assertSame(1, DB::table('trinkets')->count());
+    }
+
+    public function test_probe_opens_no_throwaway_connection(): void
+    {
+        DatabaseGuard::reachable('down');
+
+        self::assertNull(
+            config('database.connections.__db_tools_probe__'),
+            'The probe must not leave a throwaway connection in config.'
+        );
+    }
+
+    public function test_probe_reuses_the_connection_it_opens(): void
+    {
+        $established = 0;
+        Event::listen(
+            ConnectionEstablished::class,
+            function () use (&$established): void {
+                $established++;
+            }
+        );
+
+        // First contact with the default connection is the probe; the follow-up
+        // query must reuse it rather than open a second connection.
+        self::assertTrue(DatabaseGuard::reachable());
+        Schema::create('doodads', fn ($t) => $t->id());
+        DB::table('doodads')->count();
+
+        self::assertSame(1, $established, 'The probe should open exactly one connection and reuse it.');
     }
 }

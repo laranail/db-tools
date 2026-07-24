@@ -39,19 +39,14 @@ class DatabaseConnectionTester implements DatabaseConnectionTesterInterface
         }
     }
 
-    /**
-     * Reserved name for the throwaway connection used by {@see probe()}.
-     */
-    private const string PROBE_CONNECTION = '__db_tools_probe__';
-
     public function probe(?string $connection = null, ?int $timeout = null): bool
     {
         $name = $connection ?? (string) config('database.default');
 
         // Fast path: if the connection already has a live PDO (the app has
-        // queried it this request), it is trivially available — no need to open
-        // a throwaway probe connection. getRawPdo() is a Closure until the
-        // connection is actually opened, so only a real PDO counts.
+        // queried it this request), it is trivially available — reuse it.
+        // getRawPdo() is a Closure until the connection is opened, so only a
+        // real PDO counts.
         try {
             if ($this->getConnection($connection)->getRawPdo() instanceof PDO) {
                 return true;
@@ -62,32 +57,38 @@ class DatabaseConnectionTester implements DatabaseConnectionTesterInterface
 
         $config = config("database.connections.{$name}");
 
-        // Unknown/undefined connection: nothing to clone, so bound the real one
-        // as best we can and fall back to a plain test.
         if (! is_array($config)) {
+            return $this->test($connection);
+        }
+
+        // SQLite (and any local driver) cannot hang on connect, so just open
+        // the real connection and reuse it — no timeout machinery, and never a
+        // purge (purging a :memory: connection would wipe the database).
+        if (($config['driver'] ?? null) === 'sqlite') {
             return $this->test($connection);
         }
 
         $timeout ??= (int) config('laranail.db-tools.guard.probe_timeout', 2);
         $timeout = max(1, $timeout);
 
-        Config::set(
-            'database.connections.'.self::PROBE_CONNECTION,
-            $this->withConnectTimeout($config, $timeout),
-        );
+        // Warm the *real* connection with a bounded, connect-only timeout so a
+        // dead host fails fast (instead of the driver's ~30s default) AND the
+        // opened connection is reused for the rest of the request — no throwaway
+        // probe connection. The connection is known unconnected here (the fast
+        // path returned above otherwise), so purging only drops a stale, idle
+        // connection object; it never closes a live PDO. The global config is
+        // restored afterwards, leaving no persistent footprint.
+        Config::set("database.connections.{$name}", $this->withConnectTimeout($config, $timeout));
+        DB::purge($name);
 
         try {
-            DB::connection(self::PROBE_CONNECTION)->getPdo();
+            $this->getConnection($connection)->getPdo();
 
             return true;
         } catch (Exception) {
             return false;
         } finally {
-            DB::purge(self::PROBE_CONNECTION);
-
-            $connections = (array) config('database.connections', []);
-            unset($connections[self::PROBE_CONNECTION]);
-            Config::set('database.connections', $connections);
+            Config::set("database.connections.{$name}", $config);
         }
     }
 
