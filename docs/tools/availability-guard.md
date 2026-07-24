@@ -57,16 +57,19 @@ e.g. a TCP ping or cached flag; `null` restores the default probe), `Macroable`,
 ## Fast-fail probe
 
 The built-in availability probe is bounded by a short connect timeout so an unreachable or
-blackholed host fails in ~2 s instead of blocking for the driver default (~30 s). It **reuses the
-real connection** rather than opening a throwaway one:
+blackholed host fails in ~2 s instead of blocking for the driver default (~30 s), and it **opens the
+real connection once and reuses it** — never a throwaway or a clone:
 
-- If the connection already has a live PDO this request, the probe returns immediately.
-- Otherwise it warms the *real* connection with a **connect-only** timeout (`PDO::ATTR_TIMEOUT` for
-  mysql/mariadb/sqlsrv — verified not to cap query time; `connect_timeout` for pgsql; SQLite is local
-  so no timeout and never a purge, since purging `:memory:` would wipe it), then opens it once. That
-  one connection is reused for the rest of the request, so a healthy boot-time check costs **one**
-  connection, not two. The global config is restored afterwards, leaving no persistent footprint.
+- Before the connection is first resolved, the probe adds a **connect-only** timeout to its config
+  (`PDO::ATTR_TIMEOUT` for mysql/mariadb/sqlsrv — verified not to cap query time; `connect_timeout`
+  for pgsql; SQLite is local, so no timeout). The connection is then built with that timeout and
+  every later query in the request reuses it, so a healthy boot-time check costs **one** connection,
+  not two.
+- It never purges the connection (that would close a live PDO and wipe a `:memory:` SQLite
+  database), and it leaves an already-resolved connection untouched — just reusing it.
 
+The connect timeout it adds is connect-only, so it bounds a dead host without capping query time;
+it persists on the connection for the rest of the process (a benign, generally desirable default).
 Tune with `config('laranail.db-tools.guard.probe_timeout')` (seconds, default `2`).
 
 ## Events
