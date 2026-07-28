@@ -7,7 +7,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-07-28
+
+### Added
+- **`EnsureSchemaIsReady` HTTP middleware.** On an instance whose database is not fully migrated
+  (a restored-but-unmigrated dump, a half-run migration), it lets the request through but stamps
+  advisory `X-Schema-Status`/`X-Schema-Message` headers so a bare 500 doesn't hide the cause; when
+  the schema is ready it is a single cheap, cached check. It delegates to `DbTools::schemaReport()`,
+  so it honours `laranail.db-tools.readiness.required_tables`.
+- **Auto-registration.** When `laranail.db-tools.readiness.middleware.enabled` (default `true`), the
+  service provider pushes the middleware onto the HTTP kernel's **global** stack (not the web/api
+  route groups) so it survives on both the slim and the traditional kernel — a traditional kernel
+  rebuilds its route groups per request and would otherwise drop a boot-time group append. A
+  `db-tools.schema-ready` route-middleware alias is always registered for manual use.
+- New config block `laranail.db-tools.readiness.middleware` (`enabled`, `cache_store` [default `file`,
+  deliberately DB-independent], `cache_key`, `cache_ttl`, `header_status`, `header_message`).
+
+### Note for consumers
+- On upgrade, the readiness middleware is added to every HTTP request by default. It never blocks a
+  request and is cheap; disable with `laranail.db-tools.readiness.middleware.enabled = false` if you
+  do not want it. Apps that registered their own copy should drop it and rely on the package's.
+
+## [0.5.2] - 2026-07-28
+
 ### Fixed
+- **`extra.branch-alias` was stale, and `^0.4` consumers may have received 0.5.x code.** The
+  alias still read `dev-main => 0.4.x-dev` after 0.5.0 and 0.5.1 shipped, so `main`
+  advertised itself to Composer as `0.4.x-dev`. Because `0.4.x-dev` sorts above the `v0.4.2`
+  tag, any consumer whose constraint allows `^0.4` and whose root project permits dev
+  stability could resolve `main` — and receive 0.5.0's breaking
+  `SchemaReadinessInterface::flush()` addition with no major-version signal. The alias now
+  reads `0.5.x-dev`.
+
+  **If you require this package as `^0.4`, check your lock file for a `dev-main` entry.** If
+  there is one you are already running 0.5.x: move the constraint to `^0.5` and re-resolve,
+  or pin to `0.4.2` if you implement `SchemaReadinessInterface` yourself.
 - **SQL restore is now atomic on a non-default connection.** `transactionOrFail()` opened
   its transaction on the default connection via the `DB` facade while `SqlFileRestorer`
   executed the statements on `DB::connection($connection)`. For any non-default connection
@@ -48,10 +82,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   2.2.6. It cannot prevent a *future* upstream regression of the same shape; the resolved
   version logging added alongside is what makes the next one diagnosable.
 
+### Added
+- `.scripts/check-branch-alias.sh` plus two CI gates that make the alias defect above
+  unrepeatable. The release workflow asserts the alias minor equals the tag being released,
+  before anything is built or published; static analysis asserts on `main` that the alias has
+  not fallen behind the newest tag. The drift check deliberately permits the alias to run
+  *ahead* of the last tag — that is the normal state while a new minor is in development.
+
 ### Changed
 - CI: Rector runs as its own job, independent of Pint/PHPStan, so a toolchain fatal in one
   analyser no longer buries the others' verdicts. Resolved analyser versions are logged
   before each run.
+- `php` constraint `^8.4 || ^8.5` → `^8.4.1 || ^8.5`, matching the other laranail packages
+  and the floor `symfony/uid` already imposes transitively. No code change — the declared
+  range now states what was already true.
 
 ## [0.5.1] - 2026-07-28
 
