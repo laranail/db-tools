@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Simtabi\Laranail\DbTools\Schema;
 
 use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\Schema;
+use Simtabi\Laranail\DbTools\Support\ConnectionContext;
 
 /**
  * Reusable column-group macros on the schema Blueprint — convenience helpers for
@@ -83,8 +83,39 @@ final class FieldGroupMacros
 
         Blueprint::macro('dropForeignIfExists', function (string $index): void {
             /** @var Blueprint $this */
-            if (Schema::hasColumn($this->getTable(), $index)) {
-                $this->dropForeign([$index]);
+            $table = $this->getTable();
+            $keys = ConnectionContext::forBlueprint($this)->schema()->getForeignKeys($table);
+
+            foreach ($keys as $key) {
+                // The parameter is documented as an index name, and the guard
+                // used to be hasColumn(), so a conventional constraint name
+                // such as posts_user_id_foreign matched nothing and the macro
+                // silently dropped no key.
+                $name = is_string($key['name'] ?? null) ? $key['name'] : '';
+
+                /** @var list<string> $columns */
+                $columns = is_array($key['columns'] ?? null) ? array_values($key['columns']) : [];
+
+                // SQLite reports foreign keys with no name at all, so the same
+                // migration would behave differently there than on MySQL or
+                // PostgreSQL. Falling back to Laravel's own generated form —
+                // {table}_{columns}_foreign, which IS the name those drivers
+                // report — makes the conventional name work everywhere.
+                $conventional = $columns === []
+                    ? ''
+                    : $table.'_'.implode('_', $columns).'_foreign';
+
+                $matches = $index === $name
+                    || $index === $conventional
+                    || $columns === [$index];
+
+                if ($matches) {
+                    // Drop by column list where we have one: SQLite cannot drop
+                    // a constraint by a name it never stored.
+                    $this->dropForeign($columns === [] ? $index : $columns);
+
+                    return;
+                }
             }
         });
 
@@ -92,9 +123,10 @@ final class FieldGroupMacros
             /** @var Blueprint $this */
             $columns = is_array($columns) ? $columns : [$columns];
             $table = $this->getTable();
+            $schema = ConnectionContext::forBlueprint($this)->schema();
 
             foreach ($columns as $column) {
-                if (Schema::hasColumn($table, $column)) {
+                if ($schema->hasColumn($table, $column)) {
                     $this->dropColumn($column);
                 }
             }

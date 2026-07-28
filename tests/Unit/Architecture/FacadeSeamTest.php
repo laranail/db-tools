@@ -80,8 +80,6 @@ final class FacadeSeamTest extends TestCase
      */
     private const array KNOWN_VIOLATIONS = [
         'src/Schema/Concerns/HasSchemaInspection.php:36 Schema::getColumnListing',
-        'src/Schema/FieldGroupMacros.php:86 Schema::hasColumn',
-        'src/Schema/FieldGroupMacros.php:97 Schema::hasColumn',
     ];
 
     /**
