@@ -6,6 +6,7 @@ namespace Simtabi\Laranail\DbTools\Tests\Unit\Concerns;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Schema;
+use InvalidArgumentException;
 use Simtabi\Laranail\DbTools\Concerns\HasScopes;
 use Simtabi\Laranail\DbTools\Tests\TestCase;
 
@@ -60,5 +61,23 @@ final class HasScopesTest extends TestCase
     public function test_blank_term_returns_all(): void
     {
         self::assertCount(2, ArticleModel::query()->search('   ')->get());
+    }
+
+    public function test_search_rejects_columns_the_model_does_not_declare(): void
+    {
+        // $searchable is a public scope parameter, so `search($q, request('cols'))`
+        // is an inviting shape. The term is bound; the columns were interpolated
+        // straight into the SQL. Only declared columns may be searched.
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('not searchable');
+
+        ArticleModel::query()->search('x', ['title), 1) UNION SELECT 1 --'])->get();
+    }
+
+    public function test_search_treats_like_wildcards_in_the_term_as_literals(): void
+    {
+        // Unescaped, '%' matched every row.
+        self::assertCount(0, ArticleModel::query()->search('%')->get());
+        self::assertCount(0, ArticleModel::query()->search('_aravel')->get());
     }
 }

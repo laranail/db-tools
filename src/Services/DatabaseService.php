@@ -102,7 +102,9 @@ final readonly class DatabaseService implements DatabaseServiceInterface
         }
 
         try {
-            $object->newQuery()->increment('views');
+            // On the instance, not newQuery(): the latter is unconstrained, so
+            // it incremented `views` on every row in the table.
+            $object->increment('views');
             session()->put($sessionKey, time());
 
             $this->logger->debug('View count incremented', [

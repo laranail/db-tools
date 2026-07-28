@@ -160,4 +160,30 @@ final class HasUuidsOrIntegerIdsTest extends TestCase
 
         self::assertSame('UUID', HasUuidsOrIntegerIdsStringModel::getTypeOfId());
     }
+
+    public function test_an_explicitly_supplied_key_is_not_overwritten(): void
+    {
+        // The creating hook assigned unconditionally, so a pre-generated key was
+        // silently replaced. Anything that generates an id up front to wire up
+        // foreign keys — seeders, importers, restores — wrote orphaned rows and
+        // never learned about it.
+        config(['laranail.db-tools.id_type' => 'UUID']);
+
+        $id = (string) Uuid::uuid4();
+
+        $model = HasUuidsOrIntegerIdsStringModel::create(['id' => $id, 'name' => 'explicit']);
+
+        self::assertSame($id, $model->getKey());
+        self::assertNotNull(HasUuidsOrIntegerIdsStringModel::find($id));
+    }
+
+    public function test_a_key_is_still_generated_when_none_is_supplied(): void
+    {
+        config(['laranail.db-tools.id_type' => 'UUID']);
+
+        $model = HasUuidsOrIntegerIdsStringModel::create(['name' => 'generated']);
+
+        self::assertIsString($model->getKey());
+        self::assertSame(36, strlen($model->getKey()));
+    }
 }

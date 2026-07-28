@@ -6,6 +6,7 @@ namespace Simtabi\Laranail\DbTools\Tests\Unit\Http;
 
 use Illuminate\Contracts\Http\Kernel as HttpKernelContract;
 use Illuminate\Support\Facades\Route;
+use Override;
 use Simtabi\Laranail\DbTools\Http\Middleware\EnsureSchemaIsReady;
 use Simtabi\Laranail\DbTools\Schema\Contracts\SchemaReadinessInterface;
 use Simtabi\Laranail\DbTools\Schema\SchemaReadinessReport;
@@ -14,6 +15,7 @@ use Simtabi\Laranail\DbTools\Tests\TestCase;
 
 final class EnsureSchemaIsReadyTest extends TestCase
 {
+    #[Override]
     protected function defineEnvironment($app): void
     {
         parent::defineEnvironment($app);
@@ -28,9 +30,9 @@ final class EnsureSchemaIsReadyTest extends TestCase
      */
     private function fakeReport(SchemaReadinessReport $report): void
     {
-        $this->app->instance(SchemaReadinessInterface::class, new class($report) implements SchemaReadinessInterface
+        $this->app->instance(SchemaReadinessInterface::class, new readonly class($report) implements SchemaReadinessInterface
         {
-            public function __construct(private readonly SchemaReadinessReport $report) {}
+            public function __construct(private SchemaReadinessReport $report) {}
 
             public function report(array $requiredTables = [], ?string $connection = null): SchemaReadinessReport
             {

@@ -141,4 +141,18 @@ final class DatabaseServiceTest extends TestCase
         self::assertFalse($this->service->handleViewCount($model, 'viewed_fixtures'));
         self::assertSame(1, (int) $model->fresh()->views);
     }
+
+    public function test_handle_view_count_only_touches_the_viewed_row(): void
+    {
+        // newQuery() is UNCONSTRAINED, so incrementing through it issued
+        // `UPDATE ... SET views = views + 1` with no WHERE — every row in the
+        // table. A single-row fixture cannot see that; two can.
+        $viewed = DbServiceFixture::create(['name' => 'viewed', 'views' => 0]);
+        $other = DbServiceFixture::create(['name' => 'other', 'views' => 0]);
+
+        self::assertTrue($this->service->handleViewCount($viewed, 'scoped_views'));
+
+        self::assertSame(1, (int) $viewed->fresh()->views);
+        self::assertSame(0, (int) $other->fresh()->views, 'A view of one row must not increment any other.');
+    }
 }

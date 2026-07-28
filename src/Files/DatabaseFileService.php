@@ -8,16 +8,25 @@ use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
 use RuntimeException;
 use Simtabi\Laranail\DbTools\Backup\Contracts\BackupManagerInterface;
+use Simtabi\Laranail\DbTools\Concerns\ValidatesFilePaths;
 use Simtabi\Laranail\DbTools\Files\Contracts\DatabaseFileServiceInterface;
 
 /**
  * Database File Service
  *
- * Validates and imports database files with size, extension and path-traversal
- * checks to ensure proper, secure file handling.
+ * Validates and imports database files: existence, readability, extension, size,
+ * and — when `laranail.db-tools.files.import_base` is set — containment within a
+ * permitted directory.
+ *
+ * Note that realpath() alone is NOT a traversal check: it resolves `..` and
+ * symlinks rather than rejecting them, so without a base directory to confine
+ * against, any readable file on the filesystem is reachable. That is why
+ * containment is explicit and configurable rather than implied.
  */
 class DatabaseFileService implements DatabaseFileServiceInterface
 {
+    use ValidatesFilePaths;
+
     /**
      * Supported database file extensions
      */
@@ -41,7 +50,8 @@ class DatabaseFileService implements DatabaseFileServiceInterface
      */
     public function validateDatabaseFile(string $filePath): string|false
     {
-        // Security: Prevent path traversal attacks
+        // Canonicalise only. This resolves `..` and symlinks; it does not
+        // reject them. Containment is enforced separately in handleImport().
         $realPath = realpath($filePath);
 
         if ($realPath === false) {
@@ -112,7 +122,33 @@ class DatabaseFileService implements DatabaseFileServiceInterface
             );
         }
 
+        if (! $this->isWithinImportBase($validatedPath)) {
+            throw new RuntimeException(
+                "Refusing to import '{$filePath}': it resolves outside the permitted import directory "
+                .'(laranail.db-tools.files.import_base).'
+            );
+        }
+
         app(BackupManagerInterface::class)->restore($validatedPath, $connection);
+    }
+
+    /**
+     * Whether the resolved path sits inside the configured import directory.
+     *
+     * Returns true when no base is configured, so an application whose dumps
+     * live elsewhere keeps working — the confinement is opt-in rather than a
+     * silent breaking change, but it is documented and defaulted in the shipped
+     * config.
+     */
+    private function isWithinImportBase(string $realPath): bool
+    {
+        $base = config('laranail.db-tools.files.import_base');
+
+        if (! is_string($base) || $base === '') {
+            return true;
+        }
+
+        return $this->isContainedWithin($realPath, $base);
     }
 
     /**

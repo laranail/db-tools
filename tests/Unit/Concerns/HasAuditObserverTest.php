@@ -37,6 +37,29 @@ final class ExplicitAuditedFixture extends Model
     protected $guarded = [];
 }
 
+/**
+ * Unguarded, but its table has no audit columns. `isFillable()` answers true for
+ * every key on an unguarded model, so a fillability-based check claims the
+ * columns exist and puts them in the INSERT.
+ */
+final class UnauditedFixture extends Model
+{
+    protected $table = 'unaudited_fixtures';
+
+    protected $guarded = [];
+}
+
+/**
+ * Has the audit columns, but a narrow $fillable that omits them — the other
+ * direction of the same mistake.
+ */
+final class NarrowlyFillableFixture extends Model
+{
+    protected $table = 'narrowly_fillable_fixtures';
+
+    protected $fillable = ['name'];
+}
+
 final class AuditUser extends Authenticatable
 {
     protected $table = 'audit_users';
@@ -50,6 +73,10 @@ final class HasAuditObserverTest extends TestCase
     {
         parent::setUp();
 
+        // Tables are dropped and recreated per case, so the observer's schema memo
+        // must not survive between them.
+        AuditObserver::flushColumnCache();
+
         foreach (['trait_audited_fixtures', 'explicit_audited_fixtures'] as $table) {
             Schema::create($table, function ($t): void {
                 $t->id();
@@ -58,6 +85,22 @@ final class HasAuditObserverTest extends TestCase
                 $t->timestamps();
             });
         }
+
+        Schema::create('unaudited_fixtures', function ($t): void {
+            $t->id();
+            $t->string('name');
+            $t->timestamps();
+        });
+
+        Schema::create('narrowly_fillable_fixtures', function ($t): void {
+            $t->id();
+            $t->string('name');
+            $t->auditColumns();
+            $t->timestamps();
+        });
+
+        UnauditedFixture::observe(AuditObserver::class);
+        NarrowlyFillableFixture::observe(AuditObserver::class);
 
         Schema::create('audit_users', function ($t): void {
             $t->id();
@@ -115,5 +158,30 @@ final class HasAuditObserverTest extends TestCase
 
         self::assertNull($row->created_by);
         self::assertNull($row->updated_by);
+    }
+
+    public function test_does_not_stamp_a_table_without_audit_columns(): void
+    {
+        // modelHasColumn() consulted getFillable()/isFillable() rather than the
+        // schema. On an unguarded model isFillable() is true for every key, so
+        // created_by/updated_by were added to the INSERT and the write failed.
+        $this->actingAs(AuditUser::create([]));
+
+        $model = UnauditedFixture::create(['name' => 'no audit columns here']);
+
+        self::assertTrue($model->exists);
+        self::assertNull($model->getAttribute('created_by'));
+    }
+
+    public function test_stamps_a_table_whose_audit_columns_are_not_fillable(): void
+    {
+        // The inverse: the columns exist, but a narrow $fillable meant the
+        // fillability check said no and every row silently got a NULL actor.
+        $user = AuditUser::create([]);
+        $this->actingAs($user);
+
+        $model = NarrowlyFillableFixture::create(['name' => 'audited']);
+
+        self::assertSame($user->getKey(), $model->fresh()->created_by);
     }
 }

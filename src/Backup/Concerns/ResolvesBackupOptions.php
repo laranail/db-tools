@@ -108,17 +108,44 @@ trait ResolvesBackupOptions
             throw new RuntimeException("Failed to gzip-compress backup: {$source}");
         }
 
-        while (! feof($in)) {
-            $chunk = fread($in, 262144);
-            if ($chunk === false) {
-                break;
+        // Every write is checked. Ignoring gzwrite's return meant a full disk
+        // produced a truncated archive, and the unconditional unlink below then
+        // destroyed the only complete copy — while reporting success.
+        try {
+            while (! feof($in)) {
+                $chunk = fread($in, 262144);
+
+                if ($chunk === false) {
+                    throw new RuntimeException("Failed to read backup while compressing: {$source}");
+                }
+
+                if ($chunk === '') {
+                    continue;
+                }
+
+                if (gzwrite($out, $chunk) !== strlen($chunk)) {
+                    throw new RuntimeException("Short write while gzip-compressing backup (disk full?): {$destination}");
+                }
             }
-            gzwrite($out, $chunk);
+        } catch (RuntimeException $e) {
+            fclose($in);
+            gzclose($out);
+            @unlink($destination);
+
+            throw $e;
         }
 
         fclose($in);
-        gzclose($out);
 
+        // gzclose flushes the deflate buffer and writes the trailer, so it can
+        // fail even when every gzwrite succeeded.
+        if (! gzclose($out)) {
+            @unlink($destination);
+
+            throw new RuntimeException("Failed to finalise gzip archive: {$destination}");
+        }
+
+        // Only now is the archive known to be complete.
         @unlink($source);
     }
 
@@ -143,15 +170,94 @@ trait ResolvesBackupOptions
             throw new RuntimeException("Failed to gzip-decompress backup: {$source}");
         }
 
-        while (! gzeof($in)) {
-            $chunk = gzread($in, 262144);
-            if ($chunk === false) {
-                break;
+        $written = 0;
+
+        try {
+            while (! gzeof($in)) {
+                $chunk = gzread($in, 262144);
+
+                if ($chunk === false) {
+                    throw new RuntimeException("Failed to read gzip archive: {$source}");
+                }
+
+                if ($chunk === '') {
+                    continue;
+                }
+
+                if (fwrite($out, $chunk) !== strlen($chunk)) {
+                    throw new RuntimeException("Short write while gzip-decompressing backup (disk full?): {$destination}");
+                }
+
+                $written += strlen($chunk);
             }
-            fwrite($out, $chunk);
+        } catch (RuntimeException $e) {
+            gzclose($in);
+            fclose($out);
+            @unlink($destination);
+
+            throw $e;
         }
 
         gzclose($in);
         fclose($out);
+
+        // gzread does NOT report a truncated stream — it simply stops, and the
+        // loop then exits through gzeof. A short dump replayed into a database
+        // is worse than a failed restore, so compare what we wrote against the
+        // uncompressed size recorded in the gzip trailer.
+        $expected = $this->gzipUncompressedSize($source);
+
+        if ($expected !== null && $expected !== $written % 4294967296) {
+            @unlink($destination);
+
+            throw new RuntimeException(sprintf(
+                'Gzip archive is truncated or corrupt: %s (expected %d bytes, got %d).',
+                $source,
+                $expected,
+                $written % 4294967296,
+            ));
+        }
+    }
+
+    /**
+     * The uncompressed size recorded in a gzip trailer (ISIZE), or null when it
+     * cannot be read.
+     *
+     * ISIZE is the original size modulo 2^32, stored little-endian in the last
+     * four bytes. Exact for archives under 4 GiB and a strong truncation signal
+     * regardless.
+     */
+    private function gzipUncompressedSize(string $path): ?int
+    {
+        $size = @filesize($path);
+
+        if ($size === false || $size < 4) {
+            return null;
+        }
+
+        $handle = @fopen($path, 'rb');
+
+        if ($handle === false) {
+            return null;
+        }
+
+        try {
+            if (fseek($handle, -4, SEEK_END) !== 0) {
+                return null;
+            }
+
+            $trailer = fread($handle, 4);
+
+            if ($trailer === false || strlen($trailer) !== 4) {
+                return null;
+            }
+
+            /** @var array{1: int}|false $unpacked */
+            $unpacked = unpack('V', $trailer);
+
+            return $unpacked === false ? null : $unpacked[1];
+        } finally {
+            fclose($handle);
+        }
     }
 }

@@ -12,6 +12,7 @@ use InvalidArgumentException;
 use PDO;
 use PDOException;
 use Simtabi\Laranail\DbTools\Schema\Contracts\DatabaseConnectionTesterInterface;
+use Simtabi\Laranail\DbTools\Support\ConnectionContext;
 
 /**
  * Class DatabaseConnectionTester
@@ -41,11 +42,12 @@ class DatabaseConnectionTester implements DatabaseConnectionTesterInterface
 
     public function probe(?string $connection = null, ?int $timeout = null): bool
     {
-        $name = $connection ?? (string) config('database.default');
+        $context = ConnectionContext::for($connection);
+        $name = $context->key();
 
-        $config = config("database.connections.{$name}");
+        $config = $context->configArray();
 
-        if (! is_array($config)) {
+        if ($config === null) {
             return $this->test($connection);
         }
 
@@ -75,7 +77,7 @@ class DatabaseConnectionTester implements DatabaseConnectionTesterInterface
         // application's configuration. Leaving it in place would silently
         // re-apply on any later rebuild (DB::purge(), a reconnect, a recycled
         // worker) as if the developer had configured it.
-        $key = "database.connections.{$name}";
+        $key = $context->configPath();
 
         Config::set($key, $this->withConnectTimeout($config, $timeout));
 
@@ -158,7 +160,7 @@ class DatabaseConnectionTester implements DatabaseConnectionTesterInterface
             return [
                 'success' => true,
                 'message' => 'Connection successful',
-                'connection' => $connection ?? config('database.default'),
+                'connection' => ConnectionContext::for($connection)->key(),
                 'driver' => $conn->getDriverName(),
                 'version' => $this->getVersion($connection),
                 'database' => $conn->getDatabaseName(),
@@ -167,19 +169,19 @@ class DatabaseConnectionTester implements DatabaseConnectionTesterInterface
             return [
                 'success' => false,
                 'message' => 'Database error: '.$e->getMessage(),
-                'connection' => $connection ?? config('database.default'),
+                'connection' => ConnectionContext::for($connection)->key(),
             ];
         } catch (InvalidArgumentException $e) {
             return [
                 'success' => false,
                 'message' => 'Configuration error: '.$e->getMessage(),
-                'connection' => $connection ?? config('database.default'),
+                'connection' => ConnectionContext::for($connection)->key(),
             ];
         } catch (Exception $e) {
             return [
                 'success' => false,
                 'message' => 'Connection failed: '.$e->getMessage(),
-                'connection' => $connection ?? config('database.default'),
+                'connection' => ConnectionContext::for($connection)->key(),
             ];
         }
     }
@@ -277,6 +279,6 @@ class DatabaseConnectionTester implements DatabaseConnectionTesterInterface
      */
     protected function getConnection(?string $connection = null): Connection
     {
-        return $connection ? DB::connection($connection) : DB::connection();
+        return ConnectionContext::for($connection)->connection();
     }
 }

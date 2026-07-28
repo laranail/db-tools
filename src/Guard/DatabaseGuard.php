@@ -13,6 +13,7 @@ use Simtabi\Laranail\DbTools\Schema\Contracts\DatabaseConnectionTesterInterface;
 use Simtabi\Laranail\DbTools\Schema\Contracts\DatabaseSchemaInspectorInterface;
 use Simtabi\Laranail\DbTools\Schema\DatabaseConnectionTester;
 use Simtabi\Laranail\DbTools\Schema\DatabaseSchemaInspector;
+use Simtabi\Laranail\DbTools\Support\ConnectionContext;
 use Simtabi\Laranail\DbTools\Support\SafeEvent;
 use Throwable;
 
@@ -32,9 +33,6 @@ use Throwable;
 final class DatabaseGuard implements DatabaseAvailabilityInterface
 {
     use Macroable;
-
-    /** Memo key used when the default connection name cannot be resolved. */
-    private const string DEFAULT_KEY = '__default__';
 
     /**
      * Memoized availability results keyed by resolved connection name.
@@ -113,17 +111,7 @@ final class DatabaseGuard implements DatabaseAvailabilityInterface
      */
     private function resolveKey(?string $connection): string
     {
-        if ($connection !== null) {
-            return $connection;
-        }
-
-        try {
-            $default = Container::getInstance()->make('config')->get('database.default');
-        } catch (Throwable) {
-            return self::DEFAULT_KEY;
-        }
-
-        return is_string($default) && $default !== '' ? $default : self::DEFAULT_KEY;
+        return ConnectionContext::for($connection)->key();
     }
 
     /**

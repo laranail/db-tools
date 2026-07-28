@@ -7,6 +7,7 @@ namespace Simtabi\Laranail\DbTools\Concerns;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
+use InvalidArgumentException;
 
 /**
  * Reusable Eloquent query scopes.
@@ -38,24 +39,35 @@ trait HasScopes
      */
     public function scopeSearch(Builder $query, string $term, array $searchable = []): Builder
     {
-        $columns = $searchable !== [] ? $searchable : $this->searchableColumns();
+        $columns = $this->resolveSearchColumns($searchable);
 
         if ($columns === [] || trim($term) === '') {
             return $query;
         }
 
+        $grammar = $query->getConnection()->getQueryGrammar();
         $driver = $query->getConnection()->getDriverName();
 
         if (in_array($driver, ['mysql', 'mariadb'], true)) {
+            // Identifiers cannot be bound, so they are wrapped by the grammar —
+            // and resolveSearchColumns() has already restricted them to names the
+            // model declares, so nothing caller-supplied reaches the SQL.
+            $wrapped = array_map(
+                static fn (string $column): string => $grammar->wrap($column),
+                $columns
+            );
+
             return $query->whereRaw(
-                'MATCH ('.implode(',', $columns).') AGAINST (? IN BOOLEAN MODE)',
+                'MATCH ('.implode(',', $wrapped).') AGAINST (? IN BOOLEAN MODE)',
                 [$this->buildFulltextWildcards($term)]
             );
         }
 
-        return $query->where(function (Builder $builder) use ($columns, $term): void {
+        $pattern = '%'.$this->escapeLikeWildcards($term).'%';
+
+        return $query->where(function (Builder $builder) use ($columns, $pattern): void {
             foreach ($columns as $column) {
-                $builder->orWhere($column, 'LIKE', '%'.$term.'%');
+                $builder->orWhere($column, 'LIKE', $pattern);
             }
         });
     }
@@ -68,6 +80,50 @@ trait HasScopes
     protected function searchableColumns(): array
     {
         return property_exists($this, 'searchable') ? $this->searchable : [];
+    }
+
+    /**
+     * Restrict the requested columns to the ones the model declares searchable.
+     *
+     * `$searchable` is a public scope parameter, so `search($q, request('cols'))`
+     * is an inviting call shape — and column identifiers cannot be bound. Rather
+     * than try to sanitise arbitrary input into an identifier, only names the
+     * model itself declares are allowed through.
+     *
+     * @param  array<int, string>  $requested
+     * @return array<int, string>
+     *
+     * @throws InvalidArgumentException when a requested column is not declared
+     */
+    private function resolveSearchColumns(array $requested): array
+    {
+        $declared = $this->searchableColumns();
+
+        if ($requested === []) {
+            return $declared;
+        }
+
+        $unknown = array_diff($requested, $declared);
+
+        if ($unknown !== []) {
+            throw new InvalidArgumentException(sprintf(
+                'Column(s) [%s] are not searchable on %s. Declare them in its $searchable property.',
+                implode(', ', $unknown),
+                static::class,
+            ));
+        }
+
+        return array_values($requested);
+    }
+
+    /**
+     * Escape the LIKE metacharacters so a term is matched literally.
+     *
+     * Without this, searching for `%` matched every row.
+     */
+    private function escapeLikeWildcards(string $term): string
+    {
+        return addcslashes($term, '%_\\');
     }
 
     /**

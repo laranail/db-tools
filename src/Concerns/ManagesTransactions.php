@@ -6,7 +6,7 @@ namespace Simtabi\Laranail\DbTools\Concerns;
 
 use Closure;
 use Illuminate\Database\ConnectionInterface;
-use Illuminate\Support\Facades\DB;
+use Simtabi\Laranail\DbTools\Support\ConnectionContext;
 use Throwable;
 
 /**
@@ -105,6 +105,6 @@ trait ManagesTransactions
      */
     private function transactionConnection(?string $connection): ConnectionInterface
     {
-        return $connection === null ? DB::connection() : DB::connection($connection);
+        return ConnectionContext::for($connection)->connection();
     }
 }
