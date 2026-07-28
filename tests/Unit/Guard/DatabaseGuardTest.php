@@ -11,8 +11,11 @@ use Illuminate\Support\Facades\Schema;
 use Override;
 use PDO;
 use Simtabi\Laranail\DbTools\DbTools;
+use Simtabi\Laranail\DbTools\Events\DatabaseUnavailable;
 use Simtabi\Laranail\DbTools\Guard\Contracts\DatabaseAvailabilityInterface;
 use Simtabi\Laranail\DbTools\Guard\DatabaseGuard;
+use Simtabi\Laranail\DbTools\Schema\Contracts\DatabaseConnectionTesterInterface;
+use Simtabi\Laranail\DbTools\Schema\Contracts\DatabaseSchemaInspectorInterface;
 use Simtabi\Laranail\DbTools\Tests\TestCase;
 
 final class DatabaseGuardTest extends TestCase
@@ -185,5 +188,76 @@ final class DatabaseGuardTest extends TestCase
         DB::table('doodads')->count();
 
         self::assertSame(1, $established, 'The probe should open exactly one connection and reuse it.');
+    }
+
+    public function test_probe_restores_the_connection_config_it_overlays(): void
+    {
+        $before = config('database.connections.down');
+
+        self::assertFalse(DatabaseGuard::reachable('down'));
+
+        self::assertSame(
+            $before,
+            config('database.connections.down'),
+            'The probe overlays a connect timeout for its own attempt; it must not leave it '
+            .'in config, where any later rebuild would silently re-apply it.'
+        );
+    }
+
+    public function test_the_default_connection_shares_one_memo_entry_with_its_name(): void
+    {
+        $guard = app(DatabaseAvailabilityInterface::class);
+        $default = (string) config('database.default');
+
+        $probes = 0;
+        $guard->probeUsing(function () use (&$probes): bool {
+            $probes++;
+
+            return true;
+        });
+
+        // null and the explicit default name address the same connection.
+        $guard->isAvailable();
+        $guard->isAvailable($default);
+
+        self::assertSame(1, $probes, 'The default connection must not be probed twice.');
+
+        // ...so flushing by name must clear the entry the null form created.
+        $guard->flush($default);
+        $guard->isAvailable();
+
+        self::assertSame(2, $probes, 'flush($default) must invalidate the null-keyed entry too.');
+    }
+
+    public function test_unavailability_is_announced_once_per_transition(): void
+    {
+        Event::fake([DatabaseUnavailable::class]);
+
+        // Memoization off: without transition tracking this would emit one event
+        // per call for the whole outage.
+        $guard = new DatabaseGuard(
+            app(DatabaseConnectionTesterInterface::class),
+            app(DatabaseSchemaInspectorInterface::class),
+            memoize: false,
+        );
+
+        $guard->isAvailable('down');
+        $guard->isAvailable('down');
+        $guard->isAvailable('down');
+
+        Event::assertDispatchedTimes(DatabaseUnavailable::class, 1);
+    }
+
+    public function test_a_flush_re_announces_a_still_down_connection(): void
+    {
+        Event::fake([DatabaseUnavailable::class]);
+
+        $guard = app(DatabaseAvailabilityInterface::class);
+
+        $guard->isAvailable('down');
+        $guard->flush('down');
+        $guard->isAvailable('down');
+
+        Event::assertDispatchedTimes(DatabaseUnavailable::class, 2);
     }
 }
