@@ -37,7 +37,7 @@
         "docs": "https://opensource.simtabi.com/documentation/laranail/db-tools/"
     },
     "require": {
-        "php": "^8.4 || ^8.5",
+        "php": "^8.4.1 || ^8.5",
         "brick/money": "^0.13 || ^0.14",
         "illuminate/database": "^13.0",
         "illuminate/support": "^13.0",
@@ -68,7 +68,7 @@
     },
     "extra": {
         "branch-alias": {
-            "dev-main": "0.4.x-dev"
+            "dev-main": "0.5.x-dev"
         },
         "laravel": {
             "providers": [

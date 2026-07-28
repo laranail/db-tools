@@ -18,6 +18,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
+      # Runs before anything is built or published. A branch-alias that lags the
+      # tag makes the default branch advertise an old minor, so Composer offers
+      # main to consumers pinned to that minor and hands them the newer, possibly
+      # breaking, code. Failing here costs a re-tag; publishing costs a silent BC
+      # break in every downstream lock file.
+      - name: Assert branch-alias matches the tag
+        run: bash .scripts/check-branch-alias.sh --release "$GITHUB_REF_NAME"
+
       - name: Setup PHP
         uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # v2
         with:

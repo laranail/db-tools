@@ -7,7 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.2] - 2026-07-28
+
 ### Fixed
+- **`extra.branch-alias` was stale, and `^0.4` consumers may have received 0.5.x code.** The
+  alias still read `dev-main => 0.4.x-dev` after 0.5.0 and 0.5.1 shipped, so `main`
+  advertised itself to Composer as `0.4.x-dev`. Because `0.4.x-dev` sorts above the `v0.4.2`
+  tag, any consumer whose constraint allows `^0.4` and whose root project permits dev
+  stability could resolve `main` — and receive 0.5.0's breaking
+  `SchemaReadinessInterface::flush()` addition with no major-version signal. The alias now
+  reads `0.5.x-dev`.
+
+  **If you require this package as `^0.4`, check your lock file for a `dev-main` entry.** If
+  there is one you are already running 0.5.x: move the constraint to `^0.5` and re-resolve,
+  or pin to `0.4.2` if you implement `SchemaReadinessInterface` yourself.
 - **SQL restore is now atomic on a non-default connection.** `transactionOrFail()` opened
   its transaction on the default connection via the `DB` facade while `SqlFileRestorer`
   executed the statements on `DB::connection($connection)`. For any non-default connection
@@ -48,10 +61,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   2.2.6. It cannot prevent a *future* upstream regression of the same shape; the resolved
   version logging added alongside is what makes the next one diagnosable.
 
+### Added
+- `.scripts/check-branch-alias.sh` plus two CI gates that make the alias defect above
+  unrepeatable. The release workflow asserts the alias minor equals the tag being released,
+  before anything is built or published; static analysis asserts on `main` that the alias has
+  not fallen behind the newest tag. The drift check deliberately permits the alias to run
+  *ahead* of the last tag — that is the normal state while a new minor is in development.
+
 ### Changed
 - CI: Rector runs as its own job, independent of Pint/PHPStan, so a toolchain fatal in one
   analyser no longer buries the others' verdicts. Resolved analyser versions are logged
   before each run.
+- `php` constraint `^8.4 || ^8.5` → `^8.4.1 || ^8.5`, matching the other laranail packages
+  and the floor `symfony/uid` already imposes transitively. No code change — the declared
+  range now states what was already true.
 
 ## [0.5.1] - 2026-07-28
 

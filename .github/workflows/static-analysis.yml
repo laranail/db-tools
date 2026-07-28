@@ -15,6 +15,22 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # Catch alias drift on main, not only at release time. The release gate alone is
+  # too late to be comfortable: by then the mistake is already in the commit being
+  # tagged and the fix is a re-tag. Here it is a one-line edit.
+  branch-alias:
+    name: Branch alias
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0   # the drift check compares against the newest tag
+
+      - name: Assert branch-alias has not fallen behind the newest tag
+        run: bash .scripts/check-branch-alias.sh
+
   # Split by tool rather than run all three in one job.
   #
   # This package ships no composer.lock (correct for a library), so CI resolves
