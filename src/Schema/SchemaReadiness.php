@@ -36,7 +36,7 @@ final class SchemaReadiness implements SchemaReadinessInterface
     public function report(array $requiredTables = [], ?string $connection = null): SchemaReadinessReport
     {
         $required = $this->resolveRequired($requiredTables);
-        $key = ($connection ?? '__default__').'|'.implode(',', $required);
+        $key = $this->connectionKey($connection).'|'.implode(',', $required);
 
         if (array_key_exists($key, $this->reports)) {
             return $this->reports[$key];
@@ -48,6 +48,49 @@ final class SchemaReadiness implements SchemaReadinessInterface
     public function isReady(array $requiredTables = [], ?string $connection = null): bool
     {
         return $this->report($requiredTables, $connection)->isReady();
+    }
+
+    /**
+     * Drop memoized reports so the next call re-evaluates, and flush the
+     * underlying availability memo with it.
+     *
+     * Memoization assumes a short-lived process. In a long-lived one — Octane, a
+     * queue worker, `artisan migrate` followed by more work in the same process —
+     * a report taken before the schema existed would otherwise be returned
+     * forever, leaving the app convinced it is un-migrated after it has been
+     * migrated.
+     */
+    public function flush(?string $connection = null): void
+    {
+        if ($connection === null) {
+            $this->reports = [];
+        } else {
+            $prefix = $this->connectionKey($connection).'|';
+
+            foreach (array_keys($this->reports) as $key) {
+                if (str_starts_with($key, $prefix)) {
+                    unset($this->reports[$key]);
+                }
+            }
+        }
+
+        $this->guard->flush($connection);
+    }
+
+    /**
+     * Normalise a connection name for keying. `null` and the explicit default
+     * name address the same connection and must share one entry, or a targeted
+     * flush misses the reports stored under the other form.
+     */
+    private function connectionKey(?string $connection): string
+    {
+        if ($connection !== null) {
+            return $connection;
+        }
+
+        $default = Config::get('database.default');
+
+        return is_string($default) && $default !== '' ? $default : '__default__';
     }
 
     public function whenReady(callable $callback, mixed $default = null, array $requiredTables = [], ?string $connection = null): mixed
@@ -115,8 +158,10 @@ final class SchemaReadiness implements SchemaReadinessInterface
         $configured = Config::get('laranail.db-tools.readiness.required_tables', [self::MIGRATIONS_TABLE]);
         $configured = is_array($configured) ? $configured : [self::MIGRATIONS_TABLE];
 
-        // Always ensure the migrations table is part of the required set so the
-        // empty/pending distinction is meaningful.
+        // The configured set always includes the migrations table so the
+        // empty/pending distinction stays meaningful. An explicit caller list
+        // (above) is taken verbatim — build() checks the migrations table
+        // separately, so the distinction holds either way.
         return array_values(array_unique([self::MIGRATIONS_TABLE, ...$configured]));
     }
 }
