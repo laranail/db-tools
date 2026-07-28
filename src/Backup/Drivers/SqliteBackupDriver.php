@@ -20,6 +20,9 @@ use Simtabi\Laranail\DbTools\Backup\SqlFileRestorer;
  */
 class SqliteBackupDriver implements BackupDriverInterface
 {
+    /** SQLite's write-ahead-log sidecars, which travel with the database file. */
+    private const array WAL_EXTENSIONS = ['-wal', '-shm'];
+
     use ResolvesBackupOptions;
 
     /**
@@ -111,9 +114,20 @@ class SqliteBackupDriver implements BackupDriverInterface
                 throw new RuntimeException('Cannot restore a file backup into an in-memory SQLite database');
             }
 
+            // The live -wal/-shm belong to the database being REPLACED. Left in
+            // place, SQLite replays that newer WAL over the restored file on the
+            // next open, so post-backup writes come back from the dead — or the
+            // salt no longer matches the new header and the file is corrupt.
+            $this->removeWalFiles($databasePath);
+
             if (! File::copy($sourcePath, $databasePath)) {
                 throw new RuntimeException('Failed to restore SQLite database file');
             }
+
+            // backup() captures the sidecars, so a row committed to the WAL but
+            // not yet checkpointed into the main file lives only there. Not
+            // restoring them silently dropped that data.
+            $this->restoreWalFiles($sourcePath, $databasePath);
         } finally {
             if ($tempPath !== null && is_file($tempPath)) {
                 @unlink($tempPath);
@@ -194,11 +208,33 @@ class SqliteBackupDriver implements BackupDriverInterface
      * @param  string  $sourcePath  Original database path
      * @param  string  $targetPath  Backup database path
      */
+    /**
+     * Remove a database's WAL/SHM sidecars.
+     */
+    private function removeWalFiles(string $databasePath): void
+    {
+        foreach (self::WAL_EXTENSIONS as $ext) {
+            if (File::exists($databasePath.$ext)) {
+                File::delete($databasePath.$ext);
+            }
+        }
+    }
+
+    /**
+     * Put a backup's sidecars back alongside the restored database.
+     */
+    private function restoreWalFiles(string $sourcePath, string $databasePath): void
+    {
+        foreach (self::WAL_EXTENSIONS as $ext) {
+            if (File::exists($sourcePath.$ext)) {
+                File::copy($sourcePath.$ext, $databasePath.$ext);
+            }
+        }
+    }
+
     private function copyWalFiles(string $sourcePath, string $targetPath): void
     {
-        $extensions = ['-wal', '-shm'];
-
-        foreach ($extensions as $ext) {
+        foreach (self::WAL_EXTENSIONS as $ext) {
             $sourceFile = $sourcePath.$ext;
             $targetFile = $targetPath.$ext;
 

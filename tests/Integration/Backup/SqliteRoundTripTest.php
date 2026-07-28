@@ -114,4 +114,37 @@ final class SqliteRoundTripTest extends TestCase
             DB::connection('roundtrip')->table('widgets')->where('id', 1)->value('name')
         );
     }
+
+    public function test_restore_does_not_replay_a_stale_wal_over_the_restored_file(): void
+    {
+        // backup() copies the -wal/-shm sidecars; restore() overwrote only the
+        // main file and left the LIVE ones in place. SQLite then replays that
+        // newer WAL over the restored database on the next open, so post-backup
+        // writes survive a restore that reported success — or the salt no longer
+        // matches the new header and the file is simply corrupt.
+        DB::connection('roundtrip')->statement('PRAGMA journal_mode=WAL');
+        DB::connection('roundtrip')->table('widgets')->delete();
+        DB::connection('roundtrip')->table('widgets')->insert(['id' => 1, 'name' => 'before backup']);
+
+        $manager = new BackupManager;
+        $this->backupPath = tempnam(sys_get_temp_dir(), 'dbt-wal-').'.sqlite';
+        $manager->backup($this->backupPath, 'roundtrip');
+
+        // Writes after the backup, which live in the WAL rather than the main file.
+        DB::connection('roundtrip')->table('widgets')->insert(['id' => 2, 'name' => 'AFTER backup']);
+
+        self::assertFileExists($this->dbPath.'-wal', 'WAL mode should have produced a sidecar.');
+
+        DB::purge('roundtrip');
+        $manager->restore($this->backupPath, 'roundtrip');
+
+        $names = DB::connection('roundtrip')->table('widgets')->pluck('name')->all();
+
+        self::assertContains('before backup', $names);
+        self::assertNotContains(
+            'AFTER backup',
+            $names,
+            'A stale WAL must not be replayed over the restored database.'
+        );
+    }
 }
