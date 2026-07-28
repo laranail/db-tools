@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Simtabi\Laranail\DbTools\Tests\Unit\Services;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\Facades\Schema;
 use Psr\Log\NullLogger;
 use Simtabi\Laranail\DbTools\Services\DatabaseService;
@@ -89,15 +90,29 @@ final class DatabaseServiceTest extends TestCase
         self::assertFalse($this->service->modifyTimestamps([], $model));
     }
 
-    public function test_set_morph_class_names_merges_into_aliases(): void
+    public function test_set_morph_class_names_registers_a_morph_map(): void
     {
-        config(['app.aliases' => ['Existing' => 'Existing\\Class']]);
+        // The method is named for the morph map and is documented as setting
+        // "morph class names aliases", but it wrote to config('app.aliases') —
+        // the container's class-alias list, which the facade loader reads and
+        // polymorphic relations never consult. Setting a morph alias therefore
+        // did nothing: rows still stored the fully-qualified class name.
+        Relation::morphMap([], false);
 
-        $this->service->setMorphClassNames(['Widget' => DbServiceFixture::class]);
+        $this->service->setMorphClassNames(['widget' => DbServiceFixture::class]);
 
-        $aliases = config('app.aliases');
-        self::assertSame('Existing\\Class', $aliases['Existing']);
-        self::assertSame(DbServiceFixture::class, $aliases['Widget']);
+        self::assertSame(DbServiceFixture::class, Relation::getMorphedModel('widget'));
+        self::assertSame('widget', (new DbServiceFixture)->getMorphClass());
+    }
+
+    public function test_set_morph_class_names_merges_with_an_existing_map(): void
+    {
+        Relation::morphMap(['existing' => DbServiceRelated::class], false);
+
+        $this->service->setMorphClassNames(['widget' => DbServiceFixture::class]);
+
+        self::assertSame(DbServiceRelated::class, Relation::getMorphedModel('existing'));
+        self::assertSame(DbServiceFixture::class, Relation::getMorphedModel('widget'));
     }
 
     public function test_generate_relationship_sync_data(): void

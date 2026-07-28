@@ -41,9 +41,12 @@ interface DatabaseServiceInterface
     public function handleViewCount(Model $object, string $sessionName): bool;
 
     /**
-     * Set morph class names aliases
+     * Register polymorphic type aliases in Eloquent's morph map.
      *
-     * @param  array  $aliases  Array of class => alias mappings
+     * Merges into the existing map rather than replacing it, so several
+     * callers can each contribute their own types.
+     *
+     * @param  array<string, class-string<Model>>  $aliases  alias => model class
      */
     public function setMorphClassNames(array $aliases): void;
 

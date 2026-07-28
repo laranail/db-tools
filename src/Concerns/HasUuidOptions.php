@@ -6,6 +6,8 @@ namespace Simtabi\Laranail\DbTools\Concerns;
 
 use Closure;
 use Illuminate\Support\Str;
+use InvalidArgumentException;
+use Ramsey\Uuid\Uuid;
 use Simtabi\Laranail\DbTools\Exceptions\UuidException;
 
 trait HasUuidOptions
@@ -187,9 +189,55 @@ trait HasUuidOptions
             return (string) (self::$uuidGenerator)($this, $model);
         }
 
-        return $this->isUseTimeOrderedUuid()
-            ? (string) Str::orderedUuid()
-            : (string) Str::uuid();
+        // $uuidVersion and $uuidString are published knobs with public
+        // resolvers, but nothing consulted them — every model got a random v4.
+        // A model configured for v5, whose whole point is that the same input
+        // yields the same id, silently got a fresh value each time, so
+        // "idempotent" re-imports inserted duplicates.
+        $version = (int) $this->getUuidVersion();
+
+        return match ($version) {
+            1 => Uuid::uuid1()->toString(),
+            3 => Uuid::uuid3($this->uuidNamespace(), $this->requireUuidString(3))->toString(),
+            5 => Uuid::uuid5($this->uuidNamespace(), $this->requireUuidString(5))->toString(),
+            4 => $this->isUseTimeOrderedUuid()
+                ? (string) Str::orderedUuid()
+                : (string) Str::uuid(),
+            default => throw new InvalidArgumentException(
+                "Unsupported \$uuidVersion [{$version}] on ".static::class.'. Supported versions are 1, 3, 4 and 5.'
+            ),
+        };
+    }
+
+    /**
+     * Namespace for the name-based (v3/v5) versions.
+     *
+     * Override to namespace ids per application; the default matches what
+     * ramsey/uuid documents for name-based generation.
+     */
+    protected function uuidNamespace(): string
+    {
+        return Uuid::NAMESPACE_DNS;
+    }
+
+    /**
+     * The name a v3/v5 UUID is derived from.
+     *
+     * Falling back to a random value would defeat the only reason to ask for a
+     * name-based version, so an absent name is an error rather than a silent
+     * downgrade.
+     */
+    private function requireUuidString(int $version): string
+    {
+        $name = (string) $this->getUuidString();
+
+        if (trim($name) === '') {
+            throw new InvalidArgumentException(
+                'UUID version '.$version.' is name-based and needs a $uuidString on '.static::class.'.'
+            );
+        }
+
+        return $name;
     }
 
     /**
