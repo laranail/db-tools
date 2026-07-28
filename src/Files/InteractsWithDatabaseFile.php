@@ -44,12 +44,13 @@ trait InteractsWithDatabaseFile
      * Handle database file import
      *
      * @param  string  $filePath  Path to database file
+     * @param  string|null  $connection  Target connection (null for the default)
      *
      * @throws RuntimeException If file is invalid or import fails
      */
-    protected function handleImportDatabaseFile(string $filePath): void
+    protected function handleImportDatabaseFile(string $filePath, ?string $connection = null): void
     {
-        $this->databaseFile()->handleImport($filePath);
+        $this->databaseFile()->handleImport($filePath, $connection);
     }
 
     /**

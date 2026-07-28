@@ -5,10 +5,12 @@ declare(strict_types=1);
 namespace Simtabi\Laranail\DbTools\Console;
 
 use Illuminate\Console\Command;
+use Simtabi\Laranail\DbTools\Console\Concerns\ReadsOptions;
 use Simtabi\Laranail\DbTools\Console\Concerns\SupportsNamespacedNames;
 use Simtabi\Laranail\DbTools\Guard\Contracts\DatabaseAvailabilityInterface;
 use Simtabi\Laranail\DbTools\Schema\Contracts\SchemaReadinessInterface;
 use Simtabi\Laranail\DbTools\Schema\SchemaStatus;
+use Simtabi\Laranail\DbTools\Support\ConnectionContext;
 
 /**
  * Prints the schema-readiness report for a connection: is it reachable, is it
@@ -18,6 +20,7 @@ use Simtabi\Laranail\DbTools\Schema\SchemaStatus;
  */
 final class HealthCommand extends Command
 {
+    use ReadsOptions;
     use SupportsNamespacedNames;
 
     /** @var string */
@@ -35,16 +38,13 @@ final class HealthCommand extends Command
         // boot-time suspension an app applied (e.g. while uninstalled).
         $guard->resume();
 
-        $connection = is_string($this->option('connection')) ? $this->option('connection') : null;
+        $connection = $this->strOption('connection');
 
-        $required = [];
-        if (is_string($this->option('tables')) && $this->option('tables') !== '') {
-            $required = array_values(array_filter(array_map(trim(...), explode(',', $this->option('tables')))));
-        }
+        $required = $this->listOption('tables');
 
         $report = $readiness->report($required, $connection);
 
-        $this->line('Connection: '.($report->connection ?? config('database.default')));
+        $this->line('Connection: '.ConnectionContext::for($report->connection)->key());
         $this->line('Status:     '.$report->status->value);
         $this->line('Reachable:  '.($report->reachable ? 'yes' : 'no'));
         $this->line('Migrated:   '.($report->hasMigrationsTable ? 'yes' : 'no'));

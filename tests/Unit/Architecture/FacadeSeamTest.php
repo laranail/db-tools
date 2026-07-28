@@ -79,7 +79,6 @@ final class FacadeSeamTest extends TestCase
      * @var list<string>
      */
     private const array KNOWN_VIOLATIONS = [
-        'src/DbTools.php:255 Schema::withoutForeignKeyConstraints',
         'src/Schema/Concerns/HasSchemaInspection.php:36 Schema::getColumnListing',
         'src/Schema/Concerns/HasSchemaOperations.php:29 Schema::table',
         'src/Schema/Concerns/HasSchemaOperations.php:31 Schema::hasColumn',
@@ -102,7 +101,6 @@ final class FacadeSeamTest extends TestCase
      * @var list<string>
      */
     private const array KNOWN_CONFIG_VIOLATIONS = [
-        'src/Console/HealthCommand.php:47 database.default',
         'src/Schema/DatabaseSchemaInspector.php:75 database.connections.pgsql.schema',
     ];
 

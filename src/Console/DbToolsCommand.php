@@ -8,6 +8,7 @@ use Illuminate\Console\Command;
 use Illuminate\Database\ConnectionResolverInterface;
 use Simtabi\Laranail\DbTools\Backup\Contracts\BackupManagerInterface;
 use Simtabi\Laranail\DbTools\Backup\SqlFileRestorer;
+use Simtabi\Laranail\DbTools\Console\Concerns\ReadsOptions;
 use Simtabi\Laranail\DbTools\Console\Concerns\SupportsNamespacedNames;
 use Simtabi\Laranail\DbTools\Schema\Contracts\DatabaseTableVerifierInterface;
 
@@ -23,6 +24,7 @@ use Simtabi\Laranail\DbTools\Schema\Contracts\DatabaseTableVerifierInterface;
  */
 final class DbToolsCommand extends Command
 {
+    use ReadsOptions;
     use SupportsNamespacedNames;
 
     /** @var string */
@@ -166,20 +168,6 @@ final class DbToolsCommand extends Command
         }
 
         return $path;
-    }
-
-    private function strArg(string $key): string
-    {
-        $value = $this->argument($key);
-
-        return is_string($value) ? $value : '';
-    }
-
-    private function strOption(string $key): ?string
-    {
-        $value = $this->option($key);
-
-        return is_string($value) && $value !== '' ? $value : null;
     }
 
     private function confirmDestructive(string $what): bool
