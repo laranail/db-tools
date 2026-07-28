@@ -9,6 +9,7 @@ use Simtabi\Laranail\DbTools\Events\SchemaNotReady;
 use Simtabi\Laranail\DbTools\Guard\Contracts\DatabaseAvailabilityInterface;
 use Simtabi\Laranail\DbTools\Schema\Contracts\DatabaseTableVerifierInterface;
 use Simtabi\Laranail\DbTools\Schema\Contracts\SchemaReadinessInterface;
+use Simtabi\Laranail\DbTools\Support\ConnectionContext;
 use Simtabi\Laranail\DbTools\Support\SafeEvent;
 
 /**
@@ -84,13 +85,7 @@ final class SchemaReadiness implements SchemaReadinessInterface
      */
     private function connectionKey(?string $connection): string
     {
-        if ($connection !== null) {
-            return $connection;
-        }
-
-        $default = Config::get('database.default');
-
-        return is_string($default) && $default !== '' ? $default : '__default__';
+        return ConnectionContext::for($connection)->key();
     }
 
     public function whenReady(callable $callback, mixed $default = null, array $requiredTables = [], ?string $connection = null): mixed

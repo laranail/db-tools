@@ -5,10 +5,9 @@ declare(strict_types=1);
 namespace Simtabi\Laranail\DbTools\Schema;
 
 use Exception;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Schema;
 use Simtabi\Laranail\DbTools\Schema\Contracts\DatabaseSchemaInspectorInterface;
+use Simtabi\Laranail\DbTools\Support\ConnectionContext;
 
 /**
  * Class DatabaseSchemaInspector
@@ -27,7 +26,7 @@ class DatabaseSchemaInspector implements DatabaseSchemaInspectorInterface
     public function getTables(?string $connection = null): array
     {
         try {
-            $schema = $connection ? Schema::connection($connection) : Schema::getFacadeRoot();
+            $schema = ConnectionContext::for($connection)->schema();
 
             return $schema->getTableListing();
         } catch (Exception $e) {
@@ -47,9 +46,7 @@ class DatabaseSchemaInspector implements DatabaseSchemaInspectorInterface
     public function hasTable(string $table, ?string $connection = null): bool
     {
         try {
-            return $connection
-                ? Schema::connection($connection)->hasTable($table)
-                : Schema::hasTable($table);
+            return ConnectionContext::for($connection)->schema()->hasTable($table);
         } catch (Exception) {
             return false;
         }
@@ -64,7 +61,7 @@ class DatabaseSchemaInspector implements DatabaseSchemaInspectorInterface
     public function getTableCount(?string $connection = null): int
     {
         try {
-            $conn = $connection ? DB::connection($connection) : DB::connection();
+            $conn = ConnectionContext::for($connection)->connection();
             $driver = $conn->getDriverName();
             $database = $conn->getDatabaseName();
 
@@ -125,9 +122,7 @@ class DatabaseSchemaInspector implements DatabaseSchemaInspectorInterface
     public function getColumns(string $table, ?string $connection = null): array
     {
         try {
-            return $connection
-                ? Schema::connection($connection)->getColumnListing($table)
-                : Schema::getColumnListing($table);
+            return ConnectionContext::for($connection)->schema()->getColumnListing($table);
         } catch (Exception $e) {
             Log::warning('Failed to get columns', [
                 'table' => $table,
@@ -149,9 +144,7 @@ class DatabaseSchemaInspector implements DatabaseSchemaInspectorInterface
     public function hasColumn(string $table, string $column, ?string $connection = null): bool
     {
         try {
-            return $connection
-                ? Schema::connection($connection)->hasColumn($table, $column)
-                : Schema::hasColumn($table, $column);
+            return ConnectionContext::for($connection)->schema()->hasColumn($table, $column);
         } catch (Exception) {
             return false;
         }
@@ -168,9 +161,7 @@ class DatabaseSchemaInspector implements DatabaseSchemaInspectorInterface
     public function hasColumns(string $table, array $columns, ?string $connection = null): bool
     {
         try {
-            return $connection
-                ? Schema::connection($connection)->hasColumns($table, $columns)
-                : Schema::hasColumns($table, $columns);
+            return ConnectionContext::for($connection)->schema()->hasColumns($table, $columns);
         } catch (Exception) {
             return false;
         }

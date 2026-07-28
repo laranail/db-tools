@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Simtabi\Laranail\DbTools\Backup;
 
-use Illuminate\Support\Facades\Config;
 use InvalidArgumentException;
 use RuntimeException;
 use Simtabi\Laranail\DbTools\Backup\Contracts\BackupDriverInterface;
@@ -12,6 +11,7 @@ use Simtabi\Laranail\DbTools\Backup\Contracts\BackupManagerInterface;
 use Simtabi\Laranail\DbTools\Backup\Drivers\MysqlBackupDriver;
 use Simtabi\Laranail\DbTools\Backup\Drivers\PostgresBackupDriver;
 use Simtabi\Laranail\DbTools\Backup\Drivers\SqliteBackupDriver;
+use Simtabi\Laranail\DbTools\Support\ConnectionContext;
 
 /**
  * Class BackupManager
@@ -61,7 +61,7 @@ class BackupManager implements BackupManagerInterface
         $config = $this->getConnectionConfig($connection);
         // Make the connection name available to drivers that need it (the
         // config array from database.connections.* does not carry it).
-        $config['connection'] = $connection ?? Config::get('database.default');
+        $config['connection'] = ConnectionContext::for($connection)->key();
         $driver = $this->resolveDriver($config['driver']);
 
         return $driver->backup($config, $path);
@@ -136,10 +136,11 @@ class BackupManager implements BackupManagerInterface
      */
     private function getConnectionConfig(?string $connection = null): array
     {
-        $connectionName = $connection ?? Config::get('database.default');
-        $config = Config::get("database.connections.{$connectionName}");
+        $context = ConnectionContext::for($connection);
+        $connectionName = $context->key();
+        $config = $context->configArray();
 
-        if (! $config) {
+        if ($config === null) {
             throw new InvalidArgumentException("Database connection '{$connectionName}' not found");
         }
 

@@ -8,6 +8,7 @@ use Exception;
 use Simtabi\Laranail\DbTools\Schema\Contracts\DatabaseConnectionTesterInterface;
 use Simtabi\Laranail\DbTools\Schema\Contracts\DatabaseSchemaInspectorInterface;
 use Simtabi\Laranail\DbTools\Schema\Contracts\DatabaseTableVerifierInterface;
+use Simtabi\Laranail\DbTools\Support\ConnectionContext;
 
 /**
  * Class DatabaseTableVerifier
@@ -113,7 +114,7 @@ class DatabaseTableVerifier implements DatabaseTableVerifierInterface
 
             if ($testConnection) {
                 $result['connection'] = [
-                    'name' => $connection ?? config('database.default'),
+                    'name' => ConnectionContext::for($connection)->key(),
                     'driver' => $connectionTest['driver'] ?? null,
                     'version' => $connectionTest['version'] ?? null,
                 ];

@@ -6,8 +6,7 @@ namespace Simtabi\Laranail\DbTools\Concerns;
 
 use Closure;
 use Illuminate\Database\Schema\Builder;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Schema;
+use Simtabi\Laranail\DbTools\Support\ConnectionContext;
 
 /**
  * Temporarily disable and re-enable foreign key constraints around a callback.
@@ -98,7 +97,7 @@ trait ManagesForeignKeyChecks
      */
     private function foreignKeyConnectionKey(?string $connection): string
     {
-        return $connection ?? (string) config('database.default');
+        return ConnectionContext::for($connection)->key();
     }
 
     /**
@@ -106,8 +105,6 @@ trait ManagesForeignKeyChecks
      */
     private function schemaFor(?string $connection): Builder
     {
-        return $connection
-            ? Schema::connection($connection)
-            : Schema::connection(DB::getDefaultConnection());
+        return ConnectionContext::for($connection)->schema();
     }
 }

@@ -177,7 +177,7 @@ final class ConnectionContext
      */
     public function configArray(): ?array
     {
-        $config = $this->configValue('database.connections.'.$this->key());
+        $config = $this->configValue($this->configPath());
 
         return is_array($config) ? $config : null;
     }
@@ -186,6 +186,18 @@ final class ConnectionContext
     public function config(string $option, mixed $default = null): mixed
     {
         return Arr::get($this->configArray() ?? [], $option, $default);
+    }
+
+    /**
+     * The config path this connection's settings live at.
+     *
+     * For the rare caller that must *write* config rather than read it — the
+     * availability probe overlays a short connect timeout and restores it — so
+     * that even a write does not have to spell the key itself.
+     */
+    public function configPath(): string
+    {
+        return 'database.connections.'.$this->key();
     }
 
     /**

@@ -5,11 +5,11 @@ declare(strict_types=1);
 namespace Simtabi\Laranail\DbTools\Backup;
 
 use Illuminate\Database\QueryException;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use InvalidArgumentException;
 use RuntimeException;
 use Simtabi\Laranail\DbTools\Concerns\ManagesTransactions;
+use Simtabi\Laranail\DbTools\Support\ConnectionContext;
 
 /**
  * Class SqlFileRestorer
@@ -205,7 +205,7 @@ class SqlFileRestorer
         // run on, or a non-default restore has no atomicity: the work commits as
         // it goes and the rollback undoes an empty transaction elsewhere.
         return $this->transactionOrFail(function () use ($statements, $connection): true {
-            $conn = $connection ? DB::connection($connection) : DB::connection();
+            $conn = ConnectionContext::for($connection)->connection();
 
             foreach ($statements as $statement) {
                 $conn->unprepared($statement);

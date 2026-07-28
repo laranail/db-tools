@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
+use Simtabi\Laranail\DbTools\Support\ConnectionContext;
 use Throwable;
 
 /**
@@ -72,7 +72,7 @@ trait HasSoftDeletesWithUndo
     public function softDeleteHistory(): Builder
     {
         /** @var Model $this */
-        return DB::connection($this->getConnectionName())
+        return ConnectionContext::forModel($this)->connection()
             ->table($this->softDeleteHistoryTable())
             ->where('record_type', $this->getMorphClass())
             ->where('record_id', $this->getKey())
@@ -120,8 +120,8 @@ trait HasSoftDeletesWithUndo
         ];
 
         try {
-            DB::connection($this->getConnectionName())->transaction(function () use ($row): void {
-                DB::connection($this->getConnectionName())
+            ConnectionContext::forModel($this)->connection()->transaction(function () use ($row): void {
+                ConnectionContext::forModel($this)->connection()
                     ->table($this->softDeleteHistoryTable())
                     ->insert($row);
             });

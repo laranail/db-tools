@@ -79,16 +79,6 @@ final class FacadeSeamTest extends TestCase
      * @var list<string>
      */
     private const array KNOWN_VIOLATIONS = [
-        'src/Backup/SqlFileRestorer.php:208 DB::connection',
-        'src/Backup/SqlFileRestorer.php:208 DB::connection',
-        'src/Concerns/HasSoftDeletesWithUndo.php:123 DB::connection',
-        'src/Concerns/HasSoftDeletesWithUndo.php:124 DB::connection',
-        'src/Concerns/HasSoftDeletesWithUndo.php:75 DB::connection',
-        'src/Concerns/ManagesForeignKeyChecks.php:110 Schema::connection',
-        'src/Concerns/ManagesForeignKeyChecks.php:111 DB::getDefaultConnection',
-        'src/Concerns/ManagesForeignKeyChecks.php:111 Schema::connection',
-        'src/Concerns/ManagesTransactions.php:108 DB::connection',
-        'src/Concerns/ManagesTransactions.php:108 DB::connection',
         'src/DbTools.php:255 Schema::withoutForeignKeyConstraints',
         'src/Schema/Concerns/HasSchemaInspection.php:36 Schema::getColumnListing',
         'src/Schema/Concerns/HasSchemaOperations.php:29 Schema::table',
@@ -101,20 +91,6 @@ final class FacadeSeamTest extends TestCase
         'src/Schema/Concerns/HasSchemaOperations.php:87 Schema::hasIndex',
         'src/Schema/Concerns/HasSchemaOperations.php:87 Schema::hasTable',
         'src/Schema/Concerns/HasSchemaOperations.php:91 Schema::table',
-        'src/Schema/DatabaseConnectionTester.php:280 DB::connection',
-        'src/Schema/DatabaseConnectionTester.php:280 DB::connection',
-        'src/Schema/DatabaseSchemaInspector.php:129 Schema::connection',
-        'src/Schema/DatabaseSchemaInspector.php:130 Schema::getColumnListing',
-        'src/Schema/DatabaseSchemaInspector.php:153 Schema::connection',
-        'src/Schema/DatabaseSchemaInspector.php:154 Schema::hasColumn',
-        'src/Schema/DatabaseSchemaInspector.php:172 Schema::connection',
-        'src/Schema/DatabaseSchemaInspector.php:173 Schema::hasColumns',
-        'src/Schema/DatabaseSchemaInspector.php:30 Schema::connection',
-        'src/Schema/DatabaseSchemaInspector.php:30 Schema::getFacadeRoot',
-        'src/Schema/DatabaseSchemaInspector.php:51 Schema::connection',
-        'src/Schema/DatabaseSchemaInspector.php:52 Schema::hasTable',
-        'src/Schema/DatabaseSchemaInspector.php:67 DB::connection',
-        'src/Schema/DatabaseSchemaInspector.php:67 DB::connection',
         'src/Schema/FieldGroupMacros.php:86 Schema::hasColumn',
         'src/Schema/FieldGroupMacros.php:97 Schema::hasColumn',
     ];
@@ -126,22 +102,8 @@ final class FacadeSeamTest extends TestCase
      * @var list<string>
      */
     private const array KNOWN_CONFIG_VIOLATIONS = [
-        'src/Backup/BackupManager.php:139 database.default',
-        'src/Backup/BackupManager.php:140 database.connections.',
-        'src/Backup/BackupManager.php:64 database.default',
-        'src/Concerns/ManagesForeignKeyChecks.php:101 database.default',
         'src/Console/HealthCommand.php:47 database.default',
-        'src/Guard/DatabaseGuard.php:121 database.default',
-        'src/Schema/DatabaseConnectionTester.php:161 database.default',
-        'src/Schema/DatabaseConnectionTester.php:170 database.default',
-        'src/Schema/DatabaseConnectionTester.php:176 database.default',
-        'src/Schema/DatabaseConnectionTester.php:182 database.default',
-        'src/Schema/DatabaseConnectionTester.php:44 database.default',
-        'src/Schema/DatabaseConnectionTester.php:46 database.connections.',
-        'src/Schema/DatabaseConnectionTester.php:78 database.connections.',
-        'src/Schema/DatabaseSchemaInspector.php:78 database.connections.pgsql.schema',
-        'src/Schema/DatabaseTableVerifier.php:116 database.default',
-        'src/Schema/SchemaReadiness.php:91 database.default',
+        'src/Schema/DatabaseSchemaInspector.php:75 database.connections.pgsql.schema',
     ];
 
     public function test_no_default_binding_facade_calls_outside_the_seam(): void
