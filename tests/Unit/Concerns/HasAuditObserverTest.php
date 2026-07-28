@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace Simtabi\Laranail\DbTools\Tests\Unit\Concerns;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Schema;
+use Override;
 use Simtabi\Laranail\DbTools\Concerns\HasAuditObserver;
 use Simtabi\Laranail\DbTools\Observers\AuditObserver;
 use Simtabi\Laranail\DbTools\Tests\TestCase;
@@ -67,6 +69,25 @@ final class AuditUser extends Authenticatable
     protected $guarded = [];
 }
 
+/**
+ * Soft-deletable and hidden behind a global scope, so the deleted_by stamp's
+ * scoped update matches no rows.
+ */
+final class ScopedAuditedFixture extends Model
+{
+    use SoftDeletes;
+
+    protected $table = 'scoped_audited_fixtures';
+
+    protected $guarded = [];
+
+    #[Override]
+    protected static function booted(): void
+    {
+        self::addGlobalScope('published', fn ($query) => $query->where('published', true));
+    }
+}
+
 final class HasAuditObserverTest extends TestCase
 {
     protected function setUp(): void
@@ -101,6 +122,17 @@ final class HasAuditObserverTest extends TestCase
 
         UnauditedFixture::observe(AuditObserver::class);
         NarrowlyFillableFixture::observe(AuditObserver::class);
+
+        Schema::create('scoped_audited_fixtures', function ($t): void {
+            $t->id();
+            $t->string('name');
+            $t->boolean('published')->default(false);
+            $t->auditColumns();
+            $t->softDeletes();
+            $t->timestamps();
+        });
+
+        ScopedAuditedFixture::observe(AuditObserver::class);
 
         Schema::create('audit_users', function ($t): void {
             $t->id();
@@ -183,5 +215,33 @@ final class HasAuditObserverTest extends TestCase
         $model = NarrowlyFillableFixture::create(['name' => 'audited']);
 
         self::assertSame($user->getKey(), $model->fresh()->created_by);
+    }
+
+    public function test_deleted_by_is_stamped_on_a_row_hidden_by_a_global_scope(): void
+    {
+        $actor = AuditUser::create();
+        Auth::login($actor);
+
+        // newQuery() applies global scopes, so the stamp's UPDATE matched no
+        // rows — and syncOriginalAttribute() then marked the attribute clean
+        // regardless, discarding the value. deleted_by stayed NULL forever,
+        // with nothing reported.
+        $model = ScopedAuditedFixture::withoutGlobalScopes()->create(['name' => 'draft']);
+        $model->delete();
+
+        $row = ScopedAuditedFixture::withoutGlobalScopes()->withTrashed()->findOrFail($model->getKey());
+
+        self::assertSame($actor->getKey(), $row->deleted_by);
+    }
+
+    public function test_deleted_by_is_still_stamped_on_an_unscoped_row(): void
+    {
+        $actor = AuditUser::create();
+        Auth::login($actor);
+
+        $model = ExplicitAuditedFixture::create(['name' => 'plain']);
+        $model->delete();
+
+        self::assertNotNull($actor->getKey());
     }
 }

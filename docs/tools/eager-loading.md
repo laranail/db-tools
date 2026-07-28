@@ -36,6 +36,19 @@ $order->loadCountIfMissing('lines');
 $order->loadAggregateIfMissing('lines', 'total', 'sum'); // lines_sum_total
 ```
 
+Constrained relations work too — the `['relation' => closure]` form Eloquent's
+own `loadCount()` / `loadAggregate()` accept:
+
+```php
+$order->loadCountIfMissing([
+    'lines' => fn ($query) => $query->where('qty', '>', 0),
+]);
+```
+
+> Before 0.6.0 that form raised a `TypeError`. The "already loaded?" filter ran
+> over the array's values with a string-typed callback, so under
+> `strict_types` a closure value fatalled instead of loading anything.
+
 Each method returns `static`, so calls chain.
 
 ## How "missing" is decided

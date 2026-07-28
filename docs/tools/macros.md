@@ -164,8 +164,24 @@ Schema::create('posts', function (Blueprint $t) {
 | `addExpiryFields()` | `starts_at`, `expires_at` |
 | `addUuidPrimaryKey(string $column = 'id')` | UUID primary key (explicit) |
 | `addNullableMorphs(string $name, ?string $indexName = null)` | nullable `{name}_type` / `{name}_id` (**id-type-aware**) + index |
-| `dropForeignIfExists(string $index)` | drop a foreign key only if the column exists |
+| `dropForeignIfExists(string $index)` | drop a foreign key only if it exists |
 | `dropColumnIfExists(string\|array $columns)` | drop column(s) only if present |
+
+Both conditional drops read the **blueprint's own connection**, so a migration
+running against a second database decides from the database it is modifying.
+Before 0.6.0 they asked the `Schema` facade, which always answers for the
+default connection.
+
+`dropForeignIfExists()` takes an index name and matches the table's actual
+foreign keys against the reported constraint name, the column list, or
+Laravel's generated `{table}_{columns}_foreign` form — the last because SQLite
+reports foreign keys with no name, so without it the same migration would
+behave differently there than on MySQL or Postgres.
+
+> Before 0.6.0 it guarded with `hasColumn($table, $index)`. A conventional
+> constraint name such as `posts_user_id_foreign` is not a column, so the guard
+> answered false and the macro silently dropped nothing while reporting
+> success.
 
 **Id-type-aware** columns (`addUserFields`, `addAcceptanceFields`, `addNullableMorphs`,
 plus `auditColumns()` by default) follow the configured key type

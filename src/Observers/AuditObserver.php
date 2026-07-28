@@ -97,13 +97,20 @@ class AuditObserver
         $model->{$deletedBy} = $actor;
 
         if ($model->exists && $model->getKey() !== null) {
-            $model->newQuery()
+            // Without scopes: newQuery() applies them, so stamping a row the
+            // model's own global scope hides matched nothing — and the sync
+            // below then marked the attribute clean regardless, discarding the
+            // value. deleted_by stayed NULL forever with nothing reported.
+            $affected = $model->newQueryWithoutScopes()
                 ->whereKey($model->getKey())
                 ->update([$deletedBy => $actor]);
 
             // Keep the in-memory model in sync so it doesn't re-report the
-            // column as dirty on subsequent saves.
-            $model->syncOriginalAttribute($deletedBy);
+            // column as dirty on subsequent saves — but only when the write
+            // actually landed.
+            if ($affected > 0) {
+                $model->syncOriginalAttribute($deletedBy);
+            }
         }
     }
 

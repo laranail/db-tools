@@ -38,14 +38,48 @@ optional properties/methods on the model:
 | `$uuidColumnName` / `uuidColumn()` | `getUuidColumnName()` | `'uuid'` |
 | `$uuidVersion` | `getUuidVersion()` | `4` |
 | `$uuidString` | `getUuidString()` | `''` (for v3/v5) |
-| `$devEnvironments` | `getDevEnvironments()` | `['local', 'testing']` |
-| `$enableUuidTesting` | `isEnableUuidTesting()` | `false` |
 | `$useTimeOrderedUuid` | `isUseTimeOrderedUuid()` | `false` |
 | `$enforceUuid` | `isEnforceUuid()` | `true` |
 
-When `$useTimeOrderedUuid` is true, `Str::orderedUuid()` is used (lexically
-sortable); otherwise `Str::uuid()`. Helpers: `getUuid()`, `setUuid($value)`,
-`getGeneratedUuid()`.
+`$devEnvironments` and `$enableUuidTesting` have resolvers
+(`getDevEnvironments()`, `isEnableUuidTesting()`) but **nothing reads them** and
+no behaviour is defined for them. They are listed here only so the resolvers are
+not mistaken for working knobs. Use the custom generator hook below for
+test-time UUIDs.
+
+**Versions.** `$uuidVersion` accepts `1`, `3`, `4` (default) or `5`. Versions 3
+and 5 are name-based and derive the UUID from `$uuidString`, so the same name
+always yields the same id:
+
+```php
+class Invoice extends Model
+{
+    use HasUuid;
+
+    protected $uuidVersion = 5;
+    protected $uuidString  = 'invoice-2026-0001';
+}
+```
+
+Override `uuidNamespace()` to namespace those ids per application; it defaults
+to `Uuid::NAMESPACE_DNS`. A v3/v5 model with an empty `$uuidString` throws
+`InvalidArgumentException` rather than falling back to a random value, since
+that fallback would defeat the only reason to ask for a name-based version. An
+unrecognised version throws too.
+
+> Before 0.6.0 `getGeneratedUuid()` consulted neither knob, so every model got a
+> random v4 no matter what it declared. A model configured for v5 silently got a
+> fresh value each time, and "idempotent" re-imports inserted duplicates instead
+> of colliding on the unique index.
+
+When `$useTimeOrderedUuid` is true (and the version is 4), `Str::orderedUuid()`
+is used (lexically sortable); otherwise `Str::uuid()`. Helpers: `getUuid()`,
+`setUuid($value)`, `getGeneratedUuid()`.
+
+The "does this table have the uuid column" check is memoised per connection,
+table and column, so a bulk insert no longer issues one schema introspection
+query per row. Call `HasUuid::flushColumnCache()` after changing the schema
+within the same process.
 
 **Custom generator hook.** Register a closure to override generation
 process-wide (e.g. a readable UUID in tests). It receives `($this, $model)` and
@@ -141,7 +175,17 @@ class Order extends Model
 
 $order->metadata = ['via' => 'fedex']; // encoded on save
 $order->metadata['via'];               // 'fedex' — decoded on read
+$order->toArray()['metadata'];         // ['via' => 'fedex'] — decoded here too
 ```
+
+> Before 0.6.0 decoding happened only in `getAttribute()`, which `toArray()`
+> does not go through — so `$order->metadata` was an array while
+> `$order->toArray()['metadata']` was still the raw JSON string, and anything
+> serialising the model (API resources, queued payloads, `toJson()`) shipped a
+> double-encoded field.
+
+Malformed JSON is left as the raw string rather than becoming `null`, so a bad
+row surfaces instead of silently emptying.
 
 ## Behavior traits
 
@@ -237,6 +281,15 @@ $comment->hasChildren(); // exists() check
 (new Comment)->getAsThreadedParentToChildren($ticketId);
 ```
 
+When `threadScopeColumn()` is set, the scope applies at **every** level of the
+tree, not just the roots.
+
+> Before 0.6.0 `children()` matched on the parent key alone and
+> `getAsThreadedParentToChildren()` scoped only its root query, so a row
+> pointing at a record in another thread — reparented, imported, or written with
+> a stale id — was pulled into that thread's tree. Where the scope column stands
+> in for a tenant, that was a cross-tenant read.
+
 ### `HasSlug`
 
 Opinionated wrapper around `spatie/laravel-sluggable` with configurable
@@ -262,6 +315,26 @@ Post::query()->bySlug('my-post')->first();
 ```
 
 `getSlugOptions()` wires spatie from the configured columns automatically.
+
+`slugExists()` and `bySlug()` take an optional column name; omitting it uses the
+model's configured destination column rather than a literal `slug`.
+
+To store the slug somewhere other than a `slug` column, declare the property
+(or override `setSlugDestColumnName()`):
+
+```php
+protected string $slugDestColumnName = 'permalink';
+```
+
+> Before 0.6.0 both properties were declared **in the trait** with defaults, and
+> PHP forbids redeclaring a trait property with a different value — so the
+> documented `protected string $slugSrcInputName = 'title';` above was a fatal
+> error, not a configuration. The trait no longer declares them.
+>
+> Before 0.6.0 `slugExists()` and `bySlug()` also defaulted to a literal `'slug'`
+> and ignored `getSlugDestColumnName()`, so a model storing its slug elsewhere
+> queried a column that does not exist — or, on a table that also carries a
+> `slug` column, quietly answered about the wrong one.
 
 ### `ManagesTransactions`
 

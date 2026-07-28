@@ -93,6 +93,7 @@ ordered by `happened_at` descending.
 public static function bootHasSoftDeletesWithUndo(): void;
 public function restoreWithHistory(): bool;
 public function softDeleteHistory(): \Illuminate\Database\Query\Builder;
+public function getRestoredAtColumn(): string;   // 'restored_at'; override to rename
 protected function stampRestoredAt(): void;
 protected function recordSoftDeleteHistory(string $action, ?string $reason = null): void;
 protected function softDeleteHistoryActor(): int|string|null;  // override point
@@ -101,6 +102,21 @@ protected function softDeleteHistoryTable(): string;
 
 The table name comes from `config('laranail.db-tools.soft_delete_history.table')`
 (default `soft_delete_history`) — see [Configuration](../configuration.md#soft_delete_history).
+
+## Behaviour in 0.6.0
+
+The restore stamp writes **only** its own column, via a targeted update. It
+previously set the attribute and called `saveQuietly()`, which flushes every
+dirty attribute and bumps `updated_at` — so an unrelated in-memory edit was
+persisted on restore with no model event firing at all.
+
+A failed stamp is swallowed rather than thrown. The stamp runs from the
+`restored` listener, which fires *after* the restore has committed, so a table
+without the column used to restore the row and then throw — handing the caller
+an exception for an operation that had succeeded.
+
+> Laravel's own `SoftDeletes::restore()` calls `save()` and does flush the whole
+> model. That is framework behaviour this trait does not control.
 
 ---
 [← Docs index](../../README.md#documentation)

@@ -7,6 +7,7 @@ namespace Simtabi\Laranail\DbTools\Services;
 use Exception;
 use Illuminate\Database\Eloquent\Builder as EloquentBuilder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Database\Query\Builder as QueryBuilder;
 use Illuminate\Support\Str;
 use Psr\Log\LoggerInterface;
@@ -61,6 +62,11 @@ final readonly class DatabaseService implements DatabaseServiceInterface
             return false;
         }
 
+        // Remember the model's own setting: switching timestamps off and never
+        // switching it back left the instance silently no longer maintaining
+        // updated_at for the rest of the request.
+        $timestamps = $model->timestamps;
+
         try {
             $model->timestamps = false;
 
@@ -86,6 +92,8 @@ final readonly class DatabaseService implements DatabaseServiceInterface
             ]);
 
             return false;
+        } finally {
+            $model->timestamps = $timestamps;
         }
     }
 
@@ -128,10 +136,15 @@ final readonly class DatabaseService implements DatabaseServiceInterface
      */
     public function setMorphClassNames(array $aliases): void
     {
-        $oldAliases = config('app.aliases', []);
-        config(['app.aliases' => array_merge($oldAliases, $aliases)]);
+        // Relation::enforceMorphMap() merges into the morph map, which is what
+        // polymorphic relations actually read. This used to write
+        // config('app.aliases') — the container's class-alias list, consulted
+        // by the facade loader and never by a morph — so calling this method
+        // had no effect on morph types at all and rows kept storing
+        // fully-qualified class names.
+        Relation::enforceMorphMap($aliases);
 
-        $this->logger->info('Morph class aliases set', [
+        $this->logger->info('Morph map registered', [
             'count' => count($aliases),
         ]);
     }
@@ -149,9 +162,13 @@ final readonly class DatabaseService implements DatabaseServiceInterface
 
         foreach ($ids as $id) {
             if (! empty($id)) {
+                // Drop nulls only. array_filter() with no callback drops every
+                // falsy value, so pivot columns legitimately set to 0, false or
+                // '' vanished from the payload and fell back to the column
+                // default.
                 $out[trim((string) $id)] = array_filter(array_merge([
                     $columnName => Str::uuid()->toString(),
-                ], $data));
+                ], $data), static fn (mixed $value): bool => $value !== null);
             }
         }
 

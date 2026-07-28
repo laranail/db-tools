@@ -39,11 +39,22 @@ $db = app(DatabaseServiceInterface::class);
   ```php
   $db->handleViewCount($article, 'viewed_articles');
   ```
-- **`setMorphClassNames(array $aliases): void`** — merge a morph-alias map into
-  `config('app.aliases')` at runtime.
+- **`setMorphClassNames(array $aliases): void`** — merge polymorphic type
+  aliases into Eloquent's morph map via `Relation::enforceMorphMap()`, so morph
+  columns store the alias instead of a fully-qualified class name. Merges rather
+  than replaces, so several callers can each contribute their own types.
+  ```php
+  $db->setMorphClassNames(['post' => Post::class]);
+  (new Post)->getMorphClass(); // 'post'
+  ```
+  > Before 0.6.0 this wrote to `config('app.aliases')` — the container's
+  > class-alias list, which the facade loader reads and polymorphic relations
+  > never consult — so calling it had no effect on morph types at all.
 - **`generateRelationshipSyncData(string|array $ids, array $data = [], string $columnName = 'id'): array`**
   — build a `sync()`-ready map keyed by id, each row seeded with a fresh UUID under
-  `$columnName` plus any shared `$data` (empty values are filtered out).
+  `$columnName` plus any shared `$data`. Only `null` values are dropped; `0`,
+  `false` and `''` are kept (before 0.6.0 every falsy value was discarded, so
+  pivot columns set to `0` or `false` silently fell back to the column default).
   ```php
   $pivot = $db->generateRelationshipSyncData([1, 2], ['active' => true]);
   $model->tags()->sync($pivot);

@@ -7,6 +7,8 @@ namespace Simtabi\Laranail\DbTools\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Carbon;
+use LogicException;
+use Override;
 
 /**
  * Read model over Laravel's database session table (`SESSION_DRIVER=database`).
@@ -103,12 +105,60 @@ class DatabaseSession extends Model
     }
 
     /**
-     * The user that owns the session, when a user model has been configured.
+     * The user that owns the session.
+     *
+     * Falls back to the application's configured auth user model when
+     * usingUserModel() has not been called. The old fallback was Model::class,
+     * which is abstract, so any access fatalled with "Cannot instantiate
+     * abstract class" rather than saying what was missing.
      *
      * @return BelongsTo<Model, $this>
+     *
+     * @throws LogicException when no user model is configured
      */
     public function user(): BelongsTo
     {
-        return $this->belongsTo($this->userModelClass ?? Model::class);
+        return $this->belongsTo($this->resolveUserModelClass());
+    }
+
+    /**
+     * @return class-string<Model>
+     *
+     * @throws LogicException
+     */
+    protected function resolveUserModelClass(): string
+    {
+        if ($this->userModelClass !== null) {
+            return $this->userModelClass;
+        }
+
+        $configured = config('auth.providers.users.model');
+
+        if (is_string($configured) && is_subclass_of($configured, Model::class)) {
+            return $configured;
+        }
+
+        throw new LogicException(
+            'DatabaseSession has no user model to relate to. Call usingUserModel(YourUser::class), '
+            .'or configure auth.providers.users.model.'
+        );
+    }
+
+    /**
+     * Carry usingUserModel() across hydration.
+     *
+     * newFromBuilder() builds a fresh instance, so the configuration set on the
+     * model the query was started from never reached the rows it returned —
+     * every hydrated session fell back to the default.
+     *
+     * @param  array<string, mixed>  $attributes
+     */
+    #[Override]
+    public function newInstance($attributes = [], $exists = false): static
+    {
+        $instance = parent::newInstance($attributes, $exists);
+        $instance->userModelClass = $this->userModelClass;
+
+        return $instance;
     }
 }

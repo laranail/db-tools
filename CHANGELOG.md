@@ -7,6 +7,203 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-07-28
+
+A correctness sweep over the whole package, plus a structural fix for the bug
+class behind it. Most entries here are cases where the code returned a
+plausible wrong answer rather than failing, so an upgrade may surface work that
+was silently not happening.
+
+### Changed — breaking
+
+- **`Schema\Concerns\HasSchemaOperations`: all five methods gain a trailing
+  `?string $connection = null`.** Call sites are unaffected. A class
+  **overriding** any of these protected methods fatals with "Declaration must
+  be compatible" until it adopts the new signature.
+- **`Concerns\HasArchiver::runArchive()` returns `int`** (rows matched) instead
+  of `void`.
+- **`Services\DatabaseService::setMorphClassNames()` no longer writes
+  `config('app.aliases')`.** It registers a morph map. Anything relying on the
+  old side effect must set the alias itself.
+- **`Schema\Concerns\HasSchemaInspection::clearSchemaCache()` no longer
+  cascades to subclasses.** That cascade was the bug. Use the new
+  `clearAllSchemaCaches()` where the blanket behaviour is wanted.
+- **`HasSlug` no longer declares `$slugSrcInputName` / `$slugDestColumnName`,
+  and `HasArchiver` no longer declares `$archives`.** Code reading those
+  properties off a model that does not declare them must use the resolvers —
+  `getSlugSrcInputName()`, `getSlugDestColumnName()`, `usesArchiving()` — which
+  return the documented defaults. See *Fixed* for why.
+- **A destructive CLI action skipped for want of a terminal now exits non-zero.**
+  An interactive "no" still exits `0`. Add `--force` to keep the previous
+  behaviour in a non-interactive run.
+- **`Models\BaseModel::reload()` throws `ModelNotFoundException`** when the row
+  is gone, instead of silently keeping stale attributes.
+- **`hasTable()` / `hasColumn()` / `hasColumns()` on
+  `Schema\DatabaseSchemaInspector` rethrow** when the connection cannot be
+  opened, instead of answering `false`.
+
+### Fixed — silent data loss or wrong data
+
+- **`HasSlug`'s documented configuration was a fatal error.** All three of
+  `$slugSrcInputName`, `$slugDestColumnName` and `$archives` are documented as
+  model-level properties, and `docs/tools/traits.md`'s primary example declared
+  one. PHP forbids redeclaring a trait property with a different value, so
+  copying the documented form produced *"define the same property … the
+  definition differs and is considered incompatible"*. The traits no longer
+  declare them.
+- **`HasSlug::slugExists()` / `bySlug()` ignored the configured slug column**,
+  defaulting to a literal `slug`. A model storing its slug elsewhere queried a
+  column that does not exist, or — on a table that also carries a `slug` column
+  — quietly answered about the wrong one.
+- **`$uuidVersion` / `$uuidString` were read by nothing.** Every model got a
+  random v4 no matter what it declared, so a model configured for v5 — whose
+  point is that the same name yields the same id — got a fresh value each time
+  and "idempotent" re-imports inserted duplicates instead of colliding on the
+  unique index. Versions 1, 3, 4 and 5 are now honoured, with an overridable
+  `uuidNamespace()`. A v3/v5 model with no `$uuidString` throws rather than
+  falling back to random.
+- **`setMorphClassNames()` had no effect on morph types.** It wrote the
+  container's class-alias list, which the facade loader reads and polymorphic
+  relations never consult; rows kept storing fully-qualified class names.
+- **`$archives` was read by nothing**, so the documented archiving opt-out did
+  not work and archived rows were hidden regardless.
+- **`AuditObserver` stamped `deleted_by` through a scoped query.** Where the
+  model's own global scope hid the row the update matched nothing, and the
+  attribute was then marked clean regardless — so `deleted_by` stayed `NULL`
+  permanently, with nothing reported.
+- **`HasArchiver::archive()` reported success for a row that no longer
+  existed**, firing the `archived` event and stamping an attribute for a row it
+  never touched. `unArchive()` had none of `archive()`'s `exists` guard and set
+  `exists = true` unconditionally, issuing an UPDATE for a row that is not
+  there.
+- **`HasThreadedParentChildrenRecords` leaked across the thread scope.** The
+  scope applied to the root query but not to the eager-loaded descendants, and
+  `children()` matched on the parent key alone, so a row belonging to another
+  thread was pulled into the tree. Where the scope column stands in for a
+  tenant, that is a cross-tenant read.
+- **`HasSchemaInspection` answered for the wrong class and the wrong
+  connection.** Its cache was a pair of trait statics written through `self::`,
+  and a static declared in a trait is shared down the inheritance chain — so
+  whichever class was asked first populated it for the whole hierarchy and a
+  `Comment extends Post` reported `posts`' columns. The connection was never
+  part of the key either.
+- **`HasSchemaOperations` and the `dropColumnIfExists` / `dropForeignIfExists`
+  macros read the default connection**, so a migration against a second
+  database made its keep-or-drop decision from a different database than the
+  one it modified. `dropForeignIfExists()` also guarded with
+  `hasColumn($table, $index)`, so a conventional constraint name such as
+  `posts_user_id_foreign` matched nothing and the macro silently dropped no key
+  while reporting success.
+- **`morphs()` / `nullableMorphs()` dropped `$after` on the UUID and ULID
+  paths** — the id types this package exists to support — so morph columns
+  configured for a position were appended instead.
+- **`HasJsonColumnAccessors` decoded only in `getAttribute()`.** `toArray()`
+  does not go through it, so anything serialising the model — API resources,
+  queued payloads, `toJson()` — shipped a double-encoded field.
+- **`HasSoftDeletesWithUndo`'s restore stamp flushed the whole model.** It is
+  documented as writing one column but called `saveQuietly()`, so an unrelated
+  in-memory edit was persisted on restore with no event firing. It also ran
+  unguarded after the restore had committed, so a table without the column
+  restored the row and then threw.
+- **`DatabaseService::modifyTimestamps()` left `$model->timestamps` off**, so
+  the instance stopped maintaining `updated_at` for the rest of the request —
+  including when the save threw.
+- **`generateRelationshipSyncData()` dropped every falsy value.** Pivot columns
+  set to `0`, `false` or `''` vanished and fell back to the column default.
+  Only `null` is dropped now.
+- **`LoadsAggregatesIfMissing` raised a `TypeError`** on the constrained
+  `['relation' => closure]` form that `loadCount()` / `loadAggregate()` accept
+  and that these methods pass straight through.
+- **`Models\DatabaseSession::user()` fatalled.** It fell back to
+  `Model::class`, which is abstract, so the relation raised "Cannot instantiate
+  abstract class" instead of naming what was missing. `usingUserModel()` also
+  set a plain property that `newFromBuilder()` discarded, so the setting never
+  reached hydrated rows.
+- **`Files\DatabaseFileService::handleImport()` had no traversal protection**
+  despite the docblock claiming it. `realpath()` canonicalises a path rather
+  than rejecting it, so any readable file was importable. Imports are now
+  confined to `db-tools.files.import_base` (default `storage_path('app')`;
+  `null` restores the old behaviour).
+- **`makeTempFile()` discarded `rename()`'s result**, so a failure returned a
+  path that had never been exclusively created.
+
+### Fixed — misleading diagnostics
+
+- **A verification run against an unreachable database reported
+  `connected: true` with every table missing**, sending the operator to run
+  migrations when the connection was the problem. `hasTable()` / `hasColumn()`
+  now distinguish an absent table from an unreachable database.
+- **`--dry-run` printed nothing in CI.** It was checked *after* the destructive
+  confirmation, so a non-interactive dry run hit the "re-run with `--force`"
+  skip and exited `0` without saying what it would have done. A dry run
+  destroys nothing and no longer asks.
+- **A non-interactive skip exited `0`**, so
+  `db-tools restore --path=dump.sql && ./deploy.sh` deployed against a database
+  that was never restored.
+- **`getTableCount()` counted views as tables** on MySQL/MariaDB and
+  PostgreSQL, disagreeing with `getTables()`, and read a hardcoded
+  `database.connections.pgsql.schema` — so counting a connection named anything
+  else read the wrong schema, or silently fell back to `public` when no
+  connection was literally named `pgsql`.
+- **`BaseModel::reload()` read through global scopes**, so a row that had
+  stopped matching one was not found and the method kept the stale in-memory
+  values while reporting success. It also never called `syncOriginal()`, so
+  `isModified()` reported unsaved changes on a model just read from the
+  database.
+
+### Added
+
+- **`Support\ConnectionContext`** — the single place that answers "which
+  connection is this, and how is it configured". It replaces eight duplicated
+  null-connection normalisations in four spellings with three different
+  sentinels, plus ten redundant resolution ternaries. Both recent
+  wrong-connection bugs were instances of that duplication.
+- **`Support\SchemaColumnCache`** — one process-wide memo for column lookups,
+  deliberately a class rather than a trait static, because a static declared in
+  a trait is copied into every using class and a "clear everything" on the
+  trait would only clear one copy.
+- `Console\Concerns\ReadsOptions` — normalises `--flag=` (empty string) to
+  `null`, so a bare `--connection=` no longer forks caches keyed on the
+  resolved connection.
+- `HasSchemaInspection::schemaColumns()` / `hasSchemaColumn()` instance
+  accessors, for when the connection is set per instance (tenancy, a read
+  replica, `setConnection()`), and `clearAllSchemaCaches()`.
+- `HasArchiver::usesArchiving()`, `HasSoftDeletesWithUndo::getRestoredAtColumn()`.
+- `db-tools.files.import_base` config key.
+- `?string $connection` on `DbTools::withoutForeignKeyChecks()` and
+  `InteractsWithDatabaseFile` (restoring into the wrong database is
+  destructive).
+
+### Performance
+
+- **`HasUuid` ran a schema introspection query on every insert**, so a bulk
+  import of 10,000 rows issued 10,000 of them. The lookup is memoised per
+  connection, table and column; call `HasUuid::flushColumnCache()` after
+  changing the schema in-process.
+
+### Internal
+
+- `tests/Unit/Architecture/FacadeSeamTest` fails on any `DB::`/`Schema::`
+  facade call or `database.default` / `database.connections` literal outside
+  the seam. Both baselines are **empty**, so a reintroduction fails
+  immediately.
+- `tests/Unit/Architecture/DocumentedExamplesTest` loads every documented model
+  example in a subprocess and fails if it does not compose. This is what found
+  the `HasSlug` fatal above.
+- Test suite 254 → 381.
+
+### Not done
+
+- `$devEnvironments` and `$enableUuidTesting` on `HasUuidOptions` have
+  resolvers and a documented table row, but neither the code nor the docs ever
+  stated what they should do. Implementing them would mean inventing a
+  contract, so they remain unread and are now documented as such. Use the
+  `generateUuidUsing()` hook for test-time UUIDs.
+- The audit claim that `makeTempFile()` leaves a world-readable dump in `/tmp`
+  **did not reproduce** — `rename()` preserves the `0600` mode. An explicit
+  `chmod` was kept as defence in depth and the test is labelled a regression
+  guard rather than a fix, since it passes against the old code too.
+
 ## [0.6.0] - 2026-07-28
 
 ### Added

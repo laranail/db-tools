@@ -5,7 +5,10 @@ declare(strict_types=1);
 namespace Simtabi\Laranail\DbTools\Tests\Unit\Schema;
 
 use Illuminate\Support\Facades\Schema;
+use PHPUnit\Framework\Attributes\DataProvider;
+use ReflectionMethod;
 use Simtabi\Laranail\DbTools\Schema\DatabaseSchemaInspector;
+use Simtabi\Laranail\DbTools\Support\ConnectionContext;
 use Simtabi\Laranail\DbTools\Tests\TestCase;
 
 final class DatabaseSchemaInspectorTest extends TestCase
@@ -94,5 +97,42 @@ final class DatabaseSchemaInspectorTest extends TestCase
     public function test_get_table_count_for_unknown_connection_returns_zero(): void
     {
         self::assertSame(0, $this->inspector->getTableCount('does-not-exist'));
+    }
+
+    /**
+     * @return array<string, array{0: array<string, mixed>, 1: string}>
+     */
+    public static function postgresSchemaCases(): array
+    {
+        return [
+            'search_path wins' => [['search_path' => 'tenant_a'], 'tenant_a'],
+            'comma list takes first' => [['search_path' => 'tenant_a, public'], 'tenant_a'],
+            'array takes first' => [['search_path' => ['tenant_a', 'public']], 'tenant_a'],
+            'falls back to schema' => [['schema' => 'reporting'], 'reporting'],
+            'defaults to public' => [[], 'public'],
+            'blank defaults' => [['search_path' => '   '], 'public'],
+        ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $connectionConfig
+     */
+    #[DataProvider('postgresSchemaCases')]
+    public function test_postgres_schema_is_read_from_the_connection_being_counted(
+        array $connectionConfig,
+        string $expected,
+    ): void {
+        // getTableCount() hardcoded config('database.connections.pgsql.schema'),
+        // so counting connection "analytics" read a different connection's
+        // schema — and with nothing literally named "pgsql", silently counted
+        // "public".
+        config()->set('database.connections.analytics', ['driver' => 'pgsql'] + $connectionConfig);
+
+        $method = new ReflectionMethod(DatabaseSchemaInspector::class, 'postgresSchema');
+
+        self::assertSame(
+            $expected,
+            $method->invoke(new DatabaseSchemaInspector, ConnectionContext::for('analytics'))
+        );
     }
 }

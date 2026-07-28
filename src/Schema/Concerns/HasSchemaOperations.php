@@ -6,89 +6,120 @@ namespace Simtabi\Laranail\DbTools\Schema\Concerns;
 
 use Closure;
 use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\Schema;
+use Simtabi\Laranail\DbTools\Support\ConnectionContext;
 
 /**
  * Trait HasSchemaOperations
  *
- * Provides convenient schema modification operations.
- * All operations check for existence before acting (safe operations).
+ * Schema modification operations that check for existence before acting, so
+ * each is safe to run against a database that has already been migrated.
  *
- * DRY Principle: Reusable schema modification methods
- * KISS Principle: Simple, focused operations
+ * Every method takes an optional connection name. Passing null keeps the
+ * default connection, which is what the Schema facade used to be hardcoded to:
+ * a migration running against a second database read the wrong schema and wrote
+ * to the wrong one, silently, whenever a table of that name existed on both.
  */
 trait HasSchemaOperations
 {
     /**
-     * Drop columns from table (checks existence first)
+     * Drop columns from a table, skipping any that are not present.
+     *
+     * @param  array<int, string>|string  $columns
      */
-    protected function dropColumnsFromTable(string $table, array|string $columns): void
+    protected function dropColumnsFromTable(string $table, array|string $columns, ?string $connection = null): void
     {
         $columns = (array) $columns;
+        $schema = ConnectionContext::for($connection)->schema();
 
-        Schema::table($table, function (Blueprint $blueprint) use ($columns, $table): void {
-            foreach ($columns as $column) {
-                if (Schema::hasColumn($table, $column)) {
-                    $blueprint->dropColumn($column);
-                }
+        // Existence is resolved before the closure runs so the check and the
+        // drop cannot disagree about which connection they mean.
+        $present = array_values(array_filter(
+            $columns,
+            static fn (string $column): bool => $schema->hasColumn($table, $column),
+        ));
+
+        if ($present === []) {
+            return;
+        }
+
+        $schema->table($table, function (Blueprint $blueprint) use ($present): void {
+            foreach ($present as $column) {
+                $blueprint->dropColumn($column);
             }
         });
     }
 
     /**
-     * Add column if it doesn't exist
+     * Add a column if it does not already exist.
      */
     protected function addColumnIfNotExists(
         string $table,
         string $column,
-        Closure $definition
+        Closure $definition,
+        ?string $connection = null,
     ): void {
-        if (! Schema::hasColumn($table, $column)) {
-            Schema::table($table, function (Blueprint $blueprint) use ($column, $definition): void {
-                $definition($blueprint, $column);
-            });
+        $schema = ConnectionContext::for($connection)->schema();
+
+        if ($schema->hasColumn($table, $column)) {
+            return;
         }
+
+        $schema->table($table, function (Blueprint $blueprint) use ($column, $definition): void {
+            $definition($blueprint, $column);
+        });
     }
 
     /**
-     * Rename column if it exists
+     * Rename a column if it exists.
      */
     protected function renameColumnIfExists(
         string $table,
         string $from,
-        string $to
+        string $to,
+        ?string $connection = null,
     ): void {
-        if (Schema::hasColumn($table, $from)) {
-            Schema::table($table, fn (Blueprint $blueprint) => $blueprint->renameColumn($from, $to)
-            );
-        }
-    }
+        $schema = ConnectionContext::for($connection)->schema();
 
-    /**
-     * Drop tables if they exist
-     */
-    protected function dropTablesIfExist(string|array $tables): void
-    {
-        foreach ((array) $tables as $table) {
-            Schema::dropIfExists($table);
-        }
-    }
-
-    /**
-     * Drop index if it exists
-     *
-     * The index may be given as its name (string) or the list of columns it
-     * covers (array); Schema::hasIndex() and Blueprint::dropIndex() both accept
-     * either form. Existence is checked first so dropping a missing index is a
-     * no-op rather than a driver error.
-     */
-    protected function dropIndexIfExists(string $table, string|array $index): void
-    {
-        if (! Schema::hasTable($table) || ! Schema::hasIndex($table, $index)) {
+        if (! $schema->hasColumn($table, $from)) {
             return;
         }
 
-        Schema::table($table, function (Blueprint $blueprint) use ($index): void {
+        $schema->table($table, fn (Blueprint $blueprint) => $blueprint->renameColumn($from, $to));
+    }
+
+    /**
+     * Drop tables if they exist.
+     *
+     * @param  array<int, string>|string  $tables
+     */
+    protected function dropTablesIfExist(string|array $tables, ?string $connection = null): void
+    {
+        $schema = ConnectionContext::for($connection)->schema();
+
+        foreach ((array) $tables as $table) {
+            $schema->dropIfExists($table);
+        }
+    }
+
+    /**
+     * Drop an index if it exists.
+     *
+     * The index may be given as its name (string) or the list of columns it
+     * covers (array); hasIndex() and Blueprint::dropIndex() both accept either
+     * form. Existence is checked first so dropping a missing index is a no-op
+     * rather than a driver error.
+     *
+     * @param  array<int, string>|string  $index
+     */
+    protected function dropIndexIfExists(string $table, string|array $index, ?string $connection = null): void
+    {
+        $schema = ConnectionContext::for($connection)->schema();
+
+        if (! $schema->hasTable($table) || ! $schema->hasIndex($table, $index)) {
+            return;
+        }
+
+        $schema->table($table, function (Blueprint $blueprint) use ($index): void {
             $blueprint->dropIndex($index);
         });
     }

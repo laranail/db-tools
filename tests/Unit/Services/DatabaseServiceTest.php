@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Simtabi\Laranail\DbTools\Tests\Unit\Services;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\Facades\Schema;
 use Psr\Log\NullLogger;
 use Simtabi\Laranail\DbTools\Services\DatabaseService;
@@ -89,15 +90,29 @@ final class DatabaseServiceTest extends TestCase
         self::assertFalse($this->service->modifyTimestamps([], $model));
     }
 
-    public function test_set_morph_class_names_merges_into_aliases(): void
+    public function test_set_morph_class_names_registers_a_morph_map(): void
     {
-        config(['app.aliases' => ['Existing' => 'Existing\\Class']]);
+        // The method is named for the morph map and is documented as setting
+        // "morph class names aliases", but it wrote to config('app.aliases') —
+        // the container's class-alias list, which the facade loader reads and
+        // polymorphic relations never consult. Setting a morph alias therefore
+        // did nothing: rows still stored the fully-qualified class name.
+        Relation::morphMap([], false);
 
-        $this->service->setMorphClassNames(['Widget' => DbServiceFixture::class]);
+        $this->service->setMorphClassNames(['widget' => DbServiceFixture::class]);
 
-        $aliases = config('app.aliases');
-        self::assertSame('Existing\\Class', $aliases['Existing']);
-        self::assertSame(DbServiceFixture::class, $aliases['Widget']);
+        self::assertSame(DbServiceFixture::class, Relation::getMorphedModel('widget'));
+        self::assertSame('widget', (new DbServiceFixture)->getMorphClass());
+    }
+
+    public function test_set_morph_class_names_merges_with_an_existing_map(): void
+    {
+        Relation::morphMap(['existing' => DbServiceRelated::class], false);
+
+        $this->service->setMorphClassNames(['widget' => DbServiceFixture::class]);
+
+        self::assertSame(DbServiceRelated::class, Relation::getMorphedModel('existing'));
+        self::assertSame(DbServiceFixture::class, Relation::getMorphedModel('widget'));
     }
 
     public function test_generate_relationship_sync_data(): void
@@ -154,5 +169,57 @@ final class DatabaseServiceTest extends TestCase
 
         self::assertSame(1, (int) $viewed->fresh()->views);
         self::assertSame(0, (int) $other->fresh()->views, 'A view of one row must not increment any other.');
+    }
+
+    public function test_modify_timestamps_restores_the_models_timestamp_setting(): void
+    {
+        $model = DbServiceFixture::create(['name' => 'ts']);
+        self::assertTrue($model->timestamps);
+
+        $this->service->modifyTimestamps(['published_at' => now()->subYear()], $model);
+
+        // timestamps was switched off to write the explicit date and never
+        // switched back, so every later save on that instance silently stopped
+        // maintaining updated_at.
+        self::assertTrue($model->timestamps, 'modifyTimestamps() must not leave timestamps disabled.');
+
+        $before = $model->fresh()->updated_at;
+
+        // Timestamps have second resolution, so the clock has to move for the
+        // subsequent save to be distinguishable.
+        $this->travel(2)->seconds();
+
+        $model->name = 'touched';
+        $model->save();
+
+        self::assertNotEquals($before, $model->fresh()->updated_at);
+    }
+
+    public function test_modify_timestamps_restores_the_setting_after_a_failure(): void
+    {
+        $model = DbServiceFixture::create(['name' => 'ts']);
+
+        // A write that throws must still restore the flag.
+        $this->service->modifyTimestamps(['no_such_column' => now()], $model);
+
+        self::assertTrue($model->timestamps);
+    }
+
+    public function test_generate_relationship_sync_data_keeps_falsy_pivot_values(): void
+    {
+        // array_filter() with no callback drops every falsy value, so pivot
+        // columns legitimately set to 0, false or '' vanished from the sync
+        // payload and silently fell back to the column default.
+        $data = $this->service->generateRelationshipSyncData(['7'], [
+            'active' => 0,
+            'flagged' => false,
+            'note' => '',
+            'absent' => null,
+        ]);
+
+        self::assertSame(0, $data[7]['active']);
+        self::assertFalse($data[7]['flagged']);
+        self::assertSame('', $data[7]['note']);
+        self::assertArrayNotHasKey('absent', $data[7], 'Nulls are still dropped.');
     }
 }

@@ -22,7 +22,7 @@ php artisan laranail::db-tools.db <action> [options]
 | `--connection=` | Database connection (defaults to the app default). |
 | `--tables=a,b,c` | Tables to truncate (`clean`). |
 | `--force` | Skip the confirmation prompt. |
-| `--dry-run` | Print what would happen without touching the database. |
+| `--dry-run` | Print what would happen without touching the database. Never prompts. |
 
 ## Examples
 
@@ -38,6 +38,28 @@ php artisan laranail::db-tools.db clean   --tables=cache,sessions --force
 - **Destructive actions** (`import`, `restore`, `clean`) confirm first. In a
   **non-interactive** run (pipe/CI) they proceed **only** with `--force`, so a
   script never silently destroys data.
+- **`--dry-run` never prompts**, since it destroys nothing. Before 0.6.0 the
+  confirmation ran first, so a dry run in CI hit the "re-run with `--force`"
+  skip and exited 0 without printing what it would have done.
+
+### Exit codes
+
+| Situation | Code |
+|---|---|
+| Action completed | `0` |
+| Dry run | `0` |
+| Declined interactively | `0` — a deliberate choice |
+| Skipped non-interactively (no `--force`) | `1` |
+| Action failed / bad arguments | `1` |
+
+A non-interactive skip reports failure because nobody was asked. Before 0.6.0
+it exited 0, so
+
+```bash
+php artisan laranail::db-tools.db restore --path=dump.sql && ./deploy.sh
+```
+
+deployed against a database that was never restored.
 - `clean` truncates through the connection's query grammar — table names are
   validated against the schema via [`DatabaseTableVerifier`](table-verification.md)
   first, and never interpolated into raw SQL.

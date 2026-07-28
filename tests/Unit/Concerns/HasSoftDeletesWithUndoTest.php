@@ -29,6 +29,35 @@ final class UndoActor extends Authenticatable
     protected $guarded = [];
 }
 
+/**
+ * A model whose table carries no restored_at column at all.
+ */
+final class UndoNoStampFixture extends Model
+{
+    use HasSoftDeletesWithUndo;
+    use SoftDeletes;
+
+    protected $table = 'undo_no_stamp';
+
+    protected $guarded = [];
+}
+
+/**
+ * Exposes the protected stamp so it can be pinned in isolation from
+ * Laravel's own restore(), which flushes the whole model.
+ */
+final class ExposedStampFixture extends Model
+{
+    use HasSoftDeletesWithUndo {
+        stampRestoredAt as public;
+    }
+    use SoftDeletes;
+
+    protected $table = 'undo_fixtures';
+
+    protected $guarded = [];
+}
+
 final class HasSoftDeletesWithUndoTest extends TestCase
 {
     protected function setUp(): void
@@ -44,6 +73,13 @@ final class HasSoftDeletesWithUndoTest extends TestCase
 
         Schema::create('undo_actors', function ($t): void {
             $t->id();
+            $t->timestamps();
+        });
+
+        Schema::create('undo_no_stamp', function ($t): void {
+            $t->id();
+            $t->string('name');
+            $t->softDeletes();
             $t->timestamps();
         });
 
@@ -106,5 +142,41 @@ final class HasSoftDeletesWithUndoTest extends TestCase
             ->count();
 
         self::assertSame(0, $count);
+    }
+
+    public function test_the_stamp_writes_only_its_own_column(): void
+    {
+        $model = ExposedStampFixture::create(['name' => 'original']);
+        $original = $model->fresh()->updated_at;
+
+        // The stamp is documented as "writing only that single column
+        // quietly", but it set the attribute and called saveQuietly(), which
+        // flushes EVERY dirty attribute and bumps updated_at. An unrelated
+        // in-memory edit was persisted with no model event firing at all.
+        //
+        // (Laravel's own restore() calls save() and does flush everything —
+        // that is framework behaviour this trait does not control. What the
+        // trait owns is the stamp, so that is what is pinned here.)
+        $model->name = 'edited in memory';
+        $model->stampRestoredAt();
+
+        $stored = ExposedStampFixture::query()->findOrFail($model->getKey());
+
+        self::assertNotNull($stored->restored_at, 'The stamp must write its own column.');
+        self::assertSame('original', $stored->name, 'The stamp must not persist unrelated edits.');
+        self::assertEquals($original, $stored->updated_at, 'The stamp must not touch timestamps.');
+    }
+
+    public function test_restore_succeeds_when_the_table_has_no_restored_at_column(): void
+    {
+        $model = UndoNoStampFixture::create(['name' => 'no stamp']);
+        $model->delete();
+
+        // The stamp ran unguarded in the "restored" listener, after the
+        // restore had already committed — so a table without the column
+        // restored the row and then threw.
+        $model->restore();
+
+        self::assertNull($model->fresh()->deleted_at);
     }
 }

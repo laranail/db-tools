@@ -78,22 +78,7 @@ final class FacadeSeamTest extends TestCase
      *
      * @var list<string>
      */
-    private const array KNOWN_VIOLATIONS = [
-        'src/DbTools.php:255 Schema::withoutForeignKeyConstraints',
-        'src/Schema/Concerns/HasSchemaInspection.php:36 Schema::getColumnListing',
-        'src/Schema/Concerns/HasSchemaOperations.php:29 Schema::table',
-        'src/Schema/Concerns/HasSchemaOperations.php:31 Schema::hasColumn',
-        'src/Schema/Concerns/HasSchemaOperations.php:46 Schema::hasColumn',
-        'src/Schema/Concerns/HasSchemaOperations.php:47 Schema::table',
-        'src/Schema/Concerns/HasSchemaOperations.php:61 Schema::hasColumn',
-        'src/Schema/Concerns/HasSchemaOperations.php:62 Schema::table',
-        'src/Schema/Concerns/HasSchemaOperations.php:73 Schema::dropIfExists',
-        'src/Schema/Concerns/HasSchemaOperations.php:87 Schema::hasIndex',
-        'src/Schema/Concerns/HasSchemaOperations.php:87 Schema::hasTable',
-        'src/Schema/Concerns/HasSchemaOperations.php:91 Schema::table',
-        'src/Schema/FieldGroupMacros.php:86 Schema::hasColumn',
-        'src/Schema/FieldGroupMacros.php:97 Schema::hasColumn',
-    ];
+    private const array KNOWN_VIOLATIONS = [];
 
     /**
      * Connection-config reads not yet migrated to the seam. Same exact-equality
@@ -101,10 +86,7 @@ final class FacadeSeamTest extends TestCase
      *
      * @var list<string>
      */
-    private const array KNOWN_CONFIG_VIOLATIONS = [
-        'src/Console/HealthCommand.php:47 database.default',
-        'src/Schema/DatabaseSchemaInspector.php:75 database.connections.pgsql.schema',
-    ];
+    private const array KNOWN_CONFIG_VIOLATIONS = [];
 
     public function test_no_default_binding_facade_calls_outside_the_seam(): void
     {

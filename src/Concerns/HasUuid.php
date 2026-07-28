@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Ramsey\Uuid\Uuid as RamseyUuid;
 use Simtabi\Laranail\DbTools\Exceptions\MissingUuidColumnException;
+use Simtabi\Laranail\DbTools\Support\SchemaColumnCache;
 
 trait HasUuid
 {
@@ -91,9 +92,24 @@ trait HasUuid
      */
     private function hasColumnUuid($model): void
     {
-        if (! $model->getConnection()->getSchemaBuilder()->hasColumn($model->getTable(), $model->getUuidColumnName())) {
-            throw new MissingUuidColumnException("You don't have a '{$model->getUuidColumnName()}' column on '{$model->getTable()}' table.");
+        $column = $model->getUuidColumnName();
+
+        // Memoised: this ran a schema introspection query on EVERY insert, so
+        // a bulk import of 10k rows issued 10k of them. The memo lives in a
+        // shared class rather than a static here, because a trait static is
+        // copied into every using class — a flush on the trait would clear a
+        // copy nothing reads.
+        if (! SchemaColumnCache::has($model, $column)) {
+            throw new MissingUuidColumnException("You don't have a '{$column}' column on '{$model->getTable()}' table.");
         }
+    }
+
+    /**
+     * Forget the memoised column checks.
+     */
+    public static function flushColumnCache(): void
+    {
+        SchemaColumnCache::flush();
     }
 
     /**

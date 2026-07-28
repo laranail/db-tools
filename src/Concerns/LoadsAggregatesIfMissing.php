@@ -77,22 +77,53 @@ trait LoadsAggregatesIfMissing
      * Filter the given relations down to those whose aggregate attribute is not
      * yet present on the model.
      *
-     * @param  array<int, string>  $relations
-     * @return array<int, string>
+     * Eloquent accepts two spellings, and both must survive: a plain list of
+     * relation names, and a keyed array mapping a relation to a closure that
+     * constrains it. The filter used to run over the VALUES with a
+     * string-typed callback, so under strict_types the constrained form —
+     * which the parent methods document and pass straight through — raised a
+     * TypeError instead of loading anything. Keys and closures are preserved
+     * so whatever is kept can be handed to Eloquent unchanged.
+     *
+     * @param  array<array-key, string|callable>  $relations
+     * @return array<array-key, string|callable>
      */
     protected function aggregatesMissing(array $relations, string $function, ?string $column = null): array
     {
-        return array_values(array_filter($relations, function (string $relation) use ($function, $column): bool {
+        $missing = [];
+
+        foreach ($relations as $key => $value) {
+            $relation = is_string($key) ? $key : $value;
+
+            if (! is_string($relation)) {
+                continue;
+            }
+
             // Mirror Eloquent's attribute naming (withAggregate):
             // snake("{relation} {function} {column}") for column aggregates,
-            // "{relation}_count" for plain counts.
-            $name = $column === null
+            // "{relation}_count" for plain counts. An alias after " as " names
+            // the attribute directly.
+            $alias = str_contains($relation, ' as ')
+                ? trim(explode(' as ', $relation)[1])
+                : null;
+
+            $name = $alias ?? ($column === null
                 ? "{$relation}_{$function}"
-                : "{$relation}_{$function}_{$column}";
+                : "{$relation}_{$function}_{$column}");
 
             $attribute = (string) str(str_replace('.', '_', $name))->snake();
 
-            return ! array_key_exists($attribute, $this->getAttributes());
-        }));
+            if (array_key_exists($attribute, $this->getAttributes())) {
+                continue;
+            }
+
+            if (is_string($key)) {
+                $missing[$key] = $value;
+            } else {
+                $missing[] = $value;
+            }
+        }
+
+        return $missing;
     }
 }

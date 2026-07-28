@@ -77,4 +77,28 @@ final class HasJsonColumnAccessorsTest extends TestCase
 
         self::assertSame('not-json', $model->metadata);
     }
+
+    public function test_json_columns_are_decoded_in_array_and_json_output(): void
+    {
+        // Decoding happened only in getAttribute(), which toArray() does not
+        // go through — so $model->metadata was an array while
+        // $model->toArray()['metadata'] was still the raw JSON string. An API
+        // resource built from toArray() shipped a double-encoded field.
+        $model = JsonAccessorModel::create(['metadata' => ['a' => 1, 'b' => ['c' => 2]]]);
+        $fresh = JsonAccessorModel::query()->findOrFail($model->getKey());
+
+        self::assertSame(['a' => 1, 'b' => ['c' => 2]], $fresh->metadata);
+        self::assertSame(['a' => 1, 'b' => ['c' => 2]], $fresh->toArray()['metadata']);
+
+        $decoded = json_decode($fresh->toJson(), true);
+        self::assertSame(['a' => 1, 'b' => ['c' => 2]], $decoded['metadata']);
+    }
+
+    public function test_non_json_columns_are_untouched_in_array_output(): void
+    {
+        $model = JsonAccessorModel::create(['metadata' => ['a' => 1], 'plain' => 'kept']);
+        $fresh = JsonAccessorModel::query()->findOrFail($model->getKey());
+
+        self::assertSame('kept', $fresh->toArray()['plain']);
+    }
 }

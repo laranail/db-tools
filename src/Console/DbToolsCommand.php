@@ -8,6 +8,7 @@ use Illuminate\Console\Command;
 use Illuminate\Database\ConnectionResolverInterface;
 use Simtabi\Laranail\DbTools\Backup\Contracts\BackupManagerInterface;
 use Simtabi\Laranail\DbTools\Backup\SqlFileRestorer;
+use Simtabi\Laranail\DbTools\Console\Concerns\ReadsOptions;
 use Simtabi\Laranail\DbTools\Console\Concerns\SupportsNamespacedNames;
 use Simtabi\Laranail\DbTools\Schema\Contracts\DatabaseTableVerifierInterface;
 
@@ -23,6 +24,7 @@ use Simtabi\Laranail\DbTools\Schema\Contracts\DatabaseTableVerifierInterface;
  */
 final class DbToolsCommand extends Command
 {
+    use ReadsOptions;
     use SupportsNamespacedNames;
 
     /** @var string */
@@ -55,6 +57,12 @@ final class DbToolsCommand extends Command
         };
     }
 
+    /**
+     * Whether the last confirmDestructive() skipped for want of a terminal
+     * rather than because someone answered no.
+     */
+    private bool $skippedNonInteractively = false;
+
     private function doExport(BackupManagerInterface $backup, ?string $connection): int
     {
         $path = $this->requirePath();
@@ -80,14 +88,14 @@ final class DbToolsCommand extends Command
             return self::FAILURE;
         }
 
-        if (! $this->confirmDestructive("restore {$this->connLabel($connection)} from {$path} (overwrites data)")) {
-            return self::SUCCESS;
-        }
-
         if ($this->option('dry-run')) {
             $this->line("[dry-run] would restore {$path} → {$this->connLabel($connection)}");
 
             return self::SUCCESS;
+        }
+
+        if (! $this->confirmDestructive("restore {$this->connLabel($connection)} from {$path} (overwrites data)")) {
+            return $this->declinedExitCode();
         }
 
         return $backup->restore($path, $connection)
@@ -102,14 +110,14 @@ final class DbToolsCommand extends Command
             return self::FAILURE;
         }
 
-        if (! $this->confirmDestructive("import {$path} into {$this->connLabel($connection)}")) {
-            return self::SUCCESS;
-        }
-
         if ($this->option('dry-run')) {
             $this->line("[dry-run] would import {$path} → {$this->connLabel($connection)}");
 
             return self::SUCCESS;
+        }
+
+        if (! $this->confirmDestructive("import {$path} into {$this->connLabel($connection)}")) {
+            return $this->declinedExitCode();
         }
 
         return $restorer->restore($path, $connection)
@@ -136,14 +144,14 @@ final class DbToolsCommand extends Command
             return $this->failOut('Unknown table(s): '.implode(', ', $missing).'.');
         }
 
-        if (! $this->confirmDestructive('TRUNCATE '.implode(', ', $tables))) {
-            return self::SUCCESS;
-        }
-
         if ($this->option('dry-run')) {
             $this->line('[dry-run] would truncate '.implode(', ', $tables));
 
             return self::SUCCESS;
+        }
+
+        if (! $this->confirmDestructive('TRUNCATE '.implode(', ', $tables))) {
+            return $this->declinedExitCode();
         }
 
         $db = $connections->connection($connection);
@@ -168,22 +176,23 @@ final class DbToolsCommand extends Command
         return $path;
     }
 
-    private function strArg(string $key): string
+    /**
+     * Exit code for a destructive action that did not run.
+     *
+     * An interactive "no" is a deliberate choice and reports success. A
+     * non-interactive skip is not: nobody was asked, so reporting success let
+     * `db-tools restore && deploy` deploy against a database that was never
+     * restored.
+     */
+    private function declinedExitCode(): int
     {
-        $value = $this->argument($key);
-
-        return is_string($value) ? $value : '';
-    }
-
-    private function strOption(string $key): ?string
-    {
-        $value = $this->option($key);
-
-        return is_string($value) && $value !== '' ? $value : null;
+        return $this->skippedNonInteractively ? self::FAILURE : self::SUCCESS;
     }
 
     private function confirmDestructive(string $what): bool
     {
+        $this->skippedNonInteractively = false;
+
         if ($this->option('force')) {
             return true;
         }
@@ -191,6 +200,7 @@ final class DbToolsCommand extends Command
         // Non-interactive (pipe / CI): never silently destroy data — skip with a
         // clear message instead, so the caller knows --force is required.
         if (! $this->input->isInteractive()) {
+            $this->skippedNonInteractively = true;
             $this->warn("Skipped: {$what} — re-run with --force to proceed in a non-interactive shell.");
 
             return false;

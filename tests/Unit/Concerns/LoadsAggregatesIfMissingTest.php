@@ -118,4 +118,45 @@ final class LoadsAggregatesIfMissingTest extends TestCase
 
         self::assertSame(999, (int) $parent->children_sum_score);
     }
+
+    public function test_load_count_if_missing_accepts_a_constrained_relation(): void
+    {
+        // Eloquent's loadCount() accepts ['relation' => fn ($q) => ...] to
+        // constrain the count. aggregatesMissing() ran array_filter over the
+        // VALUES with a string-typed callback, so under strict_types the
+        // closure hit a TypeError — the documented form fatalled.
+        $parent = $this->seedParentWithChildren(3, [10, 0, 5]);
+
+        $parent->loadCountIfMissing([
+            'children' => fn ($query) => $query->where('score', '>', 0),
+        ]);
+
+        self::assertSame(2, (int) $parent->children_count);
+    }
+
+    public function test_load_aggregate_if_missing_accepts_a_constrained_relation(): void
+    {
+        $parent = $this->seedParentWithChildren(3, [10, 0, 5]);
+
+        $parent->loadAggregateIfMissing([
+            'children' => fn ($query) => $query->where('score', '>', 0),
+        ], 'score', 'sum');
+
+        self::assertSame(15, (int) $parent->children_sum_score);
+    }
+
+    public function test_a_constrained_relation_is_skipped_when_already_present(): void
+    {
+        $parent = $this->seedParentWithChildren(3, [10, 0, 5]);
+
+        $parent->loadCount('children');
+        self::assertSame(3, (int) $parent->children_count);
+
+        // Already loaded, so the constraint must not re-run and overwrite it.
+        $parent->loadCountIfMissing([
+            'children' => fn ($query) => $query->where('score', '>', 0),
+        ]);
+
+        self::assertSame(3, (int) $parent->children_count);
+    }
 }

@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Simtabi\Laranail\DbTools;
 
 use Closure;
-use Illuminate\Support\Facades\Schema;
 use Simtabi\Laranail\DbTools\Backup\Contracts\BackupManagerInterface;
 use Simtabi\Laranail\DbTools\Guard\Contracts\DatabaseAvailabilityInterface;
 use Simtabi\Laranail\DbTools\Schema\Contracts\DatabaseConnectionTesterInterface;
@@ -13,6 +12,7 @@ use Simtabi\Laranail\DbTools\Schema\Contracts\DatabaseSchemaInspectorInterface;
 use Simtabi\Laranail\DbTools\Schema\Contracts\DatabaseTableVerifierInterface;
 use Simtabi\Laranail\DbTools\Schema\Contracts\SchemaReadinessInterface;
 use Simtabi\Laranail\DbTools\Schema\SchemaReadinessReport;
+use Simtabi\Laranail\DbTools\Support\ConnectionContext;
 
 /**
  * Database Facade
@@ -250,9 +250,9 @@ class DbTools
      * @param  Closure(): TReturn  $callback
      * @return TReturn
      */
-    public static function withoutForeignKeyChecks(Closure $callback): mixed
+    public static function withoutForeignKeyChecks(Closure $callback, ?string $connection = null): mixed
     {
-        return Schema::withoutForeignKeyConstraints($callback);
+        return ConnectionContext::for($connection)->schema()->withoutForeignKeyConstraints($callback);
     }
 
     // =========================================================================

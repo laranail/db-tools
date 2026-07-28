@@ -80,8 +80,21 @@ trait HasSoftDeletesWithUndo
     }
 
     /**
-     * Stamp the `restored_at` column with the current time, writing only that
-     * single column quietly so no further model events fire.
+     * The column stamped on restore. Override to use a different name.
+     */
+    public function getRestoredAtColumn(): string
+    {
+        return 'restored_at';
+    }
+
+    /**
+     * Stamp the restore column with the current time, writing only that single
+     * column so no further model events fire.
+     *
+     * This used to set the attribute and call saveQuietly(), which flushes
+     * EVERY dirty attribute — so an unrelated in-memory edit rode along on the
+     * restore and was persisted with no event firing at all. The write is now
+     * a targeted UPDATE of the one column.
      */
     protected function stampRestoredAt(): void
     {
@@ -90,8 +103,24 @@ trait HasSoftDeletesWithUndo
             return;
         }
 
-        $this->setAttribute('restored_at', $this->freshTimestamp());
-        $this->saveQuietly();
+        $column = $this->getRestoredAtColumn();
+        $now = $this->freshTimestamp();
+
+        try {
+            ConnectionContext::forModel($this)->connection()
+                ->table($this->getTable())
+                ->where($this->getKeyName(), $this->getKey())
+                ->update([$column => $now]);
+        } catch (Throwable) {
+            // The stamp runs from the "restored" listener, after the restore
+            // has already committed. A table without the column used to
+            // restore the row and then throw, leaving the caller with an
+            // exception for an operation that had in fact succeeded.
+            return;
+        }
+
+        $this->setAttribute($column, $now);
+        $this->syncOriginalAttribute($column);
     }
 
     /**

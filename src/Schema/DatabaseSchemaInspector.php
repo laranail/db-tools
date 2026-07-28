@@ -8,6 +8,7 @@ use Exception;
 use Illuminate\Support\Facades\Log;
 use Simtabi\Laranail\DbTools\Schema\Contracts\DatabaseSchemaInspectorInterface;
 use Simtabi\Laranail\DbTools\Support\ConnectionContext;
+use Throwable;
 
 /**
  * Class DatabaseSchemaInspector
@@ -45,9 +46,33 @@ class DatabaseSchemaInspector implements DatabaseSchemaInspectorInterface
      */
     public function hasTable(string $table, ?string $connection = null): bool
     {
+        $context = ConnectionContext::for($connection);
+
         try {
-            return ConnectionContext::for($connection)->schema()->hasTable($table);
-        } catch (Exception) {
+            return $context->schema()->hasTable($table);
+        } catch (Exception $e) {
+            // "No such table" and "cannot reach this database" both landed
+            // here and both answered false, so verifying against a database
+            // that was down reported every table missing — which sends the
+            // operator to run migrations when the connection is the problem.
+            if (! $this->isReachable($context)) {
+                throw $e;
+            }
+
+            return false;
+        }
+    }
+
+    /**
+     * Whether the connection can actually be opened.
+     */
+    private function isReachable(ConnectionContext $context): bool
+    {
+        try {
+            $context->connection()->getPdo();
+
+            return true;
+        } catch (Throwable) {
             return false;
         }
     }
@@ -61,18 +86,26 @@ class DatabaseSchemaInspector implements DatabaseSchemaInspectorInterface
     public function getTableCount(?string $connection = null): int
     {
         try {
-            $conn = ConnectionContext::for($connection)->connection();
+            $context = ConnectionContext::for($connection);
+            $conn = $context->connection();
             $driver = $conn->getDriverName();
             $database = $conn->getDatabaseName();
 
             $query = match ($driver) {
+                // table_type filters out views, which getTables() also excludes
+                // (it uses getTableListing()). Without it the two disagreed on any
+                // schema containing a view.
                 'mysql', 'mariadb' => [
-                    'sql' => 'SELECT COUNT(*) as count FROM information_schema.tables WHERE table_schema = ?',
+                    'sql' => "SELECT COUNT(*) as count FROM information_schema.tables WHERE table_schema = ? AND table_type = 'BASE TABLE'",
                     'bindings' => [$database],
                 ],
+                // Read the schema off the connection being counted. Hardcoding
+                // `database.connections.pgsql.schema` meant counting a different
+                // connection's schema — or, with no connection literally named
+                // "pgsql", silently falling back to "public".
                 'pgsql' => [
-                    'sql' => 'SELECT COUNT(*) as count FROM information_schema.tables WHERE table_schema = ?',
-                    'bindings' => [config('database.connections.pgsql.schema', 'public')],
+                    'sql' => "SELECT COUNT(*) as count FROM information_schema.tables WHERE table_schema = ? AND table_type = 'BASE TABLE'",
+                    'bindings' => [$this->postgresSchema($context)],
                 ],
                 'sqlite' => [
                     'sql' => "SELECT COUNT(*) as count FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%'",
@@ -143,9 +176,15 @@ class DatabaseSchemaInspector implements DatabaseSchemaInspectorInterface
      */
     public function hasColumn(string $table, string $column, ?string $connection = null): bool
     {
+        $context = ConnectionContext::for($connection);
+
         try {
-            return ConnectionContext::for($connection)->schema()->hasColumn($table, $column);
-        } catch (Exception) {
+            return $context->schema()->hasColumn($table, $column);
+        } catch (Exception $e) {
+            if (! $this->isReachable($context)) {
+                throw $e;
+            }
+
             return false;
         }
     }
@@ -160,10 +199,39 @@ class DatabaseSchemaInspector implements DatabaseSchemaInspectorInterface
      */
     public function hasColumns(string $table, array $columns, ?string $connection = null): bool
     {
+        $context = ConnectionContext::for($connection);
+
         try {
-            return ConnectionContext::for($connection)->schema()->hasColumns($table, $columns);
-        } catch (Exception) {
+            return $context->schema()->hasColumns($table, $columns);
+        } catch (Exception $e) {
+            if (! $this->isReachable($context)) {
+                throw $e;
+            }
+
             return false;
         }
+    }
+
+    /**
+     * The schema a PostgreSQL connection reads from.
+     *
+     * `search_path` may be a comma-separated list or an array; the first entry is
+     * the one unqualified lookups resolve against.
+     */
+    private function postgresSchema(ConnectionContext $context): string
+    {
+        $searchPath = $context->config('search_path') ?? $context->config('schema');
+
+        if (is_array($searchPath)) {
+            $searchPath = $searchPath[0] ?? null;
+        }
+
+        if (! is_string($searchPath) || trim($searchPath) === '') {
+            return 'public';
+        }
+
+        $first = trim(explode(',', $searchPath)[0]);
+
+        return $first === '' ? 'public' : $first;
     }
 }

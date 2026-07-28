@@ -92,9 +92,13 @@ class BlueprintMacros extends IlluminateBlueprint
             ? (self::$idTypeResolver)()
             : 'BIGINT';
 
+        // uuidMorphs()/ulidMorphs() accept $after just as morphs() does, but
+        // it used to be dropped on these two paths — so a migration placing
+        // morph columns at a chosen position silently got them appended, on
+        // exactly the id types this class exists to support.
         match ($idType) {
-            'UUID' => $this->uuidMorphs($name, $indexName),
-            'ULID' => $this->ulidMorphs($name, $indexName),
+            'UUID' => $this->uuidMorphs($name, $indexName, $after),
+            'ULID' => $this->ulidMorphs($name, $indexName, $after),
             default => parent::morphs($name, $indexName, $after),
         };
     }
@@ -107,8 +111,8 @@ class BlueprintMacros extends IlluminateBlueprint
             : 'BIGINT';
 
         match ($idType) {
-            'UUID' => $this->nullableUuidMorphs($name, $indexName),
-            'ULID' => $this->nullableUlidMorphs($name, $indexName),
+            'UUID' => $this->nullableUuidMorphs($name, $indexName, $after),
+            'ULID' => $this->nullableUlidMorphs($name, $indexName, $after),
             default => parent::nullableMorphs($name, $indexName, $after),
         };
     }

@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace Simtabi\Laranail\DbTools\Tests\Unit\Concerns;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Ramsey\Uuid\Uuid;
 use Simtabi\Laranail\DbTools\Concerns\HasUuid;
+use Simtabi\Laranail\DbTools\Exceptions\MissingUuidColumnException;
 use Simtabi\Laranail\DbTools\Tests\TestCase;
 
 final class HasUuidModel extends Model
@@ -34,6 +36,25 @@ final class HasUuidCustomColumnModel extends Model
     public function uuidColumn(): string
     {
         return 'order_uuid';
+    }
+}
+
+/**
+ * Points at a column the table does not have.
+ */
+final class HasUuidMissingColumnModel extends Model
+{
+    use HasUuid;
+
+    protected $table = 'has_uuid_models';
+
+    protected $guarded = [];
+
+    public $timestamps = false;
+
+    public function uuidColumn(): string
+    {
+        return 'missing_uuid';
     }
 }
 
@@ -74,5 +95,52 @@ final class HasUuidTest extends TestCase
         self::assertEmpty($model->uuid);
         self::assertNotEmpty($model->order_uuid);
         self::assertTrue(Uuid::isValid($model->order_uuid));
+    }
+
+    public function test_the_uuid_column_check_is_not_repeated_per_insert(): void
+    {
+        // hasColumnUuid() ran a schema introspection on EVERY insert, so a
+        // bulk import of 10k rows issued 10k of them. Counting queries rather
+        // than checks, because one hasColumn() costs more than one query on
+        // SQLite — so the property asserted is "the second insert adds none",
+        // which holds whatever a single check costs.
+        HasUuid::flushColumnCache();
+
+        $introspections = 0;
+        DB::listen(function ($query) use (&$introspections): void {
+            if (str_contains((string) $query->sql, 'pragma') || str_contains((string) $query->sql, 'sqlite_master')) {
+                $introspections++;
+            }
+        });
+
+        HasUuidModel::create([]);
+        $afterFirst = $introspections;
+
+        self::assertGreaterThan(0, $afterFirst, 'The first insert must resolve the column.');
+
+        for ($i = 0; $i < 4; $i++) {
+            HasUuidModel::create([]);
+        }
+
+        self::assertSame(5, HasUuidModel::query()->count());
+        self::assertSame(
+            $afterFirst,
+            $introspections,
+            'Inserts after the first must not re-introspect the schema.',
+        );
+    }
+
+    public function test_the_column_check_does_not_leak_between_columns(): void
+    {
+        // Two models over the SAME table looking at DIFFERENT columns must not
+        // share a cache entry, or the first one checked would answer for both.
+        HasUuid::flushColumnCache();
+
+        HasUuidModel::create([]);
+
+        $this->expectException(MissingUuidColumnException::class);
+        $this->expectExceptionMessage("'missing_uuid' column");
+
+        HasUuidMissingColumnModel::create([]);
     }
 }

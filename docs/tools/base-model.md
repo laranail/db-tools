@@ -69,5 +69,21 @@ $order->reload();              // re-read attributes from the database
 `table_name`, `is_new`, `is_modified`, `created_at_human`, and
 `updated_at_human`.
 
+## `reload()`
+
+Re-reads the row **without global scopes** and re-syncs the original
+attributes, then returns the model. It throws `ModelNotFoundException` when the
+row no longer exists.
+
+```php
+$order->reload();          // fresh attributes, isModified() === false
+```
+
+> Two changes in 0.6.0. It used to read through `static::query()`, so a row
+> that had stopped matching a global scope was not found and the method kept
+> the stale in-memory values while still reporting success. It also never called
+> `syncOriginal()`, so every reloaded attribute counted as an unsaved change and
+> `isModified()` reported dirt on a model just read from the database.
+
 ---
 [← Docs index](../../README.md#documentation)
