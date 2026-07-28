@@ -25,15 +25,6 @@ use Simtabi\Laranail\DbTools\Schema\Scopes\ArchiveScope;
 trait HasArchiver
 {
     /**
-     * Indicates if the model should use archives.
-     *
-     * PHP forbids redeclaring a trait property with a different default, so a
-     * model cannot turn this off by declaring `public bool $archives = false`.
-     * Override {@see usesArchiving()} instead, or set the property at runtime.
-     */
-    public bool $archives = true;
-
-    /**
      * Whether the archive scope should hide archived rows for this model.
      *
      * Nothing used to read $archives at all, so the documented opt-out had no
@@ -41,7 +32,11 @@ trait HasArchiver
      */
     public function usesArchiving(): bool
     {
-        return $this->archives;
+        // property_exists, not a trait property with a default: PHP forbids
+        // redeclaring the latter with a different value, so
+        // `public bool $archives = false;` on a model was a fatal error rather
+        // than a configuration. Nothing read $archives at all before 0.6.0.
+        return property_exists($this, 'archives') ? (bool) $this->archives : true;
     }
 
     /**

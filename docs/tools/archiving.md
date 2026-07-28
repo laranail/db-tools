@@ -48,12 +48,40 @@ Document::query()->withoutArchived();  // explicitly exclude (default)
 
 | Member | Effect |
 |---|---|
-| `archive(): ?bool` | Stamp `archived_at` (null if the model doesn't exist). |
-| `unArchive(): ?bool` | Clear `archived_at`. |
+| `archive(): ?bool` | Stamp `archived_at`. `null` if the model doesn't exist, `false` if the update matched no row. |
+| `unArchive(): ?bool` | Clear `archived_at`. `null` if the model doesn't exist. |
+| `runArchive(): int` | Perform the update; returns the number of rows matched. |
+| `usesArchiving(): bool` | Whether the global scope hides archived rows. Override to opt out. |
 | `isArchived(): bool` | Whether the row is archived. |
 | `archiving` / `archived` / `unArchiving` / `unArchived` | Register model-event callbacks. |
 | `getArchivedAtColumn()` / `getQualifiedArchivedAtColumn()` | Column accessors. |
 | builder: `withArchived()` / `onlyArchived()` / `withoutArchived()` | Scope helpers. |
+
+## Opting out
+
+`ArchiveScope` consults `usesArchiving()`, which reads the `$archives`
+property:
+
+```php
+public bool $archives = false;   // archived rows stay visible
+```
+
+Override `usesArchiving()` instead when the decision is dynamic.
+
+> Two things were wrong before 0.6.0. Nothing read `$archives` at all, so the
+> documented opt-out had no effect and archived rows were hidden regardless —
+> and the trait declared `public bool $archives = true`, which made declaring it
+> on a model a fatal error, since PHP forbids redeclaring a trait property with
+> a different value. The trait no longer declares it.
+
+## Behaviour changes in 0.6.0
+
+- `runArchive()` returns `int` instead of `void`. `archive()` used to discard
+  that count and report success for a row that no longer existed, firing the
+  `archived` event and stamping the attribute for a row it never touched.
+- `unArchive()` now returns `null` for a model that was never persisted,
+  matching `archive()`. It previously set `exists = true` unconditionally and
+  issued an UPDATE for a row that does not exist, reporting success.
 
 For a delete-then-undo workflow (rather than archive), see
 [`HasSoftDeletesWithUndo`](soft-deletes.md).

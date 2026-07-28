@@ -22,16 +22,6 @@ trait HasSlug
     use SpatieHasSlug;
 
     /**
-     * Slug source column.
-     */
-    protected string $slugSrcInputName = 'name';
-
-    /**
-     * Slug destination column.
-     */
-    protected string $slugDestColumnName = 'slug';
-
-    /**
      * Build the spatie slug options from the configured columns.
      *
      * Uniqueness is delegated to spatie/laravel-sluggable, which appends a
@@ -53,9 +43,15 @@ trait HasSlug
      */
     public function getSlugSrcInputName(): string
     {
-        return method_exists($this, 'setSlugSrcInputName')
-            ? $this->setSlugSrcInputName()
-            : $this->slugSrcInputName;
+        if (method_exists($this, 'setSlugSrcInputName')) {
+            return $this->setSlugSrcInputName();
+        }
+
+        // property_exists, not a trait property with a default: PHP forbids
+        // redeclaring the latter with a different value, so the documented
+        // `protected string $slugSrcInputName = 'title';` on a model was a
+        // fatal error rather than a configuration.
+        return property_exists($this, 'slugSrcInputName') ? $this->slugSrcInputName : 'name';
     }
 
     /**
@@ -63,9 +59,11 @@ trait HasSlug
      */
     public function getSlugDestColumnName(): string
     {
-        return method_exists($this, 'setSlugDestColumnName')
-            ? $this->setSlugDestColumnName()
-            : $this->slugDestColumnName;
+        if (method_exists($this, 'setSlugDestColumnName')) {
+            return $this->setSlugDestColumnName();
+        }
+
+        return property_exists($this, 'slugDestColumnName') ? $this->slugDestColumnName : 'slug';
     }
 
     /**

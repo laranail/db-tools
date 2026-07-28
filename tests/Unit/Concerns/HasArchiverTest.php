@@ -29,13 +29,7 @@ final class UnarchivableWidget extends Model
 
     protected $guarded = [];
 
-    // The trait declares $archives as a typed property with a default, and
-    // PHP forbids redeclaring a trait property with a different default — so
-    // the accessor is the override path.
-    public function usesArchiving(): bool
-    {
-        return false;
-    }
+    public bool $archives = false;
 }
 
 final class HasArchiverTest extends TestCase

@@ -34,13 +34,7 @@ final class PermalinkPageModel extends Model
 
     public $timestamps = false;
 
-    // The trait declares $slugDestColumnName as a typed property with a
-    // default, and PHP forbids redeclaring a trait property with a different
-    // default — so the method is the only working override path.
-    protected function setSlugDestColumnName(): string
-    {
-        return 'permalink';
-    }
+    protected string $slugDestColumnName = 'permalink';
 }
 
 final class HasSlugTest extends TestCase
