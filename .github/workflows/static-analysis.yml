@@ -15,9 +15,35 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # Split by tool rather than run all three in one job.
+  #
+  # This package ships no composer.lock (correct for a library), so CI resolves
+  # the toolchain fresh on every run. That makes the analysers vulnerable to
+  # upstream drift between themselves: Rector reaches into PHPStan internals via
+  # PrivatesAccessor, and an incompatible pair fatals rather than reporting
+  # findings. It has happened once already — run 30242027388 died with
+  # MissingPrivatePropertyException on PHPStan\Parser\RichParser::$container,
+  # and was green again days later with no code change.
+  #
+  # Run sequentially in one job, that fatal reddens the whole job and buries the
+  # Pint/PHPStan verdict that had already passed. Separate jobs with
+  # fail-fast: false keep each tool's signal independent, so a toolchain break in
+  # one is visibly a break in that one — not "static analysis is failing".
   static:
-    name: Pint · PHPStan · Rector
+    name: ${{ matrix.name }}
     runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Pint · PHPStan
+            commands: |
+              vendor/bin/pint --test
+              vendor/bin/phpstan analyse --no-progress --error-format=github
+          - name: Rector
+            commands: |
+              vendor/bin/rector process --dry-run --no-progress-bar
 
     steps:
       - name: Checkout
@@ -40,11 +66,15 @@ jobs:
       - name: Install dependencies
         run: composer update --prefer-stable --no-interaction --no-progress
 
-      - name: Pint (code style)
-        run: vendor/bin/pint --test
+      # The toolchain is resolved fresh each run, so record what it actually
+      # resolved to. When an analyser fatals on an upstream incompatibility, this
+      # is the only record of which pair caused it — without it the failure is
+      # unreproducible after the fact.
+      - name: Report resolved analyser versions
+        run: |
+          for pkg in laravel/pint phpstan/phpstan larastan/larastan rector/rector; do
+            printf '%-22s %s\n' "$pkg" "$(composer show "$pkg" 2>/dev/null | awk '/^versions/{print $NF}')"
+          done
 
-      - name: PHPStan (level 8)
-        run: vendor/bin/phpstan analyse --no-progress --error-format=github
-
-      - name: Rector (dry run)
-        run: vendor/bin/rector process --dry-run --no-progress-bar
+      - name: ${{ matrix.name }}
+        run: ${{ matrix.commands }}
