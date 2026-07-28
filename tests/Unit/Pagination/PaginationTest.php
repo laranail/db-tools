@@ -56,4 +56,25 @@ final class PaginationTest extends TestCase
         self::assertSame(7, $page->total());
         self::assertCount(5, $page->items());
     }
+
+    public function test_paginate_query_clamps_non_positive_inputs(): void
+    {
+        // The sibling paginate() clamps these; paginateQuery() did not, so a
+        // perPage of 0 reached LengthAwarePaginator and raised a raw
+        // DivisionByZeroError, and a page of 0 produced a negative SQL offset.
+        Schema::create('pagination_widgets', function ($t): void {
+            $t->id();
+            $t->string('name');
+        });
+
+        foreach (range(1, 3) as $i) {
+            PaginationWidget::create(['name' => "row {$i}"]);
+        }
+
+        $page = Pagination::paginateQuery(PaginationWidget::query()->orderBy('id'), perPage: 0, page: 0);
+
+        self::assertSame(1, $page->perPage());
+        self::assertSame(1, $page->currentPage());
+        self::assertCount(1, $page->items());
+    }
 }

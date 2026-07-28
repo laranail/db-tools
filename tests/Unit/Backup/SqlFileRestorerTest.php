@@ -74,6 +74,43 @@ final class SqlFileRestorerTest extends TestCase
         self::assertSame(["INSERT INTO t VALUES ('a; b')", 'SELECT 1'], $statements);
     }
 
+    public function test_parse_keeps_a_double_dash_inside_a_string_literal(): void
+    {
+        // "--" inside a value is data, not a comment. Stripping it also destroys
+        // the closing quote and delimiter, merging this row with the next one.
+        $statements = $this->parse(
+            "INSERT INTO t (b) VALUES ('a -- b');\nINSERT INTO t (b) VALUES ('z');"
+        );
+
+        self::assertSame([
+            "INSERT INTO t (b) VALUES ('a -- b')",
+            "INSERT INTO t (b) VALUES ('z')",
+        ], $statements);
+    }
+
+    public function test_parse_keeps_a_block_comment_inside_a_string_literal(): void
+    {
+        // Worse than the dash case: the statement stays valid SQL, so it restores
+        // successfully having silently dropped part of the value.
+        $statements = $this->parse("INSERT INTO t (b) VALUES ('a /* b */ c');");
+
+        self::assertSame(["INSERT INTO t (b) VALUES ('a /* b */ c')"], $statements);
+    }
+
+    public function test_parse_keeps_comment_markers_inside_dollar_quoted_bodies(): void
+    {
+        $sql = "CREATE FUNCTION f() RETURNS void AS \$\$ SELECT '-- x'; \$\$ LANGUAGE sql;";
+
+        self::assertSame([
+            "CREATE FUNCTION f() RETURNS void AS \$\$ SELECT '-- x'; \$\$ LANGUAGE sql",
+        ], $this->parse($sql));
+    }
+
+    public function test_parse_handles_an_unterminated_block_comment(): void
+    {
+        self::assertSame(['SELECT 1'], $this->parse('SELECT 1; /* never closed'));
+    }
+
     public function test_parse_does_not_split_inside_dollar_dollar_quoting(): void
     {
         $sql = <<<'SQL'

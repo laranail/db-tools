@@ -50,6 +50,13 @@ final class Pagination
     {
         $page ??= request()->integer('page', 1);
 
+        // Same guard as paginate() above. Both values routinely originate in
+        // request input, and unclamped a perPage of 0 reaches LengthAwarePaginator's
+        // ceil($total / $perPage) as a raw DivisionByZeroError, while a page of 0
+        // yields a negative SQL offset.
+        $perPage = max(1, $perPage);
+        $page = max(1, $page);
+
         return $query->paginate($perPage, ['*'], 'page', $page)->appends($options);
     }
 }

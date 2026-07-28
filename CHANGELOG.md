@@ -8,6 +8,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- **SQL restore no longer corrupts values containing comment markers.**
+  `SqlFileRestorer` stripped comments with a regex pre-pass before its string-aware scan,
+  so `--` or `/* */` *inside a string literal* was treated as a comment. A value containing
+  `--` lost the rest of the line including its closing quote and delimiter, merging the row
+  with the next one; a value containing `/* */` had that span silently removed while
+  leaving valid SQL, so the restore succeeded and wrote the wrong data with no error.
+  Comment handling now happens inside the scan, where string and dollar-quote state is
+  known. An unterminated block comment is also no longer emitted as a bogus statement.
+- `Pagination::paginateQuery()` clamps `perPage` and `page` to at least 1, matching its
+  sibling `paginate()`. Both values routinely come from request input, and unclamped a
+  `perPage` of 0 reached `LengthAwarePaginator`'s `ceil($total / $perPage)` as a raw
+  `DivisionByZeroError`, while a `page` of 0 produced a negative SQL offset.
 - CI: floor `rector/rector` at `^2.5.8`. Rector 2.5.2–2.5.7 read
   `PHPStan\Parser\RichParser::$container` via `PrivatesAccessor` while declaring
   `phpstan/phpstan: ^2.2.2`. PHPStan 2.2.6 removed that property (it became `nodeVisitors`),
