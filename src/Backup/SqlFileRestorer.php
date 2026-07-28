@@ -88,8 +88,6 @@ class SqlFileRestorer
      */
     private function parseStatements(string $sql): array
     {
-        $sql = $this->removeComments($sql);
-
         $statements = [];
         $current = '';
         $inString = false;
@@ -111,6 +109,39 @@ class SqlFileRestorer
                 } else {
                     $current .= $char;
                 }
+
+                continue;
+            }
+
+            // Comments are only comments outside string literals (dollar-quoted
+            // blocks already returned above). Handling them here rather than in a
+            // regex pre-pass is what keeps "--" and "/* */" INSIDE a value as
+            // data: stripping them beforehand also removed the closing quote and
+            // delimiter, merging the row with the next one, or silently dropped
+            // part of a value while leaving valid SQL behind.
+            if (! $inString && $char === '-' && $nextChar === '-') {
+                $newline = strpos($sql, "\n", $i);
+
+                if ($newline === false) {
+                    break;
+                }
+
+                // Resume on the newline itself so it survives as a separator,
+                // matching how the comment-stripping pre-pass used to behave.
+                $i = $newline - 1;
+
+                continue;
+            }
+
+            if (! $inString && $char === '/' && $nextChar === '*') {
+                $end = strpos($sql, '*/', $i + 2);
+
+                if ($end === false) {
+                    // Unterminated block comment: the rest of the file is comment.
+                    break;
+                }
+
+                $i = $end + 1;
 
                 continue;
             }
@@ -157,18 +188,6 @@ class SqlFileRestorer
         }
 
         return $statements;
-    }
-
-    /**
-     * Remove SQL comments from the SQL string
-     *
-     * @return string SQL without comments
-     */
-    private function removeComments(string $sql): string
-    {
-        $sql = preg_replace('/--.*$/m', '', $sql) ?? $sql;
-
-        return preg_replace('/\/\*.*?\*\//s', '', $sql) ?? $sql;
     }
 
     /**
