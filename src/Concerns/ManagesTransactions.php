@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Simtabi\Laranail\DbTools\Concerns;
 
 use Closure;
+use Illuminate\Database\ConnectionInterface;
 use Illuminate\Support\Facades\DB;
 use Throwable;
 
@@ -36,9 +37,9 @@ trait ManagesTransactions
      *     return $user;
      * });
      */
-    protected function transaction(Closure $callback, int $attempts = 1): mixed
+    protected function transaction(Closure $callback, int $attempts = 1, ?string $connection = null): mixed
     {
-        return DB::transaction($callback, $attempts);
+        return $this->transactionConnection($connection)->transaction($callback, $attempts);
     }
 
     /**
@@ -61,17 +62,19 @@ trait ManagesTransactions
      *     return $user;
      * });
      */
-    protected function transactionOrFail(Closure $callback): mixed
+    protected function transactionOrFail(Closure $callback, ?string $connection = null): mixed
     {
-        DB::beginTransaction();
+        $db = $this->transactionConnection($connection);
+
+        $db->beginTransaction();
 
         try {
             $result = $callback();
-            DB::commit();
+            $db->commit();
 
             return $result;
         } catch (Throwable $e) {
-            DB::rollBack();
+            $db->rollBack();
             throw $e;
         }
     }
@@ -79,16 +82,29 @@ trait ManagesTransactions
     /**
      * Check if currently in a transaction
      */
-    protected function inTransaction(): bool
+    protected function inTransaction(?string $connection = null): bool
     {
-        return DB::transactionLevel() > 0;
+        return $this->getTransactionLevel($connection) > 0;
     }
 
     /**
      * Get the current transaction nesting level
      */
-    protected function getTransactionLevel(): int
+    protected function getTransactionLevel(?string $connection = null): int
     {
-        return DB::transactionLevel();
+        return $this->transactionConnection($connection)->transactionLevel();
+    }
+
+    /**
+     * Resolve the connection a transaction should be opened on.
+     *
+     * Transactions are per-connection. Without this, a caller that opened a
+     * transaction here but ran its statements on another connection got no
+     * atomicity at all: the work committed as it went, and the rollback undid an
+     * empty transaction on the default connection.
+     */
+    private function transactionConnection(?string $connection): ConnectionInterface
+    {
+        return $connection === null ? DB::connection() : DB::connection($connection);
     }
 }

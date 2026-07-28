@@ -198,6 +198,40 @@ final class SqlFileRestorerTest extends TestCase
         (new SqlFileRestorer)->restore($path);
     }
 
+    public function test_restore_rolls_back_on_a_non_default_connection(): void
+    {
+        // transactionOrFail() opened its transaction on the DEFAULT connection
+        // while the statements ran on $connection, so a non-default restore had
+        // no atomicity at all and a partial restore stayed committed.
+        config()->set('database.connections.secondary', [
+            'driver' => 'sqlite',
+            'database' => ':memory:',
+            'prefix' => '',
+        ]);
+
+        Schema::connection('secondary')->create('sql_restore_secondary', function ($t): void {
+            $t->integer('id');
+        });
+
+        $path = $this->writeTempSql(
+            "INSERT INTO sql_restore_secondary (id) VALUES (1);\n"
+            ."INSERT INTO no_such_table_here (id) VALUES (2);\n"
+        );
+
+        try {
+            (new SqlFileRestorer)->restore($path, 'secondary');
+            self::fail('Expected a RuntimeException for the bad statement.');
+        } catch (RuntimeException $e) {
+            self::assertStringContainsString('Database restoration failed', $e->getMessage());
+        }
+
+        self::assertSame(
+            0,
+            DB::connection('secondary')->table('sql_restore_secondary')->count(),
+            'The first insert must roll back with the failed batch on a non-default connection.'
+        );
+    }
+
     private function writeTempSql(string $contents): string
     {
         $path = tempnam(sys_get_temp_dir(), 'dbt-restorer-').'.sql';

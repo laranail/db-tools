@@ -201,6 +201,9 @@ class SqlFileRestorer
      */
     private function executeStatements(array $statements, ?string $connection = null): bool
     {
+        // The transaction must be opened on the SAME connection the statements
+        // run on, or a non-default restore has no atomicity: the work commits as
+        // it goes and the rollback undoes an empty transaction elsewhere.
         return $this->transactionOrFail(function () use ($statements, $connection): true {
             $conn = $connection ? DB::connection($connection) : DB::connection();
 
@@ -209,6 +212,6 @@ class SqlFileRestorer
             }
 
             return true;
-        });
+        }, $connection);
     }
 }
