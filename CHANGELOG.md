@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-07-28
+
+### Added
+- **`EnsureSchemaIsReady` HTTP middleware.** On an instance whose database is not fully migrated
+  (a restored-but-unmigrated dump, a half-run migration), it lets the request through but stamps
+  advisory `X-Schema-Status`/`X-Schema-Message` headers so a bare 500 doesn't hide the cause; when
+  the schema is ready it is a single cheap, cached check. It delegates to `DbTools::schemaReport()`,
+  so it honours `laranail.db-tools.readiness.required_tables`.
+- **Auto-registration.** When `laranail.db-tools.readiness.middleware.enabled` (default `true`), the
+  service provider pushes the middleware onto the HTTP kernel's **global** stack (not the web/api
+  route groups) so it survives on both the slim and the traditional kernel — a traditional kernel
+  rebuilds its route groups per request and would otherwise drop a boot-time group append. A
+  `db-tools.schema-ready` route-middleware alias is always registered for manual use.
+- New config block `laranail.db-tools.readiness.middleware` (`enabled`, `cache_store` [default `file`,
+  deliberately DB-independent], `cache_key`, `cache_ttl`, `header_status`, `header_message`).
+
+### Note for consumers
+- On upgrade, the readiness middleware is added to every HTTP request by default. It never blocks a
+  request and is cheap; disable with `laranail.db-tools.readiness.middleware.enabled = false` if you
+  do not want it. Apps that registered their own copy should drop it and rely on the package's.
+
 ## [0.5.2] - 2026-07-28
 
 ### Fixed

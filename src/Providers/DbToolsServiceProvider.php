@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Simtabi\Laranail\DbTools\Providers;
 
+use Illuminate\Contracts\Http\Kernel as HttpKernelContract;
 use Illuminate\Foundation\AliasLoader;
+use Illuminate\Routing\Router;
 use Illuminate\Support\ServiceProvider;
 use Override;
 use Psr\Log\LoggerInterface;
@@ -19,6 +21,7 @@ use Simtabi\Laranail\DbTools\Files\Contracts\DatabaseFileServiceInterface;
 use Simtabi\Laranail\DbTools\Files\DatabaseFileService;
 use Simtabi\Laranail\DbTools\Guard\Contracts\DatabaseAvailabilityInterface;
 use Simtabi\Laranail\DbTools\Guard\DatabaseGuard;
+use Simtabi\Laranail\DbTools\Http\Middleware\EnsureSchemaIsReady;
 use Simtabi\Laranail\DbTools\Listeners\LogDatabaseIssues;
 use Simtabi\Laranail\DbTools\Schema\AuditColumnsMacro;
 use Simtabi\Laranail\DbTools\Schema\BlueprintMacros;
@@ -102,6 +105,7 @@ final class DbToolsServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->registerEventListeners();
+        $this->registerSchemaReadinessMiddleware();
 
         if ($this->app->runningInConsole()) {
             $this->commands([
@@ -127,6 +131,45 @@ final class DbToolsServiceProvider extends ServiceProvider
         ConfiguredMorphsMacro::register();
         SoftDeleteHistoryMacro::register();
         FieldGroupMacros::register();
+    }
+
+    /**
+     * Make the schema-readiness middleware available, and (when enabled)
+     * auto-register it.
+     *
+     * It is pushed onto the HTTP kernel's GLOBAL stack rather than the web/api
+     * route groups: a traditional kernel rebuilds its route groups per request
+     * (syncMiddlewareToRouter), which would drop a boot-time group append, whereas
+     * the global stack persists across both the slim and traditional kernels. The
+     * middleware only stamps advisory headers, so running it globally is safe.
+     * Opt out via `laranail.db-tools.readiness.middleware.enabled = false`, or
+     * register the `db-tools.schema-ready` alias manually.
+     */
+    private function registerSchemaReadinessMiddleware(): void
+    {
+        $router = $this->app->make('router');
+
+        if ($router instanceof Router) {
+            $router->aliasMiddleware('db-tools.schema-ready', EnsureSchemaIsReady::class);
+        }
+
+        if (! (bool) $this->app->make('config')->get('laranail.db-tools.readiness.middleware.enabled', true)) {
+            return;
+        }
+
+        try {
+            $kernel = $this->app->make(HttpKernelContract::class);
+
+            if (method_exists($kernel, 'hasMiddleware') && $kernel->hasMiddleware(EnsureSchemaIsReady::class)) {
+                return;
+            }
+
+            if (method_exists($kernel, 'pushMiddleware')) {
+                $kernel->pushMiddleware(EnsureSchemaIsReady::class);
+            }
+        } catch (\Throwable) {
+            // No HTTP kernel (e.g. a pure console/queue context) — nothing to guard.
+        }
     }
 
     /**

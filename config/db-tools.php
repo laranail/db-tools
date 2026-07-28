@@ -131,6 +131,22 @@ return [
 
     'readiness' => [
         'required_tables' => ['migrations'],
+
+        /*
+        | The EnsureSchemaIsReady middleware. When `enabled`, the service provider
+        | auto-registers it on the HTTP kernel's global stack (robust across the
+        | slim and traditional kernels). It never blocks a request — it stamps the
+        | advisory `header_status`/`header_message` headers when the schema is not
+        | ready. `cache_store` must not depend on the database (default: file).
+        */
+        'middleware' => [
+            'enabled' => true,
+            'cache_store' => 'file',
+            'cache_key' => 'db-tools.schema_ready',
+            'cache_ttl' => 60,
+            'header_status' => 'X-Schema-Status',
+            'header_message' => 'X-Schema-Message',
+        ],
     ],
 
     /*
