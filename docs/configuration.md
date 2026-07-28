@@ -126,5 +126,22 @@ The table name used by [`HasSoftDeletesWithUndo`](tools/soft-deletes.md) and the
 `softDeleteHistory()` macro. Change it here and the trait, macro, and published
 migration all follow.
 
+### `files`
+
+```php
+'files' => [
+    'import_base' => env('DB_TOOLS_IMPORT_BASE', storage_path('app')),
+],
+```
+
+The directory `Files\DatabaseFileService::handleImport()` will import from.
+Files resolving outside it are rejected with a `RuntimeException`.
+
+Set it to `null` to disable confinement, which is the pre-0.6.0 behaviour — but
+note that without it any readable file on the filesystem is importable, which
+matters wherever the path can come from a request. The docblock previously
+claimed path-traversal protection while only calling `realpath()`, which
+canonicalises a path rather than rejecting it.
+
 ---
 [← Docs index](../README.md#documentation)

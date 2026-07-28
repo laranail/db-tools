@@ -175,7 +175,17 @@ class Order extends Model
 
 $order->metadata = ['via' => 'fedex']; // encoded on save
 $order->metadata['via'];               // 'fedex' — decoded on read
+$order->toArray()['metadata'];         // ['via' => 'fedex'] — decoded here too
 ```
+
+> Before 0.6.0 decoding happened only in `getAttribute()`, which `toArray()`
+> does not go through — so `$order->metadata` was an array while
+> `$order->toArray()['metadata']` was still the raw JSON string, and anything
+> serialising the model (API resources, queued payloads, `toJson()`) shipped a
+> double-encoded field.
+
+Malformed JSON is left as the raw string rather than becoming `null`, so a bad
+row surfaces instead of silently emptying.
 
 ## Behavior traits
 
@@ -270,6 +280,15 @@ $comment->hasChildren(); // exists() check
 // Root records (optionally scoped) with their full threaded tree:
 (new Comment)->getAsThreadedParentToChildren($ticketId);
 ```
+
+When `threadScopeColumn()` is set, the scope applies at **every** level of the
+tree, not just the roots.
+
+> Before 0.6.0 `children()` matched on the parent key alone and
+> `getAsThreadedParentToChildren()` scoped only its root query, so a row
+> pointing at a record in another thread — reparented, imported, or written with
+> a stale id — was pulled into that thread's tree. Where the scope column stands
+> in for a tenant, that was a cross-tenant read.
 
 ### `HasSlug`
 

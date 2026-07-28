@@ -110,10 +110,18 @@ too.
 
 ## Importing a dump file
 
-`Files\DatabaseFileService::handleImport()` is a thin, validated entry point for
-importing a backup file. It validates the path, extension, and size, then
-delegates to the driver-aware `restore()` above — no shell calls happen in the
-service itself.
+`Files\DatabaseFileService::handleImport()` is a thin entry point for importing
+a backup file. It checks the extension, resolves the real path, confines it to
+the configured import directory, then delegates to the driver-aware `restore()`
+above — no shell calls happen in the service itself.
+
+The import directory comes from
+[`db-tools.files.import_base`](../configuration.md), which defaults to
+`storage_path('app')`. Set it to `null` to allow imports from anywhere.
+
+> Before 0.6.0 the docblock claimed path-traversal protection but only called
+> `realpath()`, which **canonicalises** a path rather than rejecting it — so any
+> readable `.sql` anywhere on the filesystem was importable.
 
 ```php
 use Simtabi\Laranail\DbTools\Files\Contracts\DatabaseFileServiceInterface;
