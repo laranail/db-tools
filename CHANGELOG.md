@@ -5,6 +5,20 @@ All notable changes to `laranail/db-tools` are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.1] - 2026-07-28
+
+### Changed
+- `brick/money` now allows `^0.13 || ^0.14` (was `^0.13`). The cast uses only
+  `Money::of()`, `Money::ofMinor()`, `getAmount()` and `getCurrency()`, which are unchanged
+  across the two lines. Widening rather than moving the constraint means the package does
+  not force a `brick/money` upgrade on applications that pin `^0.13` for other reasons —
+  and because the CI matrix runs both `--prefer-lowest` and `--prefer-stable`, both ends of
+  the range stay continuously tested rather than assumed.
+
+### Fixed
+- CI: `actions/checkout` 7.0.0 → 7.0.1 and `softprops/action-gh-release` 3.0.1 → 3.0.2,
+  both SHA-pinned.
+
 ## [0.5.0] - 2026-07-28
 
 ### Fixed
