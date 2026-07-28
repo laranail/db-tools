@@ -97,6 +97,25 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Database file imports
+    |--------------------------------------------------------------------------
+    |
+    | import_base confines DatabaseFileService::handleImport() to a directory.
+    | realpath() alone is not a traversal check — it resolves ".." and symlinks
+    | rather than rejecting them — so without a base to compare against, any
+    | readable file on the filesystem is importable. That matters wherever the
+    | path can come from a request.
+    |
+    | Set to null to disable confinement (the pre-0.6 behaviour).
+    |
+    */
+
+    'files' => [
+        'import_base' => env('DB_TOOLS_IMPORT_BASE', storage_path('app')),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Availability guard
     |--------------------------------------------------------------------------
     |
