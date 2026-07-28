@@ -46,7 +46,7 @@ trait HasJsonColumnAccessors
      *
      * @return array<string, mixed>
      */
-    public function attributesToArray()
+    public function attributesToArray(): array
     {
         $attributes = parent::attributesToArray();
 
