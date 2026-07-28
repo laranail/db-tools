@@ -184,6 +184,6 @@ final class HasUuidsOrIntegerIdsTest extends TestCase
         $model = HasUuidsOrIntegerIdsStringModel::create(['name' => 'generated']);
 
         self::assertIsString($model->getKey());
-        self::assertSame(36, strlen((string) $model->getKey()));
+        self::assertSame(36, strlen($model->getKey()));
     }
 }

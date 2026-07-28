@@ -6,6 +6,8 @@ namespace Simtabi\Laranail\DbTools\Observers;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
+use Simtabi\Laranail\DbTools\Support\ConnectionContext;
+use Throwable;
 
 /**
  * Stamps `created_by` / `updated_by` / `deleted_by` from the authenticated
@@ -21,6 +23,13 @@ use Illuminate\Support\Facades\Auth;
  */
 class AuditObserver
 {
+    /**
+     * Memoised schema lookups, keyed by connection|table|column.
+     *
+     * @var array<string, bool>
+     */
+    private static array $columnCache = [];
+
     public function creating(Model $model): void
     {
         $actor = $this->userIdentifier($model);
@@ -114,10 +123,45 @@ class AuditObserver
         return is_string($name) && $name !== '' ? $name : $key;
     }
 
+    /**
+     * Whether the model's table actually has this column.
+     *
+     * This asks the schema. It used to ask about *fillability*, which answers a
+     * different question and got both directions wrong: `isFillable()` is true
+     * for every key on a model with `$guarded = []`, so audit columns were added
+     * to the INSERT of tables that do not have them (a hard SQL error on every
+     * write by an authenticated user); and a model with a narrow `$fillable` that
+     * omitted the audit columns reported false even though the columns existed,
+     * so every row was silently stamped NULL.
+     *
+     * Memoised per connection+table+column: this runs on every create, update and
+     * delete, and a schema round-trip per model event is not acceptable.
+     */
     protected function modelHasColumn(Model $model, string $column): bool
     {
-        return in_array($column, $model->getFillable(), true)
-            || array_key_exists($column, $model->getAttributes())
-            || $model->isFillable($column);
+        $context = ConnectionContext::forModel($model);
+        $key = $context->key().'|'.$model->getTable().'|'.$column;
+
+        if (array_key_exists($key, self::$columnCache)) {
+            return self::$columnCache[$key];
+        }
+
+        try {
+            return self::$columnCache[$key] = $context->schema()->hasColumn($model->getTable(), $column);
+        } catch (Throwable) {
+            // An unreachable database cannot be asked. Don't stamp — the write
+            // that triggered this is about to fail on its own, and guessing
+            // "yes" would turn a connection error into a confusing column error.
+            return false;
+        }
+    }
+
+    /**
+     * Forget memoised column lookups. For test suites that create and drop
+     * tables between cases.
+     */
+    public static function flushColumnCache(): void
+    {
+        self::$columnCache = [];
     }
 }
