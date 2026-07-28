@@ -8,6 +8,7 @@ use Exception;
 use Illuminate\Support\Facades\Log;
 use Simtabi\Laranail\DbTools\Schema\Contracts\DatabaseSchemaInspectorInterface;
 use Simtabi\Laranail\DbTools\Support\ConnectionContext;
+use Throwable;
 
 /**
  * Class DatabaseSchemaInspector
@@ -45,9 +46,33 @@ class DatabaseSchemaInspector implements DatabaseSchemaInspectorInterface
      */
     public function hasTable(string $table, ?string $connection = null): bool
     {
+        $context = ConnectionContext::for($connection);
+
         try {
-            return ConnectionContext::for($connection)->schema()->hasTable($table);
-        } catch (Exception) {
+            return $context->schema()->hasTable($table);
+        } catch (Exception $e) {
+            // "No such table" and "cannot reach this database" both landed
+            // here and both answered false, so verifying against a database
+            // that was down reported every table missing — which sends the
+            // operator to run migrations when the connection is the problem.
+            if (! $this->isReachable($context)) {
+                throw $e;
+            }
+
+            return false;
+        }
+    }
+
+    /**
+     * Whether the connection can actually be opened.
+     */
+    private function isReachable(ConnectionContext $context): bool
+    {
+        try {
+            $context->connection()->getPdo();
+
+            return true;
+        } catch (Throwable) {
             return false;
         }
     }
@@ -151,9 +176,15 @@ class DatabaseSchemaInspector implements DatabaseSchemaInspectorInterface
      */
     public function hasColumn(string $table, string $column, ?string $connection = null): bool
     {
+        $context = ConnectionContext::for($connection);
+
         try {
-            return ConnectionContext::for($connection)->schema()->hasColumn($table, $column);
-        } catch (Exception) {
+            return $context->schema()->hasColumn($table, $column);
+        } catch (Exception $e) {
+            if (! $this->isReachable($context)) {
+                throw $e;
+            }
+
             return false;
         }
     }
@@ -168,9 +199,15 @@ class DatabaseSchemaInspector implements DatabaseSchemaInspectorInterface
      */
     public function hasColumns(string $table, array $columns, ?string $connection = null): bool
     {
+        $context = ConnectionContext::for($connection);
+
         try {
-            return ConnectionContext::for($connection)->schema()->hasColumns($table, $columns);
-        } catch (Exception) {
+            return $context->schema()->hasColumns($table, $columns);
+        } catch (Exception $e) {
+            if (! $this->isReachable($context)) {
+                throw $e;
+            }
+
             return false;
         }
     }
