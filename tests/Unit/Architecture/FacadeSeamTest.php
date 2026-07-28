@@ -100,9 +100,7 @@ final class FacadeSeamTest extends TestCase
      *
      * @var list<string>
      */
-    private const array KNOWN_CONFIG_VIOLATIONS = [
-        'src/Schema/DatabaseSchemaInspector.php:75 database.connections.pgsql.schema',
-    ];
+    private const array KNOWN_CONFIG_VIOLATIONS = [];
 
     public function test_no_default_binding_facade_calls_outside_the_seam(): void
     {
