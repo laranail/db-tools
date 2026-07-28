@@ -5,6 +5,35 @@ All notable changes to `laranail/db-tools` are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+- CI: floor `rector/rector` at `^2.5.8`. Rector 2.5.2–2.5.7 read
+  `PHPStan\Parser\RichParser::$container` via `PrivatesAccessor` while declaring
+  `phpstan/phpstan: ^2.2.2`. PHPStan 2.2.6 removed that property (it became `nodeVisitors`),
+  so any resolution inside Rector's own declared range picked an incompatible pair and
+  fatalled with `MissingPrivatePropertyException` instead of reporting findings. Rector
+  2.5.8 both fixed the access and tightened its constraint to `^2.2.6`.
+
+  Reproduced and bounded before pinning:
+
+  | rector | phpstan | result |
+  |---|---|---|
+  | 2.5.7 | 2.2.5 | pass |
+  | 2.5.7 | 2.2.6 | **fatal** |
+  | 2.5.8 | 2.2.6 | pass |
+
+  Since the package ships no `composer.lock`, CI resolved this pair on 2026-07-27 and the
+  static-analysis job died; the same commit was green days later once 2.5.8 shipped. The
+  floor makes the known-bad window unreachable — `--prefer-lowest` now resolves 2.5.8 +
+  2.2.6. It cannot prevent a *future* upstream regression of the same shape; the resolved
+  version logging added alongside is what makes the next one diagnosable.
+
+### Changed
+- CI: Rector runs as its own job, independent of Pint/PHPStan, so a toolchain fatal in one
+  analyser no longer buries the others' verdicts. Resolved analyser versions are logged
+  before each run.
+
 ## [0.5.1] - 2026-07-28
 
 ### Changed
