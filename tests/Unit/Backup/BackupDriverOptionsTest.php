@@ -188,4 +188,33 @@ final class BackupDriverOptionsTest extends TestCase
             rmdir($dir);
         }
     }
+
+    public function test_temp_files_are_created_private(): void
+    {
+        // A regression guard, not a fix: rename() preserves the mode, so the
+        // suffixed path was already 0600 and the audit's "world-readable dump
+        // in /tmp" finding did not reproduce. This pins the property so a
+        // future change to how the path is produced cannot quietly widen it.
+        $subject = new class
+        {
+            use ResolvesBackupOptions {
+                makeTempFile as public;
+            }
+        };
+
+        foreach (['', '.sql', '.sql.gz'] as $suffix) {
+            $path = $subject->makeTempFile($suffix);
+
+            try {
+                self::assertFileExists($path);
+                self::assertSame(
+                    '0600',
+                    substr(sprintf('%o', fileperms($path)), -4),
+                    "Temp file with suffix '{$suffix}' must not be group- or world-readable.",
+                );
+            } finally {
+                @unlink($path);
+            }
+        }
+    }
 }

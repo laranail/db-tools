@@ -59,8 +59,28 @@ trait HasThreadedParentChildrenRecords
      */
     public function children(): HasMany
     {
-        return $this->hasMany(static::class, $this->parentKeyColumn())
+        $relation = $this->hasMany(static::class, $this->parentKeyColumn())
             ->orderBy($this->threadOrderColumn());
+
+        // Carry the thread scope down the tree. Matching on the parent key
+        // alone pulled in any row pointing at this record — reparented,
+        // imported, or written with a stale id — regardless of which thread it
+        // belonged to. getAsThreadedParentToChildren() scoped only its ROOT
+        // query, so those rows still arrived through the eager-loaded
+        // descendants. Where the scope column stands in for a tenant, that is
+        // a cross-tenant read.
+        $scopeColumn = $this->threadScopeColumn();
+
+        // Only when this instance actually carries a scope value. Eager loading
+        // builds the relation from a FRESH instance, where the attribute is
+        // null — constraining on that would match nothing. Eager tree loading
+        // is scoped explicitly instead, in
+        // getAsThreadedParentToChildren().
+        if ($scopeColumn !== null && $this->getAttribute($scopeColumn) !== null) {
+            $relation->where($scopeColumn, $this->getAttribute($scopeColumn));
+        }
+
+        return $relation;
     }
 
     /**
@@ -83,11 +103,28 @@ trait HasThreadedParentChildrenRecords
         $query = static::query()->whereNull($this->parentKeyColumn());
 
         $scopeColumn = $this->threadScopeColumn();
-        if ($scopeColumn !== null && $scopeId !== null) {
+        $scoped = $scopeColumn !== null && $scopeId !== null;
+
+        if ($scoped) {
             $query->where($scopeColumn, $scopeId);
         }
 
-        return $query->with('descendants')->orderBy($this->threadOrderColumn())->get();
+        // Apply the scope at EVERY level of the tree, not just the roots. The
+        // root query was scoped but the eager-loaded descendants were not, so
+        // a row pointing at a record in another thread arrived anyway — a
+        // cross-tenant read wherever the scope column stands in for a tenant.
+        $constrain = null;
+        $constrain = static function ($relation) use ($scopeColumn, $scopeId, $scoped, &$constrain): void {
+            if ($scoped) {
+                $relation->where($scopeColumn, $scopeId);
+            }
+
+            $relation->with(['descendants' => $constrain]);
+        };
+
+        return $query->with(['descendants' => $constrain])
+            ->orderBy($this->threadOrderColumn())
+            ->get();
     }
 
     /**

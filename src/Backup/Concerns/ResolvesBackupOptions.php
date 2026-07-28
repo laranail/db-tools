@@ -76,12 +76,26 @@ trait ResolvesBackupOptions
             throw new RuntimeException('Unable to create a temporary file for restore.');
         }
 
+        // Defence in depth. rename() preserves the mode, so the suffixed path
+        // is already 0600 — this only guarantees it where that is not true.
+        @chmod($temp, 0600);
+
         if ($suffix === '') {
             return $temp;
         }
 
         $withSuffix = $temp.$suffix;
-        @rename($temp, $withSuffix);
+
+        // The rename's result used to be discarded, so a failure returned a
+        // path that had never been exclusively created — the caller then wrote
+        // the dump to whatever happened to be there, at the default umask.
+        if (! @rename($temp, $withSuffix)) {
+            @unlink($temp);
+
+            throw new RuntimeException("Unable to prepare a temporary file at [{$withSuffix}].");
+        }
+
+        @chmod($withSuffix, 0600);
 
         return $withSuffix;
     }
