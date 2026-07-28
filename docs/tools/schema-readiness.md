@@ -53,11 +53,35 @@ A default listener logs it (`config('laranail.db-tools.guard.log_events')`); tog
 `php artisan laranail::db-tools.health` prints the report; `--strict` exits non-zero unless the
 status is `ready`; `--tables=` and `--connection=` override the defaults. Handy in deploy gates.
 
-## How it works
+## Memoization and `flush()`
 
 Composed on the [availability guard](availability-guard.md) (reachable, without hanging) and the
 [table verifier](table-verification.md) (which tables exist). Reports are memoized per
 (connection, required-set) for the instance lifetime, so repeated boot/middleware checks stay cheap.
+
+That assumes a short-lived process. In a long-lived one — Octane, a queue worker, or code that
+runs migrations and then keeps working — a report taken before the schema existed would be
+returned forever, leaving the app convinced it is un-migrated after it has been migrated.
+`flush()` drops the memoized reports and the underlying availability memo:
+
+```php
+use Simtabi\Laranail\DbTools\Schema\Contracts\SchemaReadinessInterface;
+
+$readiness = app(SchemaReadinessInterface::class);
+
+Artisan::call('migrate');
+
+$readiness->flush();                 // all connections
+$readiness->flush('tenant');         // just one
+
+$readiness->isReady();               // re-evaluated
+```
+
+`null` and the explicit default-connection name resolve to the same key, so
+`flush(config('database.default'))` clears reports taken via `report()` with no connection
+argument.
+
+## How it works
 
 ---
 
