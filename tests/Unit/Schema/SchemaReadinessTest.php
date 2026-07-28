@@ -112,4 +112,36 @@ final class SchemaReadinessTest extends TestCase
 
         self::assertSame(SchemaStatus::Down, $report->status);
     }
+
+    public function test_flush_re_evaluates_after_the_schema_changes(): void
+    {
+        $readiness = $this->readiness();
+
+        // Nothing migrated yet.
+        self::assertSame(SchemaStatus::Empty, $readiness->report(['migrations'])->status);
+
+        Schema::create('migrations', fn ($t) => $t->id());
+
+        // Memoized: a long-lived process would be stuck on the stale report.
+        self::assertSame(SchemaStatus::Empty, $readiness->report(['migrations'])->status);
+
+        $readiness->flush();
+
+        self::assertSame(SchemaStatus::Ready, $readiness->report(['migrations'])->status);
+    }
+
+    public function test_flush_by_name_clears_the_default_connections_reports(): void
+    {
+        $readiness = $this->readiness();
+
+        self::assertSame(SchemaStatus::Empty, $readiness->report(['migrations'])->status);
+
+        Schema::create('migrations', fn ($t) => $t->id());
+
+        // Reported under the null form, flushed by the explicit default name:
+        // both must resolve to the same key.
+        $readiness->flush((string) config('database.default'));
+
+        self::assertSame(SchemaStatus::Ready, $readiness->report(['migrations'])->status);
+    }
 }

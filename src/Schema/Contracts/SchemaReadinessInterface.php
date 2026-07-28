@@ -39,4 +39,15 @@ interface SchemaReadinessInterface
      * @return TValue
      */
     public function whenReady(callable $callback, mixed $default = null, array $requiredTables = [], ?string $connection = null): mixed;
+
+    /**
+     * Forget memoized reports for a connection (or all of them) and flush the
+     * underlying availability memo, so the next call re-evaluates.
+     *
+     * Reports are memoized for the lifetime of the instance, which assumes a
+     * short-lived process. Call this in a long-lived one (Octane, a queue
+     * worker, or after running migrations in-process) when the schema may have
+     * changed since the last report.
+     */
+    public function flush(?string $connection = null): void;
 }

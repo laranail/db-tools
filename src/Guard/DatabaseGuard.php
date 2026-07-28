@@ -33,12 +33,23 @@ final class DatabaseGuard implements DatabaseAvailabilityInterface
 {
     use Macroable;
 
+    /** Memo key used when the default connection name cannot be resolved. */
+    private const string DEFAULT_KEY = '__default__';
+
     /**
      * Memoized availability results keyed by resolved connection name.
      *
      * @var array<string, bool>
      */
     private array $available = [];
+
+    /**
+     * Last availability announced per connection, so DatabaseUnavailable fires
+     * on the transition into unavailability rather than on every check.
+     *
+     * @var array<string, bool>
+     */
+    private array $announced = [];
 
     /**
      * Optional custom availability strategy: fn(?string $connection): bool.
@@ -64,7 +75,7 @@ final class DatabaseGuard implements DatabaseAvailabilityInterface
             return false;
         }
 
-        $key = $connection ?? '__default__';
+        $key = $this->resolveKey($connection);
 
         if ($this->memoize && array_key_exists($key, $this->available)) {
             return $this->available[$key];
@@ -82,11 +93,37 @@ final class DatabaseGuard implements DatabaseAvailabilityInterface
             $this->available[$key] = $result;
         }
 
-        if (! $result && $this->emitEvents) {
+        // Announce the transition, not every check. With memoization off a
+        // sustained outage would otherwise emit one event per call — an event
+        // storm precisely when the system is already unhealthy.
+        if (! $result && $this->emitEvents && ($this->announced[$key] ?? true)) {
             SafeEvent::dispatch(new DatabaseUnavailable($connection));
         }
 
+        $this->announced[$key] = $result;
+
         return $result;
+    }
+
+    /**
+     * Memo key for a connection. `null` and the explicit default-connection name
+     * address the same physical connection, so they must share one entry —
+     * otherwise the same connection is probed twice and `flush('mysql')` leaves
+     * a stale entry behind for the `null` form.
+     */
+    private function resolveKey(?string $connection): string
+    {
+        if ($connection !== null) {
+            return $connection;
+        }
+
+        try {
+            $default = Container::getInstance()->make('config')->get('database.default');
+        } catch (Throwable) {
+            return self::DEFAULT_KEY;
+        }
+
+        return is_string($default) && $default !== '' ? $default : self::DEFAULT_KEY;
     }
 
     /**
@@ -143,6 +180,7 @@ final class DatabaseGuard implements DatabaseAvailabilityInterface
     {
         $this->suspended = false;
         $this->available = [];
+        $this->announced = [];
 
         return $this;
     }
@@ -152,15 +190,23 @@ final class DatabaseGuard implements DatabaseAvailabilityInterface
         return $this->suspended;
     }
 
+    /**
+     * Forget the memoized result for a connection (or all of them). A flush is
+     * an explicit "re-evaluate", so the announcement state is cleared too and a
+     * still-down connection will emit DatabaseUnavailable again.
+     */
     public function flush(?string $connection = null): void
     {
         if ($connection === null) {
             $this->available = [];
+            $this->announced = [];
 
             return;
         }
 
-        unset($this->available[$connection]);
+        $key = $this->resolveKey($connection);
+
+        unset($this->available[$key], $this->announced[$key]);
     }
 
     /**
@@ -172,6 +218,7 @@ final class DatabaseGuard implements DatabaseAvailabilityInterface
     {
         $this->prober = $prober === null ? null : Closure::fromCallable($prober);
         $this->available = [];
+        $this->announced = [];
 
         return $this;
     }
@@ -218,10 +265,32 @@ final class DatabaseGuard implements DatabaseAvailabilityInterface
             $container->bound(DatabaseSchemaInspectorInterface::class)
                 ? $container->make(DatabaseSchemaInspectorInterface::class)
                 : new DatabaseSchemaInspector,
+            self::configFlag($container, 'memoize'),
+            self::configFlag($container, 'emit_events'),
         );
 
         $container->instance(DatabaseAvailabilityInterface::class, $guard);
 
         return $guard;
+    }
+
+    /**
+     * Read a `guard.*` boolean, defaulting to true when config is unavailable.
+     *
+     * Without this a self-bootstrapped guard silently ignores the application's
+     * `laranail.db-tools.guard.*` settings, so it would behave differently from
+     * the one the service provider builds.
+     */
+    private static function configFlag(Container $container, string $name): bool
+    {
+        try {
+            if (! $container->bound('config')) {
+                return true;
+            }
+
+            return (bool) $container->make('config')->get("laranail.db-tools.guard.{$name}", true);
+        } catch (Throwable) {
+            return true;
+        }
     }
 }

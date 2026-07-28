@@ -58,19 +58,33 @@ class DatabaseConnectionTester implements DatabaseConnectionTesterInterface
         $timeout ??= (int) config('laranail.db-tools.guard.probe_timeout', 2);
         $timeout = max(1, $timeout);
 
-        // Give the *real* connection a bounded, connect-only timeout so a dead
-        // host fails fast (~timeout) instead of blocking for the driver's ~30s
-        // default — but only while the connection has not been resolved yet, so
-        // the option takes effect when it is first built. We never purge (that
-        // would close a live PDO, and wipe a :memory: sqlite database) and never
-        // clone: probing opens the real connection once and every later query
-        // reuses it, so a healthy check costs a single connection.
-        if (! array_key_exists($name, $this->resolvedConnections())) {
-            Config::set("database.connections.{$name}", $this->withConnectTimeout($config, $timeout));
+        // Already resolved this request? The PDO exists, so there is nothing to
+        // bound — just reuse it. We never purge (that would close a live PDO and
+        // wipe a :memory: sqlite database) and never clone: probing opens the
+        // real connection once and every later query reuses it, so a healthy
+        // check costs a single connection.
+        if (array_key_exists($name, $this->resolvedConnections())) {
+            return $this->test($connection);
         }
 
-        // test() opens the real connection (reused thereafter) and never throws.
-        return $this->test($connection);
+        // Not yet resolved: overlay a bounded connect timeout so a dead host
+        // fails fast (~timeout) instead of blocking for the driver's ~30s
+        // default. The overlay is restored immediately afterwards — Laravel
+        // copies the config when it builds the connection, so the timeout
+        // applies to the connection we open here without leaking into the
+        // application's configuration. Leaving it in place would silently
+        // re-apply on any later rebuild (DB::purge(), a reconnect, a recycled
+        // worker) as if the developer had configured it.
+        $key = "database.connections.{$name}";
+
+        Config::set($key, $this->withConnectTimeout($config, $timeout));
+
+        try {
+            // test() opens the real connection (reused thereafter) and never throws.
+            return $this->test($connection);
+        } finally {
+            Config::set($key, $config);
+        }
     }
 
     /**
@@ -88,9 +102,21 @@ class DatabaseConnectionTester implements DatabaseConnectionTesterInterface
     }
 
     /**
-     * Overlay a short connect timeout onto a connection config, per driver.
-     * mysql/mariadb/sqlsrv honour PDO::ATTR_TIMEOUT as the connect timeout;
-     * pgsql reads a connect_timeout DSN param; sqlite is always local (no-op).
+     * Overlay a short CONNECT timeout onto a connection config, per driver.
+     *
+     * The mapping is deliberately driver-specific because PDO::ATTR_TIMEOUT does
+     * not mean the same thing everywhere:
+     *
+     *   mysql/mariadb  PDO::ATTR_TIMEOUT → MYSQL_OPT_CONNECT_TIMEOUT. Connect-only.
+     *   pgsql          `connect_timeout` is appended to the DSN by Laravel's
+     *                  PostgresConnector. Connect-only.
+     *   sqlsrv         PDO::ATTR_TIMEOUT is the QUERY timeout, not the connect
+     *                  timeout — setting it here would cap every later query on
+     *                  the connection the probe opens (which is reused) at a
+     *                  couple of seconds. Laravel's SqlServerConnector maps
+     *                  `login_timeout` to the DSN's LoginTimeout, which is the
+     *                  correct connect-only knob.
+     *   sqlite         local; never reached (short-circuited in probe()).
      *
      * @param  array<string, mixed>  $config
      * @return array<string, mixed>
@@ -100,14 +126,16 @@ class DatabaseConnectionTester implements DatabaseConnectionTesterInterface
         $driver = $config['driver'] ?? null;
         $options = $config['options'] ?? [];
 
-        if (in_array($driver, ['mysql', 'mariadb', 'sqlsrv'], true)) {
+        if (in_array($driver, ['mysql', 'mariadb'], true)) {
             $options[PDO::ATTR_TIMEOUT] = $timeout;
         }
 
         if ($driver === 'pgsql') {
-            // Best-effort across Laravel versions: DSN param + attr.
             $config['connect_timeout'] = $timeout;
-            $options[PDO::ATTR_TIMEOUT] = $timeout;
+        }
+
+        if ($driver === 'sqlsrv') {
+            $config['login_timeout'] = $timeout;
         }
 
         $config['options'] = $options;
