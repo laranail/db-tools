@@ -41,6 +41,7 @@ use Simtabi\Laranail\DbTools\Services\Contracts\DatabaseServiceInterface;
 use Simtabi\Laranail\DbTools\Services\Contracts\MaintenanceServiceInterface;
 use Simtabi\Laranail\DbTools\Services\DatabaseService;
 use Simtabi\Laranail\DbTools\Services\MaintenanceService;
+use Throwable;
 
 final class DbToolsServiceProvider extends ServiceProvider
 {
@@ -167,7 +168,7 @@ final class DbToolsServiceProvider extends ServiceProvider
             if (method_exists($kernel, 'pushMiddleware')) {
                 $kernel->pushMiddleware(EnsureSchemaIsReady::class);
             }
-        } catch (\Throwable) {
+        } catch (Throwable) {
             // No HTTP kernel (e.g. a pure console/queue context) — nothing to guard.
         }
     }
