@@ -78,9 +78,7 @@ final class FacadeSeamTest extends TestCase
      *
      * @var list<string>
      */
-    private const array KNOWN_VIOLATIONS = [
-        'src/Schema/Concerns/HasSchemaInspection.php:36 Schema::getColumnListing',
-    ];
+    private const array KNOWN_VIOLATIONS = [];
 
     /**
      * Connection-config reads not yet migrated to the seam. Same exact-equality

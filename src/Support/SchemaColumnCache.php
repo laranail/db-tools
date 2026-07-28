@@ -29,6 +29,11 @@ final class SchemaColumnCache
     private static array $entries = [];
 
     /**
+     * @var array<string, list<string>>
+     */
+    private static array $listings = [];
+
+    /**
      * Whether $model's table has $column, resolved once per
      * connection + table + column.
      *
@@ -53,6 +58,30 @@ final class SchemaColumnCache
     }
 
     /**
+     * The column listing for $model's table, resolved once per
+     * class + connection + table.
+     *
+     * @return list<string>
+     */
+    public static function columns(Model $model): array
+    {
+        $context = ConnectionContext::forModel($model);
+        $key = $model::class.'|'.$context->key().'|'.$model->getTable();
+
+        if (array_key_exists($key, self::$listings)) {
+            return self::$listings[$key];
+        }
+
+        try {
+            return self::$listings[$key] = array_values(
+                $context->schema()->getColumnListing($model->getTable())
+            );
+        } catch (Throwable) {
+            return [];
+        }
+    }
+
+    /**
      * Forget every memoised answer.
      *
      * Needed wherever the schema changes within a process — most obviously a
@@ -61,5 +90,20 @@ final class SchemaColumnCache
     public static function flush(): void
     {
         self::$entries = [];
+        self::$listings = [];
+    }
+
+    /**
+     * Forget the memoised answers for one model class only.
+     */
+    public static function forget(string $class): void
+    {
+        $prefix = $class.'|';
+
+        foreach (array_keys(self::$listings) as $key) {
+            if (str_starts_with($key, $prefix)) {
+                unset(self::$listings[$key]);
+            }
+        }
     }
 }
