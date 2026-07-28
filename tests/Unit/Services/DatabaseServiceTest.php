@@ -155,4 +155,56 @@ final class DatabaseServiceTest extends TestCase
         self::assertSame(1, (int) $viewed->fresh()->views);
         self::assertSame(0, (int) $other->fresh()->views, 'A view of one row must not increment any other.');
     }
+
+    public function test_modify_timestamps_restores_the_models_timestamp_setting(): void
+    {
+        $model = DbServiceFixture::create(['name' => 'ts']);
+        self::assertTrue($model->timestamps);
+
+        $this->service->modifyTimestamps(['published_at' => now()->subYear()], $model);
+
+        // timestamps was switched off to write the explicit date and never
+        // switched back, so every later save on that instance silently stopped
+        // maintaining updated_at.
+        self::assertTrue($model->timestamps, 'modifyTimestamps() must not leave timestamps disabled.');
+
+        $before = $model->fresh()->updated_at;
+
+        // Timestamps have second resolution, so the clock has to move for the
+        // subsequent save to be distinguishable.
+        $this->travel(2)->seconds();
+
+        $model->name = 'touched';
+        $model->save();
+
+        self::assertNotEquals($before, $model->fresh()->updated_at);
+    }
+
+    public function test_modify_timestamps_restores_the_setting_after_a_failure(): void
+    {
+        $model = DbServiceFixture::create(['name' => 'ts']);
+
+        // A write that throws must still restore the flag.
+        $this->service->modifyTimestamps(['no_such_column' => now()], $model);
+
+        self::assertTrue($model->timestamps);
+    }
+
+    public function test_generate_relationship_sync_data_keeps_falsy_pivot_values(): void
+    {
+        // array_filter() with no callback drops every falsy value, so pivot
+        // columns legitimately set to 0, false or '' vanished from the sync
+        // payload and silently fell back to the column default.
+        $data = $this->service->generateRelationshipSyncData(['7'], [
+            'active' => 0,
+            'flagged' => false,
+            'note' => '',
+            'absent' => null,
+        ]);
+
+        self::assertSame(0, $data[7]['active']);
+        self::assertFalse($data[7]['flagged']);
+        self::assertSame('', $data[7]['note']);
+        self::assertArrayNotHasKey('absent', $data[7], 'Nulls are still dropped.');
+    }
 }
