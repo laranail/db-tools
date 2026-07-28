@@ -12,9 +12,9 @@ use Simtabi\Laranail\DbTools\Backup\BackupManager;
 use Simtabi\Laranail\DbTools\Backup\Contracts\BackupManagerInterface;
 use Simtabi\Laranail\DbTools\Console\DbToolsCommand;
 use Simtabi\Laranail\DbTools\Console\HealthCommand;
-use Simtabi\Laranail\DbTools\DbTools;
 use Simtabi\Laranail\DbTools\Events\DatabaseUnavailable;
 use Simtabi\Laranail\DbTools\Events\SchemaNotReady;
+use Simtabi\Laranail\DbTools\Facades\DbToolsFacade;
 use Simtabi\Laranail\DbTools\Files\Contracts\DatabaseFileServiceInterface;
 use Simtabi\Laranail\DbTools\Files\DatabaseFileService;
 use Simtabi\Laranail\DbTools\Guard\Contracts\DatabaseAvailabilityInterface;
@@ -58,7 +58,14 @@ final class DbToolsServiceProvider extends ServiceProvider
         $this->app->singleton(DatabaseConnectionTesterInterface::class, DatabaseConnectionTester::class);
 
         // Boot-safe availability guard (never-throws), layered on the tester + inspector.
-        $this->app->singleton(DatabaseAvailabilityInterface::class, fn ($app): DatabaseGuard => new DatabaseGuard(
+        //
+        // singletonIf, not singleton: DatabaseGuard::resolve() self-bootstraps and
+        // binds an instance when a static entry point is used before this provider
+        // registers. Rebinding here would discard that guard along with any state
+        // already applied to it — most importantly a suspend(), which would
+        // silently un-suspend. The early instance reads the same config defaults,
+        // so keeping it costs nothing.
+        $this->app->singletonIf(DatabaseAvailabilityInterface::class, fn ($app): DatabaseGuard => new DatabaseGuard(
             $app->make(DatabaseConnectionTesterInterface::class),
             $app->make(DatabaseSchemaInspectorInterface::class),
             (bool) $app->make('config')->get('laranail.db-tools.guard.memoize', true),
@@ -81,8 +88,14 @@ final class DbToolsServiceProvider extends ServiceProvider
             $app->basePath(),
         ));
 
-        if (class_exists('DbTools')) {
-            AliasLoader::getInstance()->alias('DbTools', DbTools::class);
+        // Register the facade alias only when the name is still free. The guard
+        // was inverted (`class_exists`), which registered the alias only in the
+        // case where it was already resolvable — a no-op — and skipped it
+        // otherwise. Target the facade, matching composer.json's
+        // extra.laravel.aliases; package discovery normally does this already,
+        // so this is the fallback for a manually-registered provider.
+        if (! class_exists('DbTools', false)) {
+            AliasLoader::getInstance()->alias('DbTools', DbToolsFacade::class);
         }
     }
 
