@@ -82,22 +82,36 @@ trait HasSlug
      */
     public static function checkModelSlug(string $slug): string
     {
-        return self::slugExists($slug) ? $slug.'-'.Str::lower((string) Str::ulid()) : $slug;
+        return static::slugExists($slug) ? $slug.'-'.Str::lower((string) Str::ulid()) : $slug;
     }
 
     /**
      * Whether a record with the given slug already exists.
+     *
+     * Passing null uses the model's configured destination column. These
+     * helpers used to default to a literal 'slug', ignoring
+     * getSlugDestColumnName(), so on a model that stores its slug elsewhere
+     * they queried a column that does not exist — or, worse, on a table that
+     * also happens to carry a 'slug' column, quietly answered about the wrong
+     * one.
      */
-    public static function slugExists(string $slug, string $columnName = 'slug'): bool
+    public static function slugExists(string $slug, ?string $columnName = null): bool
     {
-        return static::withoutGlobalScopes()->where($columnName, $slug)->exists();
+        return static::withoutGlobalScopes()
+            ->where($columnName ?? (new static)->getSlugDestColumnName(), $slug)
+            ->exists();
     }
 
     /**
      * Scope a query to a slug value.
+     *
+     * Passing null uses the model's configured destination column.
+     *
+     * @param  Builder<static>  $query
+     * @return Builder<static>
      */
-    public function scopeBySlug(Builder $query, string $slug, string $columnName = 'slug'): Builder
+    public function scopeBySlug(Builder $query, string $slug, ?string $columnName = null): Builder
     {
-        return $query->where($columnName, $slug);
+        return $query->where($columnName ?? $this->getSlugDestColumnName(), $slug);
     }
 }

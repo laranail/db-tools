@@ -7,6 +7,7 @@ namespace Simtabi\Laranail\DbTools\Models;
 use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Override;
 use Simtabi\Laranail\DbTools\Concerns\HasUuidsOrIntegerIds;
 
@@ -216,16 +217,32 @@ abstract class BaseModel extends Model
 
     /**
      * Reload the model's attributes from the database.
+     *
+     * Global scopes are bypassed on purpose: reloading is about this specific
+     * row, and a row that has stopped matching a scope is exactly the case
+     * where stale in-memory values are most misleading. Reading through
+     * static::query() meant such a row silently kept its old values while the
+     * call still reported success.
+     *
+     * @throws ModelNotFoundException when the row no longer exists
      */
     public function reload(): static
     {
-        if ($this->exists) {
-            $fresh = static::query()->whereKey($this->getKey())->first();
-
-            if ($fresh !== null) {
-                $this->setRawAttributes($fresh->getAttributes());
-            }
+        if (! $this->exists) {
+            return $this;
         }
+
+        $fresh = $this->newQueryWithoutScopes()->whereKey($this->getKey())->first();
+
+        if ($fresh === null) {
+            throw (new ModelNotFoundException)->setModel(static::class, [$this->getKey()]);
+        }
+
+        $this->setRawAttributes($fresh->getAttributes());
+
+        // Without this the reloaded values all counted as unsaved changes, so
+        // isModified() lied about a model just read from the database.
+        $this->syncOriginal();
 
         return $this;
     }
