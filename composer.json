@@ -53,7 +53,7 @@
         "pestphp/pest": "^4.0",
         "phpstan/phpstan": "^2.0",
         "phpunit/phpunit": "^12.5",
-        "rector/rector": "^2.0",
+        "rector/rector": "^2.5.8",
         "roave/security-advisories": "dev-latest"
     },
     "autoload": {
