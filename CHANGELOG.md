@@ -8,6 +8,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- **SQL restore is now atomic on a non-default connection.** `transactionOrFail()` opened
+  its transaction on the default connection via the `DB` facade while `SqlFileRestorer`
+  executed the statements on `DB::connection($connection)`. For any non-default connection
+  the statements therefore ran outside a transaction entirely: a failing restore left the
+  already-applied statements committed, and the rollback undid an empty transaction on a
+  different connection. `ManagesTransactions` methods now take an optional `$connection`
+  and resolve it, and the restorer passes its own through.
 - **SQL restore no longer corrupts values containing comment markers.**
   `SqlFileRestorer` stripped comments with a regex pre-pass before its string-aware scan,
   so `--` or `/* */` *inside a string literal* was treated as a comment. A value containing
