@@ -15,7 +15,13 @@ trait HasUuidsOrIntegerIds
                 return;
             }
 
-            $model->{$model->getKeyName()} = $model->newUniqueId();
+            // Only when the caller has not supplied one, matching Laravel's own
+            // HasUniqueIds. Assigning unconditionally silently replaced a
+            // pre-generated key, so anything that mints an id up front to wire
+            // up foreign keys wrote orphaned rows without an error.
+            if (empty($model->{$model->getKeyName()})) {
+                $model->{$model->getKeyName()} = $model->newUniqueId();
+            }
         });
     }
 
