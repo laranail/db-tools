@@ -29,12 +29,45 @@ trait HasJsonColumnAccessors
         $value = parent::getAttribute($key);
 
         if ($this->isJsonColumn($key) && is_string($value) && $value !== '') {
-            $decoded = json_decode($value, true);
-
-            return $decoded === null && json_last_error() !== JSON_ERROR_NONE ? $value : $decoded;
+            return $this->decodeJsonColumn($value);
         }
 
         return $value;
+    }
+
+    /**
+     * Decode json columns for array/JSON output too.
+     *
+     * Decoding lived only in getAttribute(), which toArray() does not go
+     * through, so $model->metadata was an array while
+     * $model->toArray()['metadata'] was still the raw JSON string — anything
+     * serialising the model (API resources, queued payloads, toJson()) emitted
+     * a double-encoded field.
+     *
+     * @return array<string, mixed>
+     */
+    public function attributesToArray()
+    {
+        $attributes = parent::attributesToArray();
+
+        foreach ($attributes as $key => $value) {
+            if ($this->isJsonColumn($key) && is_string($value) && $value !== '') {
+                $attributes[$key] = $this->decodeJsonColumn($value);
+            }
+        }
+
+        return $attributes;
+    }
+
+    /**
+     * Decode a stored json column, leaving malformed values as they are so a
+     * bad row surfaces rather than silently becoming null.
+     */
+    protected function decodeJsonColumn(string $value): mixed
+    {
+        $decoded = json_decode($value, true);
+
+        return $decoded === null && json_last_error() !== JSON_ERROR_NONE ? $value : $decoded;
     }
 
     public function setAttribute($key, $value)
