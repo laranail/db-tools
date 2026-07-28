@@ -35,6 +35,10 @@ final class ArchiveScope implements Scope
     #[Override]
     public function apply(Builder $builder, Model $model): void
     {
+        if (method_exists($model, 'usesArchiving') && ! $model->usesArchiving()) {
+            return;
+        }
+
         if (method_exists($model, 'getQualifiedArchivedAtColumn')) {
             $builder->whereNull($model->getQualifiedArchivedAtColumn());
         }

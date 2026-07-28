@@ -26,8 +26,23 @@ trait HasArchiver
 {
     /**
      * Indicates if the model should use archives.
+     *
+     * PHP forbids redeclaring a trait property with a different default, so a
+     * model cannot turn this off by declaring `public bool $archives = false`.
+     * Override {@see usesArchiving()} instead, or set the property at runtime.
      */
     public bool $archives = true;
+
+    /**
+     * Whether the archive scope should hide archived rows for this model.
+     *
+     * Nothing used to read $archives at all, so the documented opt-out had no
+     * effect and archived rows were hidden regardless.
+     */
+    public function usesArchiving(): bool
+    {
+        return $this->archives;
+    }
 
     /**
      * Boot the archiving trait for a model.
@@ -62,7 +77,13 @@ trait HasArchiver
 
         $this->touchOwners();
 
-        $this->runArchive();
+        // runArchive() used to discard the UPDATE's affected-row count, so a
+        // model whose row had since been deleted still reported success, fired
+        // the "archived" event and stamped the attribute for a row that was
+        // never touched.
+        if ($this->runArchive() === 0) {
+            return false;
+        }
 
         $this->fireModelEvent('archived', false);
 
@@ -71,8 +92,10 @@ trait HasArchiver
 
     /**
      * Perform the actual archive query on this model instance.
+     *
+     * @return int the number of rows the update matched
      */
-    public function runArchive(): void
+    public function runArchive(): int
     {
         $query = $this->setKeysForSaveQuery($this->newModelQuery());
 
@@ -88,9 +111,11 @@ trait HasArchiver
             $columns[$this->getUpdatedAtColumn()] = $this->fromDateTime($time);
         }
 
-        $query->update($columns);
+        $affected = $query->update($columns);
 
         $this->syncOriginalAttributes(array_keys($columns));
+
+        return $affected;
     }
 
     /**
@@ -98,13 +123,18 @@ trait HasArchiver
      */
     public function unArchive(): ?bool
     {
+        // archive() guards on this; unArchive() did not, and set exists = true
+        // unconditionally — so an unsaved model issued an UPDATE against a row
+        // that does not exist and reported success.
+        if (! $this->exists) {
+            return null;
+        }
+
         if ($this->fireModelEvent('unArchiving') === false) {
             return false;
         }
 
         $this->{$this->getArchivedAtColumn()} = null;
-
-        $this->exists = true;
 
         $result = $this->save();
 

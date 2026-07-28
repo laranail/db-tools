@@ -18,6 +18,26 @@ final class ArchivableWidget extends Model
     protected $guarded = [];
 }
 
+/**
+ * A model that opts out of archiving via the documented $archives flag.
+ */
+final class UnarchivableWidget extends Model
+{
+    use HasArchiver;
+
+    protected $table = 'archivable_widgets';
+
+    protected $guarded = [];
+
+    // The trait declares $archives as a typed property with a default, and
+    // PHP forbids redeclaring a trait property with a different default — so
+    // the accessor is the override path.
+    public function usesArchiving(): bool
+    {
+        return false;
+    }
+}
+
 final class HasArchiverTest extends TestCase
 {
     protected function setUp(): void
@@ -80,5 +100,48 @@ final class HasArchiverTest extends TestCase
         ArchivableWidget::create(['name' => 'e'])->archive();
 
         self::assertSame(['archiving', 'archived'], $fired);
+    }
+
+    public function test_archive_reports_failure_when_no_row_was_matched(): void
+    {
+        $widget = ArchivableWidget::create(['name' => 'vanishing']);
+
+        // The row is gone, but the in-memory model still believes it exists.
+        // runArchive() discarded the UPDATE's affected-row count, so archive()
+        // returned true, fired the "archived" event and stamped the attribute
+        // for a row that was never touched.
+        ArchivableWidget::query()->withArchived()->whereKey($widget->getKey())->delete();
+
+        self::assertFalse($widget->archive());
+    }
+
+    public function test_un_archive_refuses_a_model_that_was_never_persisted(): void
+    {
+        $widget = new ArchivableWidget(['name' => 'never saved']);
+
+        // archive() guards on $this->exists; unArchive() did not, and set
+        // exists = true unconditionally — so save() issued an UPDATE for a row
+        // that does not exist and reported success.
+        self::assertNull($widget->unArchive());
+        self::assertFalse($widget->exists);
+    }
+
+    public function test_archives_flag_opts_a_model_out_of_the_global_scope(): void
+    {
+        // $archives is public API in the trait and documented as the switch,
+        // but nothing ever read it: the scope applied regardless, so a model
+        // that opted out still had its archived rows hidden.
+        $widget = UnarchivableWidget::create(['name' => 'always visible']);
+        $widget->archive();
+
+        self::assertSame(1, UnarchivableWidget::query()->count());
+    }
+
+    public function test_archives_flag_left_on_still_hides_archived_rows(): void
+    {
+        $widget = ArchivableWidget::create(['name' => 'hidden']);
+        $widget->archive();
+
+        self::assertSame(0, ArchivableWidget::query()->count());
     }
 }
