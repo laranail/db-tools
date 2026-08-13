@@ -1,6 +1,6 @@
 # laranail/db-tools
 
-[![Latest tag](https://img.shields.io/github/v/tag/laranail/db-tools?style=flat-square&label=version)](https://github.com/laranail/db-tools/releases)
+[![Latest version on Packagist](https://img.shields.io/packagist/v/laranail/db-tools.svg)](https://packagist.org/packages/laranail/db-tools)
 [![Tests](https://github.com/laranail/db-tools/actions/workflows/tests.yml/badge.svg)](https://github.com/laranail/db-tools/actions/workflows/tests.yml)
 [![Static analysis](https://github.com/laranail/db-tools/actions/workflows/static-analysis.yml/badge.svg)](https://github.com/laranail/db-tools/actions/workflows/static-analysis.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
