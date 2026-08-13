@@ -187,6 +187,162 @@ $order->toArray()['metadata'];         // ['via' => 'fedex'] — decoded here to
 Malformed JSON is left as the raw string rather than becoming `null`, so a bad
 row surfaces instead of silently emptying.
 
+## Inheritance traits
+
+Four traits for model hierarchies, where a subclass needs to *extend* a
+declaration it inherits rather than replace it. Laravel's `$fillable`,
+`$hidden`, `$casts` and `$attributes` are plain properties, so a subclass that
+redeclares one drops everything the parent put there — silently. These traits
+add a method seam alongside each property: the subclass declares only its own
+additions and the inherited entries are merged in.
+
+Apply them on the base model. Subclasses need nothing but the `additional*()`
+override; re-applying a trait further down the chain is allowed and composes.
+
+| Trait | Subclass hook | Extends |
+|-------|---------------|---------|
+| `HasMergedFillable` | `additionalFillable(): array` | `$fillable` |
+| `HasMergedHidden` | `additionalHidden(): array` | `$hidden` |
+| `HasMergedCasts` | `additionalCasts(): array` | `$casts` / `casts()` |
+| `HasDefaultAttributes` | `additionalAttributes(): array` | `$attributes` |
+| `HasExtendedModel` | — | all four at once |
+
+### `HasExtendedModel`
+
+The aggregate. Applies the other four; adds nothing of its own.
+
+```php
+use Simtabi\Laranail\DbTools\Concerns\HasExtendedModel;
+
+class AccountModel extends Model
+{
+    use HasExtendedModel;
+
+    protected $fillable = ['email', 'password'];
+
+    protected $hidden = ['password'];
+
+    protected $attributes = ['status' => 'active'];
+
+    protected function casts(): array
+    {
+        return ['password' => 'hashed'];
+    }
+}
+```
+
+A subclass then adds to each of those without restating any of them:
+
+```php
+final class Member extends AccountModel
+{
+    protected function additionalFillable(): array
+    {
+        return ['credit_limit'];
+    }
+
+    protected function additionalCasts(): array
+    {
+        return ['credit_limit' => 'integer'];
+    }
+
+    protected function additionalAttributes(): array
+    {
+        return ['credit_limit' => 2];
+    }
+}
+
+(new Member)->getFillable();  // ['email', 'password', 'credit_limit']
+(new Member)->credit_limit;   // 2 — before any save
+```
+
+It deliberately does **not** touch `$guarded`. Mass-assignment policy belongs to
+the model; a composition trait that sets `$guarded = []` makes every attribute
+mass-assignable on any model whose `$fillable` is empty, and fatals outright on
+a model that declares its own `$guarded` with a different value.
+
+### `HasMergedFillable`
+
+`getFillable()` returns the inherited list plus `additionalFillable()`.
+Duplicates are removed and the result re-indexed, so a subclass repeating an
+inherited column is harmless. `additionalFillable()` is consulted on every
+`fill()` — keep it pure.
+
+### `HasMergedHidden`
+
+`getHidden()` returns the inherited list plus `additionalHidden()`. This one
+matters more than fillable does: a subclass that restates `$hidden` and forgets
+one inherited entry starts leaking it through `toArray()` / `toJson()` with
+nothing to notice. Merging makes the hidden set append-only down the hierarchy.
+
+### `HasMergedCasts`
+
+`getCasts()` returns the inherited cast map plus `additionalCasts()`. An
+addition wins for a key that is already cast, so a subclass can also re-cast an
+inherited column.
+
+The trait hooks `getCasts()` rather than the more obvious `casts()`, because a
+trait method loses to a method declared in the class body — silently, with no
+error. A base model using the idiomatic Laravel 11+ form:
+
+```php
+protected function casts(): array
+{
+    return ['status' => 'string'];
+}
+```
+
+would shadow a trait-provided `casts()` outright, and every subclass's
+`additionalCasts()` would simply never be consulted — the columns would just
+stop being cast, with nothing failing. `getCasts()` has no such problem:
+Laravel folds `casts()` into the `$casts` property once, in
+`initializeHasAttributes()`, and every casting decision (`hasCast()`,
+`castAttribute()`, `attributesToArray()`) reads `getCasts()`. Declaring
+`casts()` and using this trait therefore compose correctly.
+
+### `HasDefaultAttributes`
+
+`additionalAttributes()` tops up whatever `$attributes` already provides,
+without redeclaring it:
+
+```php
+use Simtabi\Laranail\DbTools\Concerns\HasDefaultAttributes;
+
+class InvoiceModel extends Model
+{
+    use HasDefaultAttributes;
+
+    protected $attributes = ['status' => 'draft'];
+
+    protected function additionalAttributes(): array
+    {
+        return ['currency' => 'KES'];
+    }
+}
+```
+
+The defaults are applied in `initializeHasDefaultAttributes()`, the per-trait
+initializer Laravel runs from the model constructor. That timing is the point:
+
+- **Before `syncOriginal()`** — a default is part of the model's original
+  state, so it never shows up in `getDirty()`.
+- **Before `fill()`** — constructor input still wins, *including an explicit
+  `null`*. Only genuinely absent keys get a default; the test is
+  `array_key_exists()`, not `isset()`.
+- **Not during hydration** — `newFromBuilder()` replaces the attribute array
+  wholesale via `setRawAttributes()`, so a row loaded from the database is never
+  retro-fitted. What is stored is what you get.
+
+> Applying defaults any later is a data-integrity hazard, not a style choice.
+> Overriding `getAttributes()` — the low-level accessor behind `syncOriginal()`,
+> `getAttributesForInsert()`, `replicate()` and `attributesToArray()` — makes a
+> stored `NULL` read back as the default *and* written back to the database as
+> the default on the next save, and invents values for columns a partial
+> `select()` never loaded.
+
+Like Laravel's own `$attributes`, this cannot cover a query-builder `insert()`,
+which never instantiates a model.
+
 ## Behavior traits
 
 ### `HasQuietSaving`

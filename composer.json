@@ -1,6 +1,6 @@
 {
     "name": "laranail/db-tools",
-    "description": "Independent Laravel database utilities \u2014 model traits (UUID/NanoID/ULID, audit log, soft-deletes-with-undo, soft-archive, JSON accessors), casts (money, datetime), schema macros & field groups, backup/restore, a database CLI command, connection & table inspection, a session read-model, and cursor + offset pagination.",
+    "description": "Independent Laravel database utilities \u2014 model traits (UUID/NanoID/ULID, audit log, soft-deletes-with-undo, soft-archive, JSON accessors, inheritance-friendly fillable/hidden/casts/defaults), casts (money, datetime), schema macros & field groups, backup/restore, a database CLI command, connection & table inspection, a session read-model, and cursor + offset pagination.",
     "keywords": [
         "laravel",
         "database",

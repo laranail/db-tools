@@ -5,7 +5,7 @@
 [![Static analysis](https://github.com/laranail/db-tools/actions/workflows/static-analysis.yml/badge.svg)](https://github.com/laranail/db-tools/actions/workflows/static-analysis.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-> Independent, framework-agnostic database utilities for Laravel — model traits (UUID/NanoID/ULID keys, JSON accessors, slugs, soft-archiving), money & datetime casts, schema macros, an audit observer, backup/restore, a database CLI, cursor/offset pagination, and inspection services.
+> Independent, framework-agnostic database utilities for Laravel — model traits (UUID/NanoID/ULID keys, JSON accessors, slugs, soft-archiving, inheritance-friendly fillable/hidden/casts/defaults), money & datetime casts, schema macros, an audit observer, backup/restore, a database CLI, cursor/offset pagination, and inspection services.
 
 PHP `^8.4 || ^8.5` on Laravel `^13` — depends only on `illuminate/*` plus a few small libraries, with **no dependency** on other Laranail packages.
 

@@ -7,6 +7,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Five inheritance traits under `Concerns\`** — `HasMergedFillable`,
+  `HasMergedHidden`, `HasMergedCasts`, `HasDefaultAttributes`, and the
+  `HasExtendedModel` aggregate over all four. They let a subclass *extend* an
+  inherited `$fillable` / `$hidden` / `$casts` / `$attributes` declaration by
+  declaring only its additions (`additionalFillable()`, `additionalHidden()`,
+  `additionalCasts()`, `additionalAttributes()`), instead of redeclaring the
+  property and silently dropping whatever the parent put there. See
+  [docs/tools/traits.md](docs/tools/traits.md#inheritance-traits).
+
+  Two details are load-bearing and differ from the obvious implementation:
+
+  - `HasMergedCasts` hooks `getCasts()`, not `casts()`. A trait method loses to
+    a method declared in the class body with no error, so a base model
+    declaring the idiomatic `protected function casts(): array` would shadow a
+    trait-provided `casts()` and every subclass's `additionalCasts()` would
+    never be consulted — the columns would just stop being cast.
+  - `HasDefaultAttributes` applies defaults in the constructor-time trait
+    initializer, not by overriding `getAttributes()`. `getAttributes()` backs
+    `syncOriginal()`, `getAttributesForInsert()`, `replicate()` and
+    `attributesToArray()`; injecting defaults there makes a stored `NULL` read
+    back as the default *and* be written back to the database as the default on
+    the next save, and invents values for columns a partial `select()` never
+    loaded.
+
 ## [0.7.0] - 2026-07-28
 
 A correctness sweep over the whole package, plus a structural fix for the bug
