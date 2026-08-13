@@ -67,6 +67,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **`laranail.db-tools.clean.protected_tables`** config key.
 
+- **`laranail.db-tools.schema.blueprint_macros`** — installs `BlueprintMacros`
+  so its `id()` / `foreignId()` / `morphs()` / `nullableMorphs()` overrides
+  actually run. Off by default: it changes the column type every `id()` in the
+  application produces.
+
+  `BlueprintMacros` was inert. It was documented as "wire it into a custom
+  schema builder", which no application did, so nothing installed it — the
+  overrides never ran and `registerDriverSetup()` was unreachable outside a docs
+  example. The flag binds it over `Illuminate\Database\Schema\Blueprint` in the
+  container, which is the seam Laravel's schema builder resolves every blueprint
+  through. `Schema::blueprintResolver()` is not used:
+  `Connection::getSchemaBuilder()` returns a new builder per call, so a resolver
+  set on one instance is lost on the next.
+
+  `registerDriverSetup()` callbacks now run **once per connection** rather than
+  once per blueprint — a migration touching forty tables should not issue the
+  same `SET SESSION` forty times. `BlueprintMacros::flushDriverSetupState()`
+  resets that after a reconnect.
+
 - **Five inheritance traits under `Concerns\`** — `HasMergedFillable`,
   `HasMergedHidden`, `HasMergedCasts`, `HasDefaultAttributes`, and the
   `HasExtendedModel` aggregate over all four. They let a subclass *extend* an

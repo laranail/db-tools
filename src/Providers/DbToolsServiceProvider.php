@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Simtabi\Laranail\DbTools\Providers;
 
 use Illuminate\Contracts\Http\Kernel as HttpKernelContract;
+use Illuminate\Database\Schema\Blueprint as IlluminateBlueprint;
 use Illuminate\Foundation\AliasLoader;
 use Illuminate\Routing\Router;
 use Illuminate\Support\ServiceProvider;
@@ -131,6 +132,19 @@ final class DbToolsServiceProvider extends ServiceProvider
         // Keep the custom BlueprintMacros builder aligned with the configured
         // key type so its id()/foreignId()/morphs() overrides match the macros.
         BlueprintMacros::setIdTypeResolver(static fn (): string => ConfiguredMorphsMacro::idType());
+
+        // Opt-in: bind BlueprintMacros over Laravel's Blueprint so the
+        // overrides actually run. Laravel's schema builder resolves every
+        // blueprint through Container::make(Blueprint::class, ...) when no
+        // resolver is set (Schema\Builder::createBlueprint()), so the binding
+        // reaches every connection with nothing else to wire.
+        //
+        // Not Schema::blueprintResolver(): Connection::getSchemaBuilder()
+        // returns a new builder on each call, so a resolver set on one instance
+        // is lost on the next.
+        if ((bool) config('laranail.db-tools.schema.blueprint_macros', false)) {
+            $this->app->bind(IlluminateBlueprint::class, BlueprintMacros::class);
+        }
 
         AuditColumnsMacro::register();
         SoftDeletesWithUndoMacro::register();

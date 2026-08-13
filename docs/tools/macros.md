@@ -99,26 +99,44 @@ type. Most apps publish the migration rather than calling this macro directly.
 
 ## `BlueprintMacros`
 
-An extended `Blueprint` subclass (`extends Illuminate\…\Blueprint`) that makes
-`id()`, `foreignId()`, `morphs()`, and `nullableMorphs()` resolve their column
-type from a configurable resolver — so one set of migrations works whether your
-app uses BIGINT, UUID, or ULID keys. Wire it into a custom schema builder, then
-configure it statically.
+An extended `Blueprint` subclass that makes `id()`, `foreignId()`, `morphs()`
+and `nullableMorphs()` resolve their column type from your configured key type —
+so one set of migrations works whether the app uses BIGINT, UUID or ULID keys.
+
+> Before 0.7.1 this class was documented as "wire it into a custom schema
+> builder", which no application did. Nothing installed it, so the overrides
+> never ran and `registerDriverSetup()` was unreachable. It is installed by a
+> config flag now.
+
+### Enabling it
 
 ```php
-use Simtabi\Laranail\DbTools\Schema\BlueprintMacros;
-
-// Resolve the id type once (e.g. from config). Returns 'UUID', 'ULID',
-// or anything else (treated as BIGINT).
-BlueprintMacros::setIdTypeResolver(fn (): string => 'UUID');
-
-// Optional: per-driver setup callback, run on Blueprint construction.
-BlueprintMacros::registerDriverSetup('pgsql', function ($connection): void {
-    // e.g. ensure an extension exists
-});
+// config/laranail/db-tools.php
+'schema' => [
+    'blueprint_macros' => true,
+],
 ```
 
-With the resolver returning `'UUID'`:
+The provider then binds `BlueprintMacros` over `Illuminate\Database\Schema\Blueprint`
+in the container. Laravel's schema builder resolves every blueprint through
+`Container::make(Blueprint::class, …)` when no resolver is set, so the binding
+reaches every connection and every migration with nothing else to wire.
+
+**It is off by default on purpose.** It changes the column type every `id()` in
+your application produces, which is not a decision a package should make for
+you. The [field-group macros](#field-group-macros) and the configured-morphs
+macros are always registered and need no flag.
+
+> `Schema::blueprintResolver()` is deliberately not used.
+> `Connection::getSchemaBuilder()` returns a **new** builder on each call, so a
+> resolver set on one instance is lost on the next, and the behaviour would
+> depend on whether the caller happened to go through the cached `Schema` facade.
+
+### What it resolves to
+
+The id type comes from `laranail.db-tools.id_type` and the `using_uuids_for_id`
+/ `using_ulids_for_id` flags — the same source the macros use, so the two can
+never disagree. With UUID configured:
 
 | Method | Resolves to |
 |--------|-------------|
@@ -127,9 +145,27 @@ With the resolver returning `'UUID'`:
 | `morphs()` | `uuidMorphs()` |
 | `nullableMorphs()` | `nullableUuidMorphs()` |
 
-`'ULID'` resolves to the `ulid*` equivalents; any other value falls back to the
-parent BIGINT behavior. A per-driver setup callback that throws is swallowed so
-migrations are not blocked.
+ULID resolves to the `ulid*` equivalents; anything else falls back to the parent
+BIGINT behaviour.
+
+### Per-driver setup
+
+```php
+use Simtabi\Laranail\DbTools\Schema\BlueprintMacros;
+
+BlueprintMacros::registerDriverSetup('mysql', function ($connection): void {
+    $connection->statement('SET SESSION sql_require_primary_key=0');
+});
+```
+
+Runs **once per connection**, on the first blueprint built for it — not once per
+blueprint. A migration touching forty tables should not issue the same
+`SET SESSION` forty times.
+
+The trade-off: setup is session state, so a reconnect loses it and it will not
+re-apply until `BlueprintMacros::flushDriverSetupState()` is called. Use it for
+session tuning, not for anything correctness depends on. A callback that throws
+is logged via `error_log()` and never blocks the migration.
 
 ## Field-group macros
 

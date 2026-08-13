@@ -80,6 +80,26 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Schema blueprint
+    |--------------------------------------------------------------------------
+    |
+    | blueprint_macros — bind BlueprintMacros over Laravel's Blueprint so that
+    | id(), foreignId(), morphs() and nullableMorphs() follow "id_type" above
+    | in every migration, and so registerDriverSetup() callbacks run.
+    |
+    | Off by default: it changes the column type every id() in the application
+    | produces, which is not something a package should decide for you. The
+    | *macros* (auditColumns, configuredMorphs, the field groups) are always
+    | registered and need no flag.
+    |
+    */
+
+    'schema' => [
+        'blueprint_macros' => env('DB_TOOLS_BLUEPRINT_MACROS', false),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Backup & restore
     |--------------------------------------------------------------------------
     |
