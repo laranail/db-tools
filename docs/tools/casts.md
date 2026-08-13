@@ -16,17 +16,24 @@ value object. This avoids the rounding pitfalls of float money.
 > (e.g. `$order->amount->getAmount()` for the major-unit value, or compare with
 > `->isEqualTo(...)`).
 
-- `get`: `Money::ofMinor((int) $value, $currency)` — minor units → `Money`.
+- `get`: minor units → `Money`. A fractional stored value (a `DECIMAL` column,
+  or a driver handing back strings) is **rounded**, not truncated — `(int)
+  '1050.7'` is `1050`, which loses money quietly and makes a round trip
+  non-idempotent against the half-up rounding on the way in.
 - `set`: a `Money` instance is stored as its integer minor amount; a numeric
-  value (int/float/numeric-string) is treated as **major units** and converted
-  to minor units (`HALF_UP` rounding). A non-numeric, non-`Money` value throws
+  value (int/float/numeric-string) is treated as **major units** and converted.
+  Both paths round `HALF_UP`. A non-numeric, non-`Money` value throws
   `InvalidArgumentException`; `null` passes through unchanged.
 
 ### Currency resolution
 
-The currency comes from the cast argument first, falling back to
-`config('laranail.db-tools.money.default_currency')` (which itself defaults to
-`USD`). See [Configuration](../configuration.md#money).
+| Cast argument | Currency |
+|---|---|
+| `CastMoney::class.':EUR'` | fixed — EUR |
+| `CastMoney::class.':@currency'` | per row — read from the `currency` column |
+| `CastMoney::class` | `laranail.db-tools.money.default_currency`, else `USD` |
+
+See [Configuration](../configuration.md#money).
 
 ```php
 use Simtabi\Laranail\DbTools\Casts\CastMoney;
@@ -45,6 +52,50 @@ $order->amount = Money::of('19.99', 'USD');  // stored as 1999 (minor units)
 $order->amount = 19.99;                       // major units -> stored as 1999
 $order->amount;                               // Brick\Money\Money (USD 19.99)
 $order->amount = 'abc';                       // throws InvalidArgumentException
+```
+
+### Per-row currency
+
+For a multi-currency table, where an amount means nothing without the row that
+carries it, point the cast at a sibling column with `@`:
+
+```php
+class Wallet extends Model
+{
+    protected $casts = ['balance' => CastMoney::class.':@currency'];
+}
+```
+
+The column may hold a plain code or a backed enum. This mode is **strict**: if
+the column was not loaded, or holds nothing, the cast throws
+`Exceptions\MoneyCurrencyException` rather than substituting a default. Quietly
+falling back to `USD` would read a KES balance back as dollars and, on the next
+save, write it back that way — silent, and unrecoverable once it has spread.
+
+| Situation | Code | Behaviour |
+|---|---|---|
+| Column absent from the loaded attributes (a partial `select()`) | 2101 | throws |
+| Column loaded but `null` or blank | 2102 | throws |
+| A `Money` assigned whose currency contradicts the row's | 2103 | throws |
+| Stored value is not a usable minor amount | 2104 | throws |
+| A bare number assigned before the currency column is set | 2105 | throws |
+
+The last one is an ordering constraint, and it has two fixes. Converting major
+units to minor needs the currency's scale — 2 for USD, 0 for JPY, 3 for KWD —
+so there is nothing safe to assume:
+
+```php
+// Throws (2105): balance is assigned before currency is known.
+Wallet::create(['balance' => 100.00, 'currency' => 'KES']);
+
+// Fine — the currency is set first.
+Wallet::create(['currency' => 'KES', 'balance' => 100.00]);
+
+// Fine — Money carries its own currency, so order does not matter.
+Wallet::create(['balance' => Money::of('100.00', 'KES'), 'currency' => 'KES']);
+
+// Fine — a loaded row already has its currency in the attribute array.
+$wallet->balance = 250.50;
 ```
 
 ### Serialization

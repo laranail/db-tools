@@ -7,7 +7,43 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **`Casts\CastMoney` no longer truncates a fractional stored value.** `get()`
+  did `(int) $value`, so a `DECIMAL` column — or a driver handing back strings —
+  lost the fraction: `'1050.7'` became `1050`. It rounds half-up now, matching
+  the rounding on the way in, so a write-then-read round trip is idempotent.
+- **`CastMoney`'s two `set()` branches now round identically.** The `Money`
+  branch called `getMinorAmount()->toInt()` with no rounding mode, so a Money
+  built with a custom context threw `RoundingNecessaryException` while the
+  numerically identical string silently rounded half-up. Same input, two
+  outcomes.
+- **`CastMoney::serialize()` resolves the currency the same way `get()` does.**
+  Its defensive raw-value branch fell back to the global default currency,
+  which under a per-row currency is the wrong answer.
+
 ### Added
+
+- **`CastMoney` per-row currency: `CastMoney::class.':@currency'`.** Points the
+  cast at a sibling column instead of a fixed code, for multi-currency tables
+  where an amount means nothing without the row that carries it. The column may
+  hold a plain code or a backed enum.
+
+  The mode is deliberately strict — an unloaded column, an empty column, or a
+  `Money` whose currency contradicts the row's all throw
+  `Exceptions\MoneyCurrencyException` rather than substituting a default.
+  Falling back to `USD` would read a KES balance back as dollars and write it
+  back that way on the next save; silent, and unrecoverable once it spreads.
+
+  One ordering constraint comes with it: assigning a bare number before the
+  currency column is set throws (code 2105), because converting major units to
+  minor needs the currency's scale — 2 for USD, 0 for JPY, 3 for KWD. Assign
+  the currency first, or assign a `Money`, which carries its own. A loaded row
+  already has its currency and needs no particular order. See
+  [docs/tools/casts.md](docs/tools/casts.md#per-row-currency).
+
+- **`Exceptions\MoneyCurrencyException`** (codes 2101-2105) for the five ways a
+  money currency can be unresolvable or contradictory.
 
 - **Five inheritance traits under `Concerns\`** — `HasMergedFillable`,
   `HasMergedHidden`, `HasMergedCasts`, `HasDefaultAttributes`, and the
