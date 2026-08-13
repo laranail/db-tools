@@ -41,6 +41,15 @@ php artisan laranail::db-tools.db clean   --tables=cache,sessions --force
 - **`--dry-run` never prompts**, since it destroys nothing. Before 0.6.0 the
   confirmation ran first, so a dry run in CI hit the "re-run with `--force`"
   skip and exited 0 without printing what it would have done.
+- **`clean` will not truncate a protected table.** The list lives at
+  `laranail.db-tools.clean.protected_tables` and holds `migrations` by default;
+  naming one is refused before the prompt. The confirmation is not a guard —
+  `--force` removes it, and `--force` is what CI uses.
+- **`clean` disables foreign key constraints for the run and wraps it in a
+  transaction.** Table order stops mattering, including for circular
+  references, which have no valid order at all. See
+  [`CleanDatabaseService`](services.md#cleandatabaseservice) for the honest
+  limit of that transaction on MySQL.
 
 ### Exit codes
 

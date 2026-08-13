@@ -61,6 +61,25 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Truncation guard
+    |--------------------------------------------------------------------------
+    |
+    | Tables CleanDatabaseService will never truncate. Naming one explicitly is
+    | refused; a whole-database clean skips them.
+    |
+    | "migrations" is here because truncating it strands the schema at an
+    | unknown version with no record of how it got there, and the confirmation
+    | prompt is not a guard — --force removes it, and --force is what CI uses.
+    | Add anything else whose loss is not recoverable from a re-seed.
+    |
+    */
+
+    'clean' => [
+        'protected_tables' => ['migrations'],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Backup & restore
     |--------------------------------------------------------------------------
     |

@@ -37,6 +37,8 @@ use Simtabi\Laranail\DbTools\Schema\FieldGroupMacros;
 use Simtabi\Laranail\DbTools\Schema\SchemaReadiness;
 use Simtabi\Laranail\DbTools\Schema\SoftDeleteHistoryMacro;
 use Simtabi\Laranail\DbTools\Schema\SoftDeletesWithUndoMacro;
+use Simtabi\Laranail\DbTools\Services\CleanDatabaseService;
+use Simtabi\Laranail\DbTools\Services\Contracts\CleanDatabaseServiceInterface;
 use Simtabi\Laranail\DbTools\Services\Contracts\DatabaseServiceInterface;
 use Simtabi\Laranail\DbTools\Services\Contracts\MaintenanceServiceInterface;
 use Simtabi\Laranail\DbTools\Services\DatabaseService;
@@ -85,6 +87,9 @@ final class DbToolsServiceProvider extends ServiceProvider
 
         // General DB service
         $this->app->singleton(DatabaseServiceInterface::class, DatabaseService::class);
+
+        // Truncation with foreign keys handled and protected tables honoured.
+        $this->app->singleton(CleanDatabaseServiceInterface::class, CleanDatabaseService::class);
 
         // Filesystem maintenance (caches, logs, storage symlink)
         $this->app->singleton(MaintenanceServiceInterface::class, fn ($app): MaintenanceService => new MaintenanceService(

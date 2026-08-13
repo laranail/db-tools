@@ -9,6 +9,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **`laranail::db-tools.db clean` no longer half-empties a database.** It
+  truncated in a bare loop with no foreign-key handling and no transaction, so
+  `--tables=users,posts` with a `posts.user_id` constraint failed partway on
+  MySQL — and on PostgreSQL without `CASCADE` — after already emptying every
+  table before the one that threw. Constraints are now disabled for the whole
+  run and the run is wrapped in a transaction, so table order stops mattering,
+  including for circular references.
+- **`clean` will not truncate the migration ledger.** There was no exclusion
+  list at all, so `--tables=migrations` stranded the schema at an unknown
+  version, and the confirmation prompt was no guard — `--force` removes it, and
+  `--force` is what CI uses. `laranail.db-tools.clean.protected_tables` (default
+  `['migrations']`) is refused before the prompt.
+
 - **`Casts\CastMoney` no longer truncates a fractional stored value.** `get()`
   did `(int) $value`, so a `DECIMAL` column — or a driver handing back strings —
   lost the fraction: `'1050.7'` became `1050`. It rounds half-up now, matching
@@ -44,6 +57,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **`Exceptions\MoneyCurrencyException`** (codes 2101-2105) for the five ways a
   money currency can be unresolvable or contradictory.
+
+- **`Services\CleanDatabaseService`** (+ `CleanDatabaseServiceInterface`,
+  `CleanDatabaseResult`, `Exceptions\CleanDatabaseException`) — truncation as a
+  service rather than a loop inside a command. `truncate()` for an explicit
+  list, `truncateAll(except: [...])` for everything else. The CLI's `clean`
+  action delegates to it. See
+  [docs/tools/services.md](docs/tools/services.md#cleandatabaseservice).
+
+- **`laranail.db-tools.clean.protected_tables`** config key.
 
 - **Five inheritance traits under `Concerns\`** — `HasMergedFillable`,
   `HasMergedHidden`, `HasMergedCasts`, `HasDefaultAttributes`, and the
