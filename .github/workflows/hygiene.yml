@@ -1,0 +1,57 @@
+name: Release hygiene
+
+# Two checks that nothing else catches, because both failure modes look healthy
+# from the outside.
+#
+# A SHA-pinned action is the supply-chain control, but the version comment beside
+# it is what a reviewer reads, and nothing keeps the two in step. A pin can also
+# be perfectly self-consistent and a year stale: laranail/confetti carried
+# setup-php 2.34.1 for fourteen months because the github-actions ecosystem sat on
+# the default limit of five open pull requests and had filed exactly five.
+#
+# Pre-1.0 the tag moves and consumers resolve ^0.1 through it, so a tag left
+# behind main does not ship them older features, it ships them code without the
+# fixes. Fifteen repositories in this org were in that state when this was written.
+
+on:
+  schedule:
+    - cron: '0 7 * * 1'
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - '.github/workflows/**'
+      - 'scripts/verify-action-pins.py'
+      - 'scripts/verify-tag-currency.sh'
+
+permissions:
+  contents: read
+
+jobs:
+  pins:
+    name: Action pins
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Verify every pin is honest and current
+        run: python3 scripts/verify-action-pins.py
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  tag:
+    name: Release currency
+    runs-on: ubuntu-latest
+
+    # Not on pull requests: the tag is expected to lag between pushing a commit
+    # and moving it, and a job that fails for the minute in between is one people
+    # learn to ignore.
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Verify the moving tag is on main
+        run: bash scripts/verify-tag-currency.sh ${{ github.repository }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
