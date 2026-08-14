@@ -26,7 +26,7 @@ class SeedFileException extends DbToolsException
     {
         return new self(
             'fakerphp/faker is not installed, so no generator can be created. '
-            . 'Run `composer require --dev fakerphp/faker`.',
+            .'Run `composer require --dev fakerphp/faker`.',
         );
     }
 

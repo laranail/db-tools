@@ -7,8 +7,8 @@ namespace Simtabi\Laranail\DbTools\Tests\Unit\Seeding;
 use Faker\Generator;
 use Illuminate\Support\Facades\File;
 use PHPUnit\Framework\Attributes\Test;
-use Simtabi\Laranail\DbTools\Seeding\Concerns\InteractsWithSeedFiles;
 use Simtabi\Laranail\DbTools\Exceptions\SeedFileException;
+use Simtabi\Laranail\DbTools\Seeding\Concerns\InteractsWithSeedFiles;
 use Simtabi\Laranail\DbTools\Tests\TestCase;
 
 final class InteractsWithSeedFilesTest extends TestCase
@@ -21,15 +21,15 @@ final class InteractsWithSeedFilesTest extends TestCase
     {
         parent::setUp();
 
-        $this->sandbox = sys_get_temp_dir() . '/laranail-seedfiles-' . bin2hex(random_bytes(6));
-        File::ensureDirectoryExists($this->sandbox . '/nested');
+        $this->sandbox = sys_get_temp_dir().'/laranail-seedfiles-'.bin2hex(random_bytes(6));
+        File::ensureDirectoryExists($this->sandbox.'/nested');
 
-        File::put($this->sandbox . '/countries.json', json_encode(['KE', 'TZ', 'UG']));
-        File::put($this->sandbox . '/broken.json', 'not json at all');
-        File::put($this->sandbox . '/notes.txt', 'hello');
-        File::put($this->sandbox . '/nested/b.json', '[]');
-        File::put($this->sandbox . '/nested/a.json', '[]');
-        File::put($this->sandbox . '/nested/c.csv', 'x');
+        File::put($this->sandbox.'/countries.json', json_encode(['KE', 'TZ', 'UG']));
+        File::put($this->sandbox.'/broken.json', 'not json at all');
+        File::put($this->sandbox.'/notes.txt', 'hello');
+        File::put($this->sandbox.'/nested/b.json', '[]');
+        File::put($this->sandbox.'/nested/a.json', '[]');
+        File::put($this->sandbox.'/nested/c.csv', 'x');
 
         $this->seeder = new class
         {
@@ -186,7 +186,7 @@ final class InteractsWithSeedFilesTest extends TestCase
         $this->seeder->setSeedFileBasePath($this->sandbox);
 
         self::assertSame(
-            [$this->sandbox . '/nested/a.json', $this->sandbox . '/nested/b.json', $this->sandbox . '/nested/c.csv'],
+            [$this->sandbox.'/nested/a.json', $this->sandbox.'/nested/b.json', $this->sandbox.'/nested/c.csv'],
             $this->seeder->seedFiles('nested'),
         );
     }
@@ -197,11 +197,11 @@ final class InteractsWithSeedFilesTest extends TestCase
         $this->seeder->setSeedFileBasePath($this->sandbox);
 
         self::assertSame(
-            [$this->sandbox . '/nested/a.json', $this->sandbox . '/nested/b.json'],
+            [$this->sandbox.'/nested/a.json', $this->sandbox.'/nested/b.json'],
             $this->seeder->seedFiles('nested', 'json'),
         );
         self::assertSame(
-            [$this->sandbox . '/nested/c.csv'],
+            [$this->sandbox.'/nested/c.csv'],
             $this->seeder->seedFiles('nested', '.csv'),
         );
     }
