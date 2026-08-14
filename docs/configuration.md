@@ -143,5 +143,28 @@ matters wherever the path can come from a request. The docblock previously
 claimed path-traversal protection while only calling `realpath()`, which
 canonicalises a path rather than rejecting it.
 
+### `migrations`
+
+```php
+'migrations' => [
+    'reversible_environments' => ['local', 'development', 'dev', 'testing'],
+    'allow_rollback' => env('DB_TOOLS_ALLOW_ROLLBACK', false),
+    'guard_destructive_commands' => true,
+],
+```
+
+Whether this installation may have its schema dropped — see
+[Migrations](tools/migrations.md). `reversible_environments` is where dropping
+is normal workflow (`testing` is in the list because `RefreshDatabase` runs
+`migrate:fresh`), `allow_rollback` is the deliberate override for an operator
+who means it, and `guard_destructive_commands` registers the listener that
+applies the same policy to `migrate:fresh` and `db:wipe` — the two commands
+that drop every table without running any migration's `down()`.
+
+The override is read through `config()` and never `env()`: `config:cache` is
+routine on exactly the servers where this matters, and `env()` returns null once
+configuration is cached, which would shut the escape hatch for the one operator
+who needs it.
+
 ---
 [← Docs index](../README.md#documentation)

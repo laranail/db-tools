@@ -5,7 +5,84 @@ All notable changes to `laranail/db-tools` are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.8.0] - 2026-08-14
+
+The database scaffolding every consumer was re-inventing, taken into the package
+that should have held it. Nothing here is a rewrite: it is
+`adelsaiq.ai`'s hand-rolled migration and seeder bases, generalised, plus the
+coverage gap they all shared.
+
+### Added
+
+- **`Migrations\BaseMigration`** — declare `tables()` in creation order and get
+  `down()` for free, dropping in reverse so dependent tables go before their
+  parents. Deliberately ships no column helpers: larastan derives model property
+  types by parsing migration files for `Schema::create` calls, so a column added
+  from a shared helper is invisible to that parse and every model gains an
+  "access to an undefined property" error for it.
+
+  The connection is **pinned, not inherited** — `down()` reads
+  `Migration::$connection`, the same property the framework uses to decide where
+  the migration runs, so a rollback drops from where `up()` created rather than
+  from whatever connection happened to be default at the time.
+
+- **`Migrations\ReversalPolicy`** — decides whether this installation may have
+  its schema dropped, by environment rather than per migration. The question is
+  never "is this migration reversible" (they all are) but "is this a database
+  where losing everything is acceptable". `laranail.db-tools.migrations
+  .reversible_environments` (default `local`/`development`/`dev`/`testing`) and
+  the `DB_TOOLS_ALLOW_ROLLBACK` override, read through `config()` and never
+  `env()` — `config:cache` is routine on exactly the servers where this guard
+  matters, and `env()` returns null once configuration is cached, which would
+  shut the escape hatch for the one operator who needs it.
+
+- **`Migrations\GuardsDestructiveCommands`** — the coverage gap. A `down()`
+  guard sees `migrate:rollback` and `migrate:reset`, both of which reach
+  `Migrator::runDown()`. It cannot see `migrate:fresh` or `db:wipe`, which go
+  straight to the schema builder and drop every table without running any
+  migration's `down()` — including the migrations that do not extend a base
+  class at all. This listener applies the same policy to those two on
+  `CommandStarting`, honouring `--force` because nobody types that by accident.
+  Registered automatically; `laranail.db-tools.migrations
+  .guard_destructive_commands` turns it off.
+
+- **`Seeding\BaseSeeder`** with `upsert()` / `upsertAll()` / `blockedInProduction()`
+  / `refuseInProduction()`. `blockedInProduction()` is not a convenience: demo
+  seeders write fixtures that must never reach a production installation —
+  published passwords, and in one real case a published TOTP secret enrolled
+  against staff accounts able to suspend or delete any customer.
+
+- **`Seeding\UpsertResult`** — `upsertAll()` returns created/updated/unchanged
+  counts. The version this generalises documented "number of rows written" and
+  returned `count($rows)`: the same number on every run whether it wrote
+  anything or not, so a seeder reported "40 roles" on its fortieth idempotent
+  re-run. A row missing its identity column now throws rather than being
+  inserted afresh each time.
+
+- **`Seeding\Concerns\InteractsWithSeederOutput`** — `console()` and `tell()`.
+  `Seeder::$command` is an **uninitialised typed property** outside console
+  runs, and `?->` does not guard one, so `$this->command?->info(…)` throws under
+  `$this->seed()` in a test. `ReflectionProperty::isInitialized()` asks the
+  question that is actually being asked. `tell()`'s method name is checked
+  against a whitelist instead of being dispatched dynamically.
+
+- **`Seeding\Concerns\InteractsWithSeedFiles`**, relocated from
+  `laranail/package-tools`. It is application seeder tooling that had landed in
+  the package-authoring package; it had no external consumers, so the correction
+  is free now and expensive later.
+
+### Changed
+
+- `laranail/package-tools` no longer ships `InteractsWithSeedFiles`. Anything
+  importing it moves to
+  `Simtabi\Laranail\DbTools\Seeding\Concerns\InteractsWithSeedFiles`.
+
+## [0.7.0] - 2026-07-28
+
+A correctness sweep over the whole package, plus a structural fix for the bug
+class behind it. Most entries here are cases where the code returned a
+plausible wrong answer rather than failing, so an upgrade may surface work that
+was silently not happening.
 
 ### Fixed
 
@@ -109,13 +186,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     back as the default *and* be written back to the database as the default on
     the next save, and invents values for columns a partial `select()` never
     loaded.
-
-## [0.7.0] - 2026-07-28
-
-A correctness sweep over the whole package, plus a structural fix for the bug
-class behind it. Most entries here are cases where the code returned a
-plausible wrong answer rather than failing, so an upgrade may surface work that
-was silently not happening.
 
 ### Changed — breaking
 
