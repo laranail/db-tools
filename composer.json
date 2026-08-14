@@ -103,5 +103,8 @@
         }
     },
     "minimum-stability": "dev",
-    "prefer-stable": true
+    "prefer-stable": true,
+    "suggest": {
+        "fakerphp/faker": "Enables the Faker generator in Seeding\\Concerns\\InteractsWithSeedFiles. Not required \u2014 seed fixtures work without it."
+    }
 }

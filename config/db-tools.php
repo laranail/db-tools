@@ -259,4 +259,23 @@ return [
         'guard_destructive_commands' => env('DB_TOOLS_GUARD_DESTRUCTIVE', true),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Seeding
+    |--------------------------------------------------------------------------
+    |
+    | Where InteractsWithSeedFiles looks for fixture files, and the locale its
+    | Faker generator is built with.
+    |
+    | `fakerphp/faker` is a suggest, not a dependency: a production install has
+    | no use for it, and the trait throws a catchable exception rather than
+    | trying to install anything.
+    |
+    */
+
+    'seeding' => [
+        'files_path' => env('DB_TOOLS_SEED_FILES_PATH'),
+        'faker_locale' => env('DB_TOOLS_FAKER_LOCALE', 'en_US'),
+    ],
+
 ];
