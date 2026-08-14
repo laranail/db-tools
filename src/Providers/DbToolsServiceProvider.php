@@ -163,14 +163,14 @@ final class DbToolsServiceProvider extends ServiceProvider
      * the global stack persists across both the slim and traditional kernels. The
      * middleware only stamps advisory headers, so running it globally is safe.
      * Opt out via `laranail.db-tools.readiness.middleware.enabled = false`, or
-     * register the `db-tools.schema-ready` alias manually.
+     * register the `laranail-db-tools.schema-ready` alias manually.
      */
     private function registerSchemaReadinessMiddleware(): void
     {
         $router = $this->app->make('router');
 
         if ($router instanceof Router) {
-            $router->aliasMiddleware('db-tools.schema-ready', EnsureSchemaIsReady::class);
+            $router->aliasMiddleware('laranail-db-tools.schema-ready', EnsureSchemaIsReady::class);
         }
 
         if (! (bool) $this->app->make('config')->get('laranail.db-tools.readiness.middleware.enabled', true)) {

@@ -136,7 +136,7 @@ final class EnsureSchemaIsReadyTest extends TestCase
     {
         $aliases = $this->app->make('router')->getMiddleware();
 
-        self::assertArrayHasKey('db-tools.schema-ready', $aliases);
-        self::assertSame(EnsureSchemaIsReady::class, $aliases['db-tools.schema-ready']);
+        self::assertArrayHasKey('laranail-db-tools.schema-ready', $aliases);
+        self::assertSame(EnsureSchemaIsReady::class, $aliases['laranail-db-tools.schema-ready']);
     }
 }
