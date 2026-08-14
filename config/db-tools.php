@@ -226,4 +226,37 @@ return [
         ],
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Migrations
+    |--------------------------------------------------------------------------
+    |
+    | `down()` drops tables. That is what you want while developing a schema and
+    | what you never want on a live installation, where `migrate:rollback` — one
+    | mistyped command, or a deploy step that runs it on failure — destroys the
+    | customer's data with no confirmation and no backup.
+    |
+    | `reversible_environments` lists the environments where dropping the schema
+    | is normal. `testing` is in the default because RefreshDatabase runs
+    | migrate:fresh, and a suite that could not rebuild its schema could not run.
+    |
+    | `allow_rollback` is the deliberate override. Read through config() and not
+    | env(), because `config:cache` is routine on exactly the servers where this
+    | guard matters and env() returns null once the configuration is cached —
+    | which would shut the escape hatch for the one operator who needs it.
+    |
+    | `guard_destructive_commands` extends the same policy to `migrate:fresh`
+    | and `db:wipe`, which drop every table without running any migration's
+    | down() and so cannot be caught by BaseMigration. (`migrate:rollback` and
+    | `migrate:reset` both do run down(), so they need nothing here.) `--force`
+    | still works: nobody types it by accident.
+    |
+    */
+
+    'migrations' => [
+        'reversible_environments' => ['local', 'development', 'dev', 'testing'],
+        'allow_rollback' => env('DB_TOOLS_ALLOW_ROLLBACK', false),
+        'guard_destructive_commands' => env('DB_TOOLS_GUARD_DESTRUCTIVE', true),
+    ],
+
 ];

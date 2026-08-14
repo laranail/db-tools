@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Simtabi\Laranail\DbTools\Providers;
 
+use Illuminate\Console\Events\CommandStarting;
 use Illuminate\Contracts\Http\Kernel as HttpKernelContract;
 use Illuminate\Database\Schema\Blueprint as IlluminateBlueprint;
 use Illuminate\Foundation\AliasLoader;
@@ -24,6 +25,7 @@ use Simtabi\Laranail\DbTools\Guard\Contracts\DatabaseAvailabilityInterface;
 use Simtabi\Laranail\DbTools\Guard\DatabaseGuard;
 use Simtabi\Laranail\DbTools\Http\Middleware\EnsureSchemaIsReady;
 use Simtabi\Laranail\DbTools\Listeners\LogDatabaseIssues;
+use Simtabi\Laranail\DbTools\Migrations\GuardsDestructiveCommands;
 use Simtabi\Laranail\DbTools\Schema\AuditColumnsMacro;
 use Simtabi\Laranail\DbTools\Schema\BlueprintMacros;
 use Simtabi\Laranail\DbTools\Schema\ConfiguredMorphsMacro;
@@ -112,6 +114,7 @@ final class DbToolsServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->registerEventListeners();
+        $this->registerDestructiveCommandGuard();
         $this->registerSchemaReadinessMiddleware();
 
         if ($this->app->runningInConsole()) {
@@ -196,6 +199,27 @@ final class DbToolsServiceProvider extends ServiceProvider
      * Wire the default log listener for the availability/readiness events.
      * Opt-out via `db-tools.guard.log_events`; apps can always listen directly.
      */
+    /**
+     * Guard the two commands that drop tables without running any migration's
+     * `down()`.
+     *
+     * `migrate:rollback` and `migrate:reset` both reach `Migrator::runDown()`,
+     * so a BaseMigration guard already covers them. `migrate:fresh` and
+     * `db:wipe` go straight to the schema builder and cannot be caught that
+     * way — which is what this is for.
+     */
+    private function registerDestructiveCommandGuard(): void
+    {
+        if (! (bool) $this->app->make('config')->get('laranail.db-tools.migrations.guard_destructive_commands', true)) {
+            return;
+        }
+
+        $this->app->make('events')->listen(
+            CommandStarting::class,
+            [GuardsDestructiveCommands::class, 'handle'],
+        );
+    }
+
     private function registerEventListeners(): void
     {
         if (! (bool) $this->app->make('config')->get('laranail.db-tools.guard.log_events', true)) {
