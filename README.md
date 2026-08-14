@@ -17,9 +17,9 @@ composer require laranail/db-tools
 
 `DbToolsServiceProvider` is auto-discovered and registers the schema macros at boot.
 
-## Documentation
+## <a name="documentation"></a>Documentation
 
-Full documentation is at **[opensource.simtabi.com/documentation/laranail/db-tools](https://opensource.simtabi.com/documentation/laranail/db-tools/)** — installation, getting started, the model traits, casts, schema macros, the audit observer, backup/restore, the database CLI, and configuration.
+Full documentation is at **[opensource.simtabi.com/documentation/laranail/db-tools](https://opensource.simtabi.com/documentation/laranail/db-tools/)** — installation, getting started, the model traits, casts, schema macros, the audit observer, backup/restore, the database CLI, configuration, and the release process.
 
 ## Contributing & security
 
