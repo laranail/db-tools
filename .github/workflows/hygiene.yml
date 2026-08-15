@@ -55,3 +55,16 @@ jobs:
         run: bash scripts/verify-tag-currency.sh ${{ github.repository }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  dist:
+    name: Dist integrity
+    runs-on: ubuntu-latest
+
+    # A file composer.json references and .gitattributes strips is invisible in
+    # the repository and fatal in a consumer's vendor/. It needs both a
+    # reference and an export-ignore, so neither line looks wrong on its own.
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Every referenced path survives the archive
+        run: php scripts/verify-dist-integrity.php
