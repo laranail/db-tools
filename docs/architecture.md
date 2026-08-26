@@ -55,6 +55,18 @@ The division of labour across the suite reflects this: **seeding** lives in
 `composer.json` is reviewed against this invariant, and the `require` block must
 stay free of any `laranail/*` entry.
 
+The invariant has been tested against a real case. In 0.9.0 this package's publish tags were bare
+(`db-tools-config`), which is exactly the flat-global-map collision the family's naming convention
+exists to prevent, and the obvious fix was to extend `laranail/package-tools`, which mints namespaced
+tags automatically. It was costed and rejected: extending removed about sixteen lines of registration
+plumbing, and the naming guard that now enforces the tags needs no dependency at all — it reads
+Laravel's own `ServiceProvider::publishableGroups()` and `pathsToPublish()`. Sixteen lines is not
+worth handing every consumer a package-author toolchain they have no use for.
+
+The measurement is the part worth keeping: before taking a `laranail/*` dependency here, write down
+what it actually removes, and check whether the thing you want can be asserted against the framework
+instead.
+
 ## Contracts
 
 **`Schema/Contracts/`**

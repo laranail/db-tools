@@ -83,7 +83,7 @@ precedence) then `db-tools.id_type` — see
 Builds the columns for the soft-delete history table written by the
 [`HasSoftDeletesWithUndo`](soft-deletes.md) trait — used by the publishable
 `create_soft_delete_history_table` migration (publish tag
-`db-tools-migrations`).
+`laranail::db-tools-migrations`).
 
 ```php
 Schema::create('soft_delete_history', function (Blueprint $t): void {
