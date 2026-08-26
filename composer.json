@@ -43,7 +43,8 @@
         "illuminate/support": "^13.0",
         "ramsey/uuid": "^4.7",
         "spatie/laravel-sluggable": "^4.0",
-        "symfony/uid": "^7.0 || ^8.0"
+        "symfony/uid": "^7.0 || ^8.0",
+        "laranail/package-tools": "^0.1"
     },
     "require-dev": {
         "larastan/larastan": "^3.0",
@@ -113,6 +114,20 @@
         {
             "type": "vcs",
             "url": "https://github.com/laranail/package-tools"
+        },
+        {
+            "type": "vcs",
+            "url": "https://github.com/laranail/console"
+        },
+        {
+            "type": "composer",
+            "url": "https://repo.packagist.org",
+            "exclude": [
+                "laranail/*"
+            ]
+        },
+        {
+            "packagist.org": false
         }
     ]
 }

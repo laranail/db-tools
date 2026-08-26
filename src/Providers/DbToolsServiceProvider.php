@@ -9,7 +9,7 @@ use Throwable;
 use Psr\Log\LoggerInterface;
 use Illuminate\Routing\Router;
 use Illuminate\Foundation\AliasLoader;
-use Illuminate\Support\ServiceProvider;
+use Simtabi\Laranail\Package\Tools\Package;
 use Illuminate\Console\Events\CommandStarting;
 use Simtabi\Laranail\DbTools\Guard\DatabaseGuard;
 use Simtabi\Laranail\DbTools\Backup\BackupManager;
@@ -37,6 +37,7 @@ use Simtabi\Laranail\DbTools\Schema\SoftDeletesWithUndoMacro;
 use Illuminate\Database\Schema\Blueprint as IlluminateBlueprint;
 use Simtabi\Laranail\DbTools\Http\Middleware\EnsureSchemaIsReady;
 use Simtabi\Laranail\DbTools\Migrations\GuardsDestructiveCommands;
+use Simtabi\Laranail\Package\Tools\Providers\PackageServiceProvider;
 use Simtabi\Laranail\DbTools\Backup\Contracts\BackupManagerInterface;
 use Simtabi\Laranail\DbTools\Schema\Contracts\SchemaReadinessInterface;
 use Simtabi\Laranail\DbTools\Services\Contracts\DatabaseServiceInterface;
@@ -48,13 +49,33 @@ use Simtabi\Laranail\DbTools\Services\Contracts\CleanDatabaseServiceInterface;
 use Simtabi\Laranail\DbTools\Schema\Contracts\DatabaseSchemaInspectorInterface;
 use Simtabi\Laranail\DbTools\Schema\Contracts\DatabaseConnectionTesterInterface;
 
-final class DbToolsServiceProvider extends ServiceProvider
+final class DbToolsServiceProvider extends PackageServiceProvider
 {
+    /**
+     * Config, commands and publish tags are declared here rather than hand-wired below.
+     *
+     * `->name('laranail/db-tools')` is what makes the rest resolve: the config file
+     * `config/db-tools.php` merges under `laranail.db-tools` and publishes to
+     * `config_path('laranail/db-tools.php')` -- the same key and the same destination this
+     * provider wired by hand -- and `setPublishTagId('db-tools')` mints `laranail::db-tools-config`
+     * in place of the bare `db-tools-config` it used to register.
+     */
     #[Override]
-    public function register(): void
+    public function configurePackage(Package $package): void
     {
-        $this->mergeConfigFrom(__DIR__ . '/../../config/db-tools.php', 'laranail.db-tools');
+        $package
+            ->name('laranail/db-tools')
+            ->setPublishTagId('db-tools')
+            ->hasConfigFile('db-tools')
+            ->hasCommands(DbToolsCommand::class, HealthCommand::class);
+    }
 
+    /**
+     * Runs inside the base's register(), after the package is configured.
+     */
+    #[Override]
+    public function packageRegistered(): void
+    {
         // Backup
         $this->app->singleton(BackupManagerInterface::class, BackupManager::class);
 
@@ -111,31 +132,22 @@ final class DbToolsServiceProvider extends ServiceProvider
         }
     }
 
-    public function boot(): void
+    /**
+     * Runs inside the base's boot(), after the package's own resources are registered.
+     */
+    #[Override]
+    public function packageBooted(): void
     {
         $this->registerEventListeners();
         $this->registerDestructiveCommandGuard();
         $this->registerSchemaReadinessMiddleware();
 
         if ($this->app->runningInConsole()) {
-            // Publish tags are a flat global map. A second package claiming 'db-tools-config' would
-            // not collide loudly -- it would silently replace this one, and surface as the wrong file
-            // published. The vendor scope is what makes the key unambiguous.
-            $this->commands([
-                DbToolsCommand::class,
-                HealthCommand::class,
-            ]);
-
-            // Publish tags are a flat global map. A second package claiming 'db-tools-config' would
-            // not collide loudly -- it would silently replace this one, and surface as the wrong file
-            // published. The vendor scope is what makes the key unambiguous.
+            // The migration is a .stub stamped with a fresh timestamp at publish time, so it stays a
+            // hand-written publishes() rather than hasMigrations(). Only the tag is namespaced.
             $this->publishes([
-                __DIR__ . '/../../config/db-tools.php' => config_path('laranail/db-tools.php'),
-            ], 'laranail::db-tools-config');
-
-            $this->publishes([
-                __DIR__ . '/../../database/migrations/0001_01_01_000000_create_soft_delete_history_table.php.stub' => database_path('migrations/' . date('Y_m_d_His') . '_create_soft_delete_history_table.php'),
-            ], 'laranail::db-tools-migrations');
+                $this->packagePath('database/migrations/0001_01_01_000000_create_soft_delete_history_table.php.stub') => database_path('migrations/' . date('Y_m_d_His') . '_create_soft_delete_history_table.php'),
+            ], $this->package->getNamespacedPublishTag('migrations'));
         }
 
         // Keep the custom BlueprintMacros builder aligned with the configured

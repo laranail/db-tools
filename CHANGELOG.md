@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.9.0] - 2026-08-26
 
+Built on `laranail/package-tools` rather than beside it.
+
 ### Changed
 
 - **Breaking.** Publish tags are vendor-scoped:
@@ -17,24 +19,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   | `db-tools-migrations` | `laranail::db-tools-migrations` |
 
   `vendor:publish --tag=db-tools-config` becomes
-  `vendor:publish --tag=laranail::db-tools-config`. The bare names were a defect. Laravel keeps
+  `vendor:publish --tag=laranail::db-tools-config`. The bare names were a defect: Laravel keeps
   publish tags in a flat global map, so a second package claiming `db-tools-config` would not
-  collide loudly -- it would silently replace this one, and surface much later as the wrong file
-  published, or nothing published at all.
+  collide loudly — it would silently replace this one, and the damage would surface as the wrong
+  file published.
 
-  Destinations and the config key are unchanged: `config/db-tools.php` still merges under
-  `laranail.db-tools` and still publishes to `config_path('laranail/db-tools.php')`. An application
-  that already published its config needs no migration beyond the tag name.
+  **Destinations and the config key are unchanged.** `config/db-tools.php` still merges under
+  `laranail.db-tools` and still publishes to `config_path('laranail/db-tools.php')`, so an
+  application that already published its config needs no migration beyond the tag name.
+
+- `DbToolsServiceProvider` extends `PackageServiceProvider`. Config registration, the config publish
+  and command registration are now declared in `configurePackage()` instead of hand-wired; the
+  hand-written `__DIR__ . '/../../…'` paths are gone, replaced by `packagePath()`, which resolves by
+  reflection and so cannot drift when the file moves. Everything specific to this package — the
+  container bindings, the destructive-command guard, the schema-readiness middleware, the Blueprint
+  macros — is untouched, moved to the base's `packageRegistered()` and `packageBooted()` hooks.
 
 ### Added
+
+- `laranail/package-tools ^0.1` as a dependency, with `vcs` repository entries for it and for
+  `laranail/console`, which arrives through it. Composer ignores a dependency's own `repositories`,
+  so the root has to declare the whole transitive `laranail/*` closure.
+
+  This adds nothing to any real dependency graph: all six packages that require `laranail/db-tools`
+  already require `laranail/package-tools` directly. The PHP floor is unchanged — `^8.4.1 || ^8.5`
+  either way.
 
 - `tests/Integration/NamingConventionTest.php`, asserting the config key, publish tags, publish
   destination and command names against the **live registries** on a booted application rather than
   by reading the provider. Grepping proves how a registration was written, not what the framework
-  ended up holding -- which is the only thing that matters for a flat global map.
-
-  It needs no dependency to do this: it reads Laravel's own `ServiceProvider::publishableGroups()`,
-  `pathsToPublish()` and console kernel. The [independence invariant](docs/architecture.md) holds.
+  ended up holding.
 
 ## [0.8.0] - 2026-08-14
 
