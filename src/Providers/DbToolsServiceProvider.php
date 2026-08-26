@@ -118,6 +118,9 @@ final class DbToolsServiceProvider extends ServiceProvider
         $this->registerSchemaReadinessMiddleware();
 
         if ($this->app->runningInConsole()) {
+            // Publish tags are a flat global map. A second package claiming 'db-tools-config' would
+            // not collide loudly -- it would silently replace this one, and surface as the wrong file
+            // published. The vendor scope is what makes the key unambiguous.
             $this->commands([
                 DbToolsCommand::class,
                 HealthCommand::class,
@@ -125,11 +128,11 @@ final class DbToolsServiceProvider extends ServiceProvider
 
             $this->publishes([
                 __DIR__.'/../../config/db-tools.php' => config_path('laranail/db-tools.php'),
-            ], 'db-tools-config');
+            ], 'laranail::db-tools-config');
 
             $this->publishes([
                 __DIR__.'/../../database/migrations/0001_01_01_000000_create_soft_delete_history_table.php.stub' => database_path('migrations/'.date('Y_m_d_His').'_create_soft_delete_history_table.php'),
-            ], 'db-tools-migrations');
+            ], 'laranail::db-tools-migrations');
         }
 
         // Keep the custom BlueprintMacros builder aligned with the configured

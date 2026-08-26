@@ -30,7 +30,7 @@ Publish and run the history-table migration (see
 [Configuration](../configuration.md#publishing-the-soft-delete-history-migration)):
 
 ```bash
-php artisan vendor:publish --tag=db-tools-migrations
+php artisan vendor:publish --tag=laranail::db-tools-migrations
 php artisan migrate
 ```
 

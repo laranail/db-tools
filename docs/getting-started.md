@@ -13,7 +13,7 @@ The service provider + the `DbTools` facade are auto-discovered. Publish the con
 migration) if you want to customise them:
 
 ```bash
-php artisan vendor:publish --tag=db-tools-config
+php artisan vendor:publish --tag=laranail::db-tools-config
 ```
 
 ## 2. Inspect + verify schema

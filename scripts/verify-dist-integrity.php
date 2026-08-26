@@ -39,7 +39,6 @@ declare(strict_types=1);
  * Usage:
  *   php scripts/verify-dist-integrity.php [revision]      # default HEAD
  */
-
 $revision = $argv[1] ?? 'HEAD';
 $root = dirname(__DIR__);
 
@@ -129,12 +128,12 @@ function referencedPaths(array $composer): array
 }
 
 /**
- * @param list<string> $haystack
+ * @param  list<string>  $haystack
  */
 function contains(array $haystack, string $path): bool
 {
     foreach ($haystack as $candidate) {
-        if ($candidate === $path || str_starts_with($candidate, $path . '/')) {
+        if ($candidate === $path || str_starts_with($candidate, $path.'/')) {
             return true;
         }
     }
@@ -164,7 +163,7 @@ foreach (referencedPaths($composer) as [$key, $path]) {
 
     $failures[] = sprintf(
         '%s references %s, which .gitattributes strips from the dist archive. '
-        . 'Consumers installing from dist will not have it.',
+        .'Consumers installing from dist will not have it.',
         $key,
         $path,
     );
@@ -184,7 +183,7 @@ foreach ($failures as $failure) {
 
 printf(
     "\n  Fix by removing the export-ignore rule, not by dropping the reference — the\n"
-    . "  file is referenced because a consumer needs it.\n",
+    ."  file is referenced because a consumer needs it.\n",
 );
 
 exit(1);

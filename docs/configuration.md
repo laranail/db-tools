@@ -21,7 +21,7 @@ or not you publish.
 ## Publishing the config
 
 ```bash
-php artisan vendor:publish --tag=db-tools-config
+php artisan vendor:publish --tag=laranail::db-tools-config
 ```
 
 This copies the package default to **`config/laranail/db-tools.php`** in your
@@ -36,7 +36,7 @@ The [soft-delete restore history](tools/soft-deletes.md) feature needs a history
 table. Publish its migration with:
 
 ```bash
-php artisan vendor:publish --tag=db-tools-migrations
+php artisan vendor:publish --tag=laranail::db-tools-migrations
 php artisan migrate
 ```
 

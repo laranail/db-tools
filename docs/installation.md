@@ -48,14 +48,14 @@ The package works with sensible defaults, but you can publish its config to
 tune the key type, audit columns, money currency, and backup behavior:
 
 ```bash
-php artisan vendor:publish --tag=db-tools-config
+php artisan vendor:publish --tag=laranail::db-tools-config
 ```
 
 The [soft-delete restore history](tools/soft-deletes.md) feature also ships a
 publishable migration:
 
 ```bash
-php artisan vendor:publish --tag=db-tools-migrations
+php artisan vendor:publish --tag=laranail::db-tools-migrations
 php artisan migrate
 ```
 

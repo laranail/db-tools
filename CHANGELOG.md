@@ -5,6 +5,37 @@ All notable changes to `laranail/db-tools` are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.0] - 2026-08-26
+
+### Changed
+
+- **Breaking.** Publish tags are vendor-scoped:
+
+  | Before | After |
+  |---|---|
+  | `db-tools-config` | `laranail::db-tools-config` |
+  | `db-tools-migrations` | `laranail::db-tools-migrations` |
+
+  `vendor:publish --tag=db-tools-config` becomes
+  `vendor:publish --tag=laranail::db-tools-config`. The bare names were a defect. Laravel keeps
+  publish tags in a flat global map, so a second package claiming `db-tools-config` would not
+  collide loudly -- it would silently replace this one, and surface much later as the wrong file
+  published, or nothing published at all.
+
+  Destinations and the config key are unchanged: `config/db-tools.php` still merges under
+  `laranail.db-tools` and still publishes to `config_path('laranail/db-tools.php')`. An application
+  that already published its config needs no migration beyond the tag name.
+
+### Added
+
+- `tests/Integration/NamingConventionTest.php`, asserting the config key, publish tags, publish
+  destination and command names against the **live registries** on a booted application rather than
+  by reading the provider. Grepping proves how a registration was written, not what the framework
+  ended up holding -- which is the only thing that matters for a flat global map.
+
+  It needs no dependency to do this: it reads Laravel's own `ServiceProvider::publishableGroups()`,
+  `pathsToPublish()` and console kernel. The [independence invariant](docs/architecture.md) holds.
+
 ## [0.8.0] - 2026-08-14
 
 The database scaffolding every consumer was re-inventing, taken into the package
