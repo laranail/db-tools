@@ -52,9 +52,7 @@ trait HasArchiver
      */
     public function initializeHasArchiver(): void
     {
-        if (! isset($this->casts[$this->getArchivedAtColumn()])) {
-            $this->casts[$this->getArchivedAtColumn()] = 'datetime';
-        }
+        $this->casts[$this->getArchivedAtColumn()] ??= 'datetime';
     }
 
     /**
