@@ -4,21 +4,21 @@ declare(strict_types=1);
 
 namespace Simtabi\Laranail\DbTools\Tests\Unit\Concerns;
 
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\Schema;
 use InvalidArgumentException;
-use Simtabi\Laranail\DbTools\Concerns\HasScopes;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Database\Eloquent\Model;
 use Simtabi\Laranail\DbTools\Tests\TestCase;
+use Simtabi\Laranail\DbTools\Concerns\HasScopes;
 
 final class ArticleModel extends Model
 {
     use HasScopes;
 
+    public $timestamps = false;
+
     protected $table = 'articles';
 
     protected $guarded = [];
-
-    public $timestamps = false;
 
     /** @var array<int, string> */
     protected array $searchable = ['title', 'body'];

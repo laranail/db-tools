@@ -17,14 +17,14 @@ interface SchemaReadinessInterface
      * Build a readiness report for the given required tables (falling back to
      * the configured default set when none are given).
      *
-     * @param  list<string>  $requiredTables
+     * @param list<string> $requiredTables
      */
     public function report(array $requiredTables = [], ?string $connection = null): SchemaReadinessReport;
 
     /**
      * True when the connection is reachable and every required table exists.
      *
-     * @param  list<string>  $requiredTables
+     * @param list<string> $requiredTables
      */
     public function isReady(array $requiredTables = [], ?string $connection = null): bool;
 
@@ -33,9 +33,10 @@ interface SchemaReadinessInterface
      *
      * @template TValue
      *
-     * @param  callable():TValue  $callback
-     * @param  TValue  $default
-     * @param  list<string>  $requiredTables
+     * @param callable():TValue $callback
+     * @param TValue $default
+     * @param list<string> $requiredTables
+     *
      * @return TValue
      */
     public function whenReady(callable $callback, mixed $default = null, array $requiredTables = [], ?string $connection = null): mixed;

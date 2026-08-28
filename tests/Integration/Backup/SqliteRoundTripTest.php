@@ -6,8 +6,8 @@ namespace Simtabi\Laranail\DbTools\Tests\Integration\Backup;
 
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
-use Simtabi\Laranail\DbTools\Backup\BackupManager;
 use Simtabi\Laranail\DbTools\Tests\TestCase;
+use Simtabi\Laranail\DbTools\Backup\BackupManager;
 
 final class SqliteRoundTripTest extends TestCase
 {
@@ -22,13 +22,13 @@ final class SqliteRoundTripTest extends TestCase
         // A real, file-based SQLite database (not :memory:) so the file-copy
         // backup path can actually read and write a file. SQLite's connector
         // requires the file to pre-exist, so create it before connecting.
-        $this->dbPath = tempnam(sys_get_temp_dir(), 'dbt-sqlite-').'.sqlite';
+        $this->dbPath = tempnam(sys_get_temp_dir(), 'dbt-sqlite-') . '.sqlite';
         touch($this->dbPath);
 
         config()->set('database.connections.roundtrip', [
-            'driver' => 'sqlite',
+            'driver'   => 'sqlite',
             'database' => $this->dbPath,
-            'prefix' => '',
+            'prefix'   => '',
         ]);
 
         $this->seedDatabase();
@@ -47,23 +47,9 @@ final class SqliteRoundTripTest extends TestCase
         parent::tearDown();
     }
 
-    private function seedDatabase(): void
-    {
-        Schema::connection('roundtrip')->dropIfExists('widgets');
-        Schema::connection('roundtrip')->create('widgets', function ($t): void {
-            $t->integer('id');
-            $t->string('name');
-        });
-
-        DB::connection('roundtrip')->table('widgets')->insert([
-            'id' => 1,
-            'name' => 'original-row',
-        ]);
-    }
-
     public function test_file_copy_backup_and_restore_round_trip(): void
     {
-        $this->backupPath = tempnam(sys_get_temp_dir(), 'dbt-backup-').'.sqlite';
+        $this->backupPath = tempnam(sys_get_temp_dir(), 'dbt-backup-') . '.sqlite';
 
         $manager = new BackupManager;
 
@@ -82,7 +68,7 @@ final class SqliteRoundTripTest extends TestCase
         self::assertSame(1, DB::connection('roundtrip')->table('widgets')->count());
         self::assertSame(
             'original-row',
-            DB::connection('roundtrip')->table('widgets')->where('id', 1)->value('name')
+            DB::connection('roundtrip')->table('widgets')->where('id', 1)->value('name'),
         );
     }
 
@@ -90,7 +76,7 @@ final class SqliteRoundTripTest extends TestCase
     {
         config()->set('laranail.db-tools.backup.gzip', true);
 
-        $this->backupPath = tempnam(sys_get_temp_dir(), 'dbt-backup-').'.sqlite.gz';
+        $this->backupPath = tempnam(sys_get_temp_dir(), 'dbt-backup-') . '.sqlite.gz';
 
         $manager = new BackupManager;
 
@@ -99,7 +85,7 @@ final class SqliteRoundTripTest extends TestCase
         // The gzip stream should not be a verbatim copy of the source file.
         self::assertNotSame(
             file_get_contents($this->dbPath),
-            file_get_contents($this->backupPath)
+            file_get_contents($this->backupPath),
         );
 
         DB::connection('roundtrip')->table('widgets')->delete();
@@ -111,7 +97,7 @@ final class SqliteRoundTripTest extends TestCase
         self::assertSame(1, DB::connection('roundtrip')->table('widgets')->count());
         self::assertSame(
             'original-row',
-            DB::connection('roundtrip')->table('widgets')->where('id', 1)->value('name')
+            DB::connection('roundtrip')->table('widgets')->where('id', 1)->value('name'),
         );
     }
 
@@ -127,13 +113,13 @@ final class SqliteRoundTripTest extends TestCase
         DB::connection('roundtrip')->table('widgets')->insert(['id' => 1, 'name' => 'before backup']);
 
         $manager = new BackupManager;
-        $this->backupPath = tempnam(sys_get_temp_dir(), 'dbt-wal-').'.sqlite';
+        $this->backupPath = tempnam(sys_get_temp_dir(), 'dbt-wal-') . '.sqlite';
         $manager->backup($this->backupPath, 'roundtrip');
 
         // Writes after the backup, which live in the WAL rather than the main file.
         DB::connection('roundtrip')->table('widgets')->insert(['id' => 2, 'name' => 'AFTER backup']);
 
-        self::assertFileExists($this->dbPath.'-wal', 'WAL mode should have produced a sidecar.');
+        self::assertFileExists($this->dbPath . '-wal', 'WAL mode should have produced a sidecar.');
 
         DB::purge('roundtrip');
         $manager->restore($this->backupPath, 'roundtrip');
@@ -144,7 +130,21 @@ final class SqliteRoundTripTest extends TestCase
         self::assertNotContains(
             'AFTER backup',
             $names,
-            'A stale WAL must not be replayed over the restored database.'
+            'A stale WAL must not be replayed over the restored database.',
         );
+    }
+
+    private function seedDatabase(): void
+    {
+        Schema::connection('roundtrip')->dropIfExists('widgets');
+        Schema::connection('roundtrip')->create('widgets', function ($t): void {
+            $t->integer('id');
+            $t->string('name');
+        });
+
+        DB::connection('roundtrip')->table('widgets')->insert([
+            'id'   => 1,
+            'name' => 'original-row',
+        ]);
     }
 }

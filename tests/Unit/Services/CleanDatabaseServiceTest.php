@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Simtabi\Laranail\DbTools\Tests\Unit\Services;
 
-use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Database\QueryException;
+use Simtabi\Laranail\DbTools\Tests\TestCase;
 use Simtabi\Laranail\DbTools\Concerns\ManagesForeignKeyChecks;
 use Simtabi\Laranail\DbTools\Exceptions\CleanDatabaseException;
 use Simtabi\Laranail\DbTools\Services\Contracts\CleanDatabaseServiceInterface;
-use Simtabi\Laranail\DbTools\Tests\TestCase;
 
 final class CleanDatabaseServiceTest extends TestCase
 {
@@ -38,18 +38,6 @@ final class CleanDatabaseServiceTest extends TestCase
         });
 
         $this->cleaner = $this->app->make(CleanDatabaseServiceInterface::class);
-    }
-
-    private function seedRows(): void
-    {
-        $author = $this->app['db']->table('authors')->insertGetId(['name' => 'Ada']);
-        $this->app['db']->table('books')->insert(['author_id' => $author, 'title' => 'Notes']);
-        $this->app['db']->table('migrations')->insert(['migration' => '2026_01_01_000000_create_things']);
-    }
-
-    private function rows(string $table): int
-    {
-        return $this->app['db']->table($table)->count();
     }
 
     // -----------------------------------------------------------------
@@ -94,21 +82,6 @@ final class CleanDatabaseServiceTest extends TestCase
         }
 
         self::assertSame(0, $this->foreignKeyNestingLevel());
-    }
-
-    private function foreignKeyNestingLevel(): int
-    {
-        $probe = new class
-        {
-            use ManagesForeignKeyChecks;
-
-            public function level(): int
-            {
-                return $this->getForeignKeyCheckNestingLevel();
-            }
-        };
-
-        return $probe->level();
     }
 
     // -----------------------------------------------------------------
@@ -235,5 +208,32 @@ final class CleanDatabaseServiceTest extends TestCase
         self::assertFalse($result->skippedAny());
         self::assertArrayHasKey('truncated', $result->toArray());
         self::assertArrayHasKey('connection', $result->toArray());
+    }
+
+    private function seedRows(): void
+    {
+        $author = $this->app['db']->table('authors')->insertGetId(['name' => 'Ada']);
+        $this->app['db']->table('books')->insert(['author_id' => $author, 'title' => 'Notes']);
+        $this->app['db']->table('migrations')->insert(['migration' => '2026_01_01_000000_create_things']);
+    }
+
+    private function rows(string $table): int
+    {
+        return $this->app['db']->table($table)->count();
+    }
+
+    private function foreignKeyNestingLevel(): int
+    {
+        $probe = new class
+        {
+            use ManagesForeignKeyChecks;
+
+            public function level(): int
+            {
+                return $this->getForeignKeyCheckNestingLevel();
+            }
+        };
+
+        return $probe->level();
     }
 }

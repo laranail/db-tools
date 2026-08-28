@@ -4,34 +4,34 @@ declare(strict_types=1);
 
 namespace Simtabi\Laranail\DbTools\Tests\Unit\Concerns;
 
-use Illuminate\Database\Eloquent\Model;
+use Ramsey\Uuid\Uuid;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
-use Ramsey\Uuid\Uuid;
+use Illuminate\Database\Eloquent\Model;
+use Simtabi\Laranail\DbTools\Tests\TestCase;
 use Simtabi\Laranail\DbTools\Concerns\HasUuid;
 use Simtabi\Laranail\DbTools\Exceptions\MissingUuidColumnException;
-use Simtabi\Laranail\DbTools\Tests\TestCase;
 
 final class HasUuidModel extends Model
 {
     use HasUuid;
 
+    public $timestamps = false;
+
     protected $table = 'has_uuid_models';
 
     protected $guarded = [];
-
-    public $timestamps = false;
 }
 
 final class HasUuidCustomColumnModel extends Model
 {
     use HasUuid;
 
+    public $timestamps = false;
+
     protected $table = 'has_uuid_models';
 
     protected $guarded = [];
-
-    public $timestamps = false;
 
     public function uuidColumn(): string
     {
@@ -46,11 +46,11 @@ final class HasUuidMissingColumnModel extends Model
 {
     use HasUuid;
 
+    public $timestamps = false;
+
     protected $table = 'has_uuid_models';
 
     protected $guarded = [];
-
-    public $timestamps = false;
 
     public function uuidColumn(): string
     {

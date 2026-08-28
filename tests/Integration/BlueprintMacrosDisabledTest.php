@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Simtabi\Laranail\DbTools\Tests\Integration;
 
-use Illuminate\Database\Schema\Blueprint as IlluminateBlueprint;
 use Illuminate\Support\Facades\Schema;
 use Simtabi\Laranail\DbTools\Tests\TestCase;
+use Illuminate\Database\Schema\Blueprint as IlluminateBlueprint;
 
 /**
  * The binding changes the column type every `id()` in the application produces,
@@ -15,14 +15,6 @@ use Simtabi\Laranail\DbTools\Tests\TestCase;
  */
 final class BlueprintMacrosDisabledTest extends TestCase
 {
-    protected function getEnvironmentSetUp($app): void
-    {
-        parent::getEnvironmentSetUp($app);
-
-        // Deliberately NOT setting schema.blueprint_macros.
-        $app['config']->set('laranail.db-tools.using_uuids_for_id', true);
-    }
-
     public function test_the_blueprint_is_not_rebound_by_default(): void
     {
         self::assertFalse($this->app->bound(IlluminateBlueprint::class));
@@ -40,5 +32,13 @@ final class BlueprintMacrosDisabledTest extends TestCase
             (bool) $columns['id']['auto_increment'],
             'The blueprint override took effect without the config flag.',
         );
+    }
+
+    protected function getEnvironmentSetUp($app): void
+    {
+        parent::getEnvironmentSetUp($app);
+
+        // Deliberately NOT setting schema.blueprint_macros.
+        $app['config']->set('laranail.db-tools.using_uuids_for_id', true);
     }
 }

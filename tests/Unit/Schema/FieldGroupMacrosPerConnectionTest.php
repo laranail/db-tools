@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Simtabi\Laranail\DbTools\Tests\Unit\Schema;
 
-use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\Schema;
 use Override;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Database\Schema\Blueprint;
 use Simtabi\Laranail\DbTools\Tests\TestCase;
 
 /**
@@ -18,21 +18,6 @@ use Simtabi\Laranail\DbTools\Tests\TestCase;
 final class FieldGroupMacrosPerConnectionTest extends TestCase
 {
     private string $secondaryFile = '';
-
-    #[Override]
-    protected function defineEnvironment($app): void
-    {
-        parent::defineEnvironment($app);
-
-        $this->secondaryFile = tempnam(sys_get_temp_dir(), 'dbt-macros-').'.sqlite';
-        touch($this->secondaryFile);
-
-        $app['config']->set('database.connections.secondary', [
-            'driver' => 'sqlite',
-            'database' => $this->secondaryFile,
-            'prefix' => '',
-        ]);
-    }
 
     protected function tearDown(): void
     {
@@ -138,5 +123,20 @@ final class FieldGroupMacrosPerConnectionTest extends TestCase
         });
 
         self::assertTrue(Schema::hasColumn('macro_posts', 'user_id'));
+    }
+
+    #[Override]
+    protected function defineEnvironment($app): void
+    {
+        parent::defineEnvironment($app);
+
+        $this->secondaryFile = tempnam(sys_get_temp_dir(), 'dbt-macros-') . '.sqlite';
+        touch($this->secondaryFile);
+
+        $app['config']->set('database.connections.secondary', [
+            'driver'   => 'sqlite',
+            'database' => $this->secondaryFile,
+            'prefix'   => '',
+        ]);
     }
 }

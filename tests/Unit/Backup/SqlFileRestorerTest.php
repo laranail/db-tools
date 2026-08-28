@@ -5,13 +5,13 @@ declare(strict_types=1);
 namespace Simtabi\Laranail\DbTools\Tests\Unit\Backup;
 
 use DB;
-use Illuminate\Support\Facades\File;
-use Illuminate\Support\Facades\Schema;
-use InvalidArgumentException;
 use ReflectionMethod;
 use RuntimeException;
-use Simtabi\Laranail\DbTools\Backup\SqlFileRestorer;
+use InvalidArgumentException;
+use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Schema;
 use Simtabi\Laranail\DbTools\Tests\TestCase;
+use Simtabi\Laranail\DbTools\Backup\SqlFileRestorer;
 
 final class SqlFileRestorerTest extends TestCase
 {
@@ -27,19 +27,6 @@ final class SqlFileRestorerTest extends TestCase
         }
 
         parent::tearDown();
-    }
-
-    /**
-     * @return array<int, string>
-     */
-    private function parse(string $sql): array
-    {
-        $method = new ReflectionMethod(SqlFileRestorer::class, 'parseStatements');
-
-        /** @var array<int, string> $result */
-        $result = $method->invoke(new SqlFileRestorer, $sql);
-
-        return $result;
     }
 
     public function test_parse_splits_on_semicolons(): void
@@ -79,7 +66,7 @@ final class SqlFileRestorerTest extends TestCase
         // "--" inside a value is data, not a comment. Stripping it also destroys
         // the closing quote and delimiter, merging this row with the next one.
         $statements = $this->parse(
-            "INSERT INTO t (b) VALUES ('a -- b');\nINSERT INTO t (b) VALUES ('z');"
+            "INSERT INTO t (b) VALUES ('a -- b');\nINSERT INTO t (b) VALUES ('z');",
         );
 
         self::assertSame([
@@ -157,7 +144,7 @@ final class SqlFileRestorerTest extends TestCase
 
         $path = $this->writeTempSql(
             "INSERT INTO sql_restore_target (id, name) VALUES (1, 'alpha');\n"
-            ."INSERT INTO sql_restore_target (id, name) VALUES (2, 'beta');\n"
+            . "INSERT INTO sql_restore_target (id, name) VALUES (2, 'beta');\n",
         );
 
         $result = (new SqlFileRestorer)->restore($path);
@@ -174,7 +161,7 @@ final class SqlFileRestorerTest extends TestCase
 
         $path = $this->writeTempSql(
             "INSERT INTO sql_restore_rollback (id) VALUES (1);\n"
-            ."INSERT INTO this_table_does_not_exist (id) VALUES (2);\n"
+            . "INSERT INTO this_table_does_not_exist (id) VALUES (2);\n",
         );
 
         try {
@@ -204,9 +191,9 @@ final class SqlFileRestorerTest extends TestCase
         // while the statements ran on $connection, so a non-default restore had
         // no atomicity at all and a partial restore stayed committed.
         config()->set('database.connections.secondary', [
-            'driver' => 'sqlite',
+            'driver'   => 'sqlite',
             'database' => ':memory:',
-            'prefix' => '',
+            'prefix'   => '',
         ]);
 
         Schema::connection('secondary')->create('sql_restore_secondary', function ($t): void {
@@ -215,7 +202,7 @@ final class SqlFileRestorerTest extends TestCase
 
         $path = $this->writeTempSql(
             "INSERT INTO sql_restore_secondary (id) VALUES (1);\n"
-            ."INSERT INTO no_such_table_here (id) VALUES (2);\n"
+            . "INSERT INTO no_such_table_here (id) VALUES (2);\n",
         );
 
         try {
@@ -228,13 +215,26 @@ final class SqlFileRestorerTest extends TestCase
         self::assertSame(
             0,
             DB::connection('secondary')->table('sql_restore_secondary')->count(),
-            'The first insert must roll back with the failed batch on a non-default connection.'
+            'The first insert must roll back with the failed batch on a non-default connection.',
         );
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function parse(string $sql): array
+    {
+        $method = new ReflectionMethod(SqlFileRestorer::class, 'parseStatements');
+
+        /** @var array<int, string> $result */
+        $result = $method->invoke(new SqlFileRestorer, $sql);
+
+        return $result;
     }
 
     private function writeTempSql(string $contents): string
     {
-        $path = tempnam(sys_get_temp_dir(), 'dbt-restorer-').'.sql';
+        $path = tempnam(sys_get_temp_dir(), 'dbt-restorer-') . '.sql';
         File::put($path, $contents);
         $this->tempFiles[] = $path;
 

@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Simtabi\Laranail\DbTools\Tests\Unit\Migrations;
 
-use PHPUnit\Framework\Attributes\DataProvider;
 use RuntimeException;
-use Simtabi\Laranail\DbTools\Migrations\ReversalPolicy;
 use Simtabi\Laranail\DbTools\Tests\TestCase;
+use PHPUnit\Framework\Attributes\DataProvider;
+use Simtabi\Laranail\DbTools\Migrations\ReversalPolicy;
 
 /**
  * `down()` drops tables, and `migrate:rollback` asks for no confirmation. On a
@@ -24,19 +24,6 @@ final class ReversalPolicyTest extends TestCase
         parent::tearDown();
     }
 
-    private function pretendEnvironment(string $environment): void
-    {
-        $this->app['env'] = $environment;
-    }
-
-    #[DataProvider('reversibleEnvironments')]
-    public function test_it_permits_environments_where_dropping_the_schema_is_normal(string $environment): void
-    {
-        $this->pretendEnvironment($environment);
-
-        self::assertTrue(ReversalPolicy::isPermitted());
-    }
-
     /**
      * @return iterable<string, array{string}>
      */
@@ -46,6 +33,64 @@ final class ReversalPolicyTest extends TestCase
         yield 'development' => ['development'];
         yield 'dev' => ['dev'];
         yield 'testing' => ['testing'];
+    }
+
+    /**
+     * @return iterable<string, array{string}>
+     */
+    public static function unlistedEnvironments(): iterable
+    {
+        yield 'staging' => ['staging'];
+        yield 'uat' => ['uat'];
+        yield 'demo' => ['demo'];
+        yield 'prod' => ['prod'];
+    }
+
+    /**
+     * @return iterable<string, array{mixed}>
+     */
+    public static function truthyOverrides(): iterable
+    {
+        yield 'bool' => [true];
+        yield 'string true' => ['true'];
+        yield 'string one' => ['1'];
+        yield 'int one' => [1];
+        yield 'yes' => ['yes'];
+        yield 'on' => ['on'];
+    }
+
+    /**
+     * @return iterable<string, array{mixed}>
+     */
+    public static function falsyOverrides(): iterable
+    {
+        yield 'bool' => [false];
+        yield 'string false' => ['false'];
+        yield 'string zero' => ['0'];
+        yield 'int zero' => [0];
+        yield 'empty' => [''];
+        yield 'no' => ['no'];
+        yield 'a word that is not a bool' => ['maybe'];
+        yield 'null' => [null];
+    }
+
+    /**
+     * @return iterable<string, array{mixed}>
+     */
+    public static function malformedEnvironmentLists(): iterable
+    {
+        yield 'empty array' => [[]];
+        yield 'a string' => ['not-an-array'];
+        yield 'null' => [null];
+        yield 'an int' => [42];
+    }
+
+    #[DataProvider('reversibleEnvironments')]
+    public function test_it_permits_environments_where_dropping_the_schema_is_normal(string $environment): void
+    {
+        $this->pretendEnvironment($environment);
+
+        self::assertTrue(ReversalPolicy::isPermitted());
     }
 
     public function test_testing_is_permitted_because_refresh_database_runs_migrate_fresh(): void
@@ -72,17 +117,6 @@ final class ReversalPolicyTest extends TestCase
         $this->pretendEnvironment($environment);
 
         self::assertFalse(ReversalPolicy::isPermitted());
-    }
-
-    /**
-     * @return iterable<string, array{string}>
-     */
-    public static function unlistedEnvironments(): iterable
-    {
-        yield 'staging' => ['staging'];
-        yield 'uat' => ['uat'];
-        yield 'demo' => ['demo'];
-        yield 'prod' => ['prod'];
     }
 
     public function test_the_refusal_names_the_environment_the_alternatives_and_the_override(): void
@@ -144,19 +178,6 @@ final class ReversalPolicyTest extends TestCase
         self::assertTrue(ReversalPolicy::isPermitted());
     }
 
-    /**
-     * @return iterable<string, array{mixed}>
-     */
-    public static function truthyOverrides(): iterable
-    {
-        yield 'bool' => [true];
-        yield 'string true' => ['true'];
-        yield 'string one' => ['1'];
-        yield 'int one' => [1];
-        yield 'yes' => ['yes'];
-        yield 'on' => ['on'];
-    }
-
     #[DataProvider('falsyOverrides')]
     public function test_anything_else_leaves_the_guard_on(mixed $value): void
     {
@@ -164,21 +185,6 @@ final class ReversalPolicyTest extends TestCase
         config()->set('laranail.db-tools.migrations.allow_rollback', $value);
 
         self::assertFalse(ReversalPolicy::isPermitted());
-    }
-
-    /**
-     * @return iterable<string, array{mixed}>
-     */
-    public static function falsyOverrides(): iterable
-    {
-        yield 'bool' => [false];
-        yield 'string false' => ['false'];
-        yield 'string zero' => ['0'];
-        yield 'int zero' => [0];
-        yield 'empty' => [''];
-        yield 'no' => ['no'];
-        yield 'a word that is not a bool' => ['maybe'];
-        yield 'null' => [null];
     }
 
     public function test_the_environment_list_is_configurable(): void
@@ -198,21 +204,15 @@ final class ReversalPolicyTest extends TestCase
         self::assertSame(ReversalPolicy::DEFAULT_ENVIRONMENTS, ReversalPolicy::environments());
     }
 
-    /**
-     * @return iterable<string, array{mixed}>
-     */
-    public static function malformedEnvironmentLists(): iterable
-    {
-        yield 'empty array' => [[]];
-        yield 'a string' => ['not-an-array'];
-        yield 'null' => [null];
-        yield 'an int' => [42];
-    }
-
     public function test_environments_compare_case_insensitively(): void
     {
         $this->pretendEnvironment('LOCAL');
 
         self::assertTrue(ReversalPolicy::isPermitted());
+    }
+
+    private function pretendEnvironment(string $environment): void
+    {
+        $this->app['env'] = $environment;
     }
 }

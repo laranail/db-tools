@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Simtabi\Laranail\DbTools\Tests\Unit\Schema;
 
 use Override;
-use Simtabi\Laranail\DbTools\Schema\DatabaseSchemaInspector;
-use Simtabi\Laranail\DbTools\Schema\DatabaseTableVerifier;
 use Simtabi\Laranail\DbTools\Tests\TestCase;
+use Simtabi\Laranail\DbTools\Schema\DatabaseTableVerifier;
+use Simtabi\Laranail\DbTools\Schema\DatabaseSchemaInspector;
 
 /**
  * hasTable() caught every exception and answered false, so "this table does
@@ -18,20 +18,6 @@ use Simtabi\Laranail\DbTools\Tests\TestCase;
  */
 final class UnreachableConnectionTest extends TestCase
 {
-    #[Override]
-    protected function defineEnvironment($app): void
-    {
-        parent::defineEnvironment($app);
-
-        // A directory that cannot exist, so opening the database fails at
-        // connect time rather than producing an empty schema.
-        $app['config']->set('database.connections.unreachable', [
-            'driver' => 'sqlite',
-            'database' => '/nonexistent-'.self::class.'/does/not/exist.sqlite',
-            'prefix' => '',
-        ]);
-    }
-
     public function test_has_table_does_not_answer_false_for_an_unreachable_database(): void
     {
         $inspector = new DatabaseSchemaInspector;
@@ -82,5 +68,19 @@ final class UnreachableConnectionTest extends TestCase
         $inspector = new DatabaseSchemaInspector;
 
         self::assertFalse($inspector->hasColumn('definitely_not_a_table', 'name'));
+    }
+
+    #[Override]
+    protected function defineEnvironment($app): void
+    {
+        parent::defineEnvironment($app);
+
+        // A directory that cannot exist, so opening the database fails at
+        // connect time rather than producing an empty schema.
+        $app['config']->set('database.connections.unreachable', [
+            'driver'   => 'sqlite',
+            'database' => '/nonexistent-' . self::class . '/does/not/exist.sqlite',
+            'prefix'   => '',
+        ]);
     }
 }

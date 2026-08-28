@@ -33,23 +33,6 @@ abstract class BaseEvent
     }
 
     /**
-     * Populate the shared event fields. Called by subclass factory methods.
-     *
-     * @param  array<string, mixed>|null  $metadata
-     */
-    protected function createEvent(
-        string $action,
-        string $type,
-        ?Request $request = null,
-        ?array $metadata = null,
-    ): void {
-        $this->action = $action;
-        $this->type = $type;
-        $this->request = $request;
-        $this->metadata = $metadata ?? [];
-    }
-
-    /**
      * Human-readable name. Subclasses override per action and fall back here.
      */
     public function getDisplayName(): string
@@ -89,5 +72,22 @@ abstract class BaseEvent
     public function getMetadata(): array
     {
         return $this->metadata;
+    }
+
+    /**
+     * Populate the shared event fields. Called by subclass factory methods.
+     *
+     * @param array<string, mixed>|null $metadata
+     */
+    protected function createEvent(
+        string $action,
+        string $type,
+        ?Request $request = null,
+        ?array $metadata = null,
+    ): void {
+        $this->action = $action;
+        $this->type = $type;
+        $this->request = $request;
+        $this->metadata = $metadata ?? [];
     }
 }

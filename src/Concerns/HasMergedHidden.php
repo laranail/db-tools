@@ -23,18 +23,6 @@ use Illuminate\Database\Eloquent\Model;
 trait HasMergedHidden
 {
     /**
-     * Attributes this model hides on top of the ones it inherits.
-     *
-     * Override in a subclass.
-     *
-     * @return array<int, string>
-     */
-    protected function additionalHidden(): array
-    {
-        return [];
-    }
-
-    /**
      * The inherited hidden list plus this model's additions.
      *
      * @return array<int, string>
@@ -45,5 +33,17 @@ trait HasMergedHidden
             ...parent::getHidden(),
             ...$this->additionalHidden(),
         ]));
+    }
+
+    /**
+     * Attributes this model hides on top of the ones it inherits.
+     *
+     * Override in a subclass.
+     *
+     * @return array<int, string>
+     */
+    protected function additionalHidden(): array
+    {
+        return [];
     }
 }

@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Simtabi\Laranail\DbTools\Services;
 
-use Illuminate\Contracts\Config\Repository as ConfigRepository;
+use Simtabi\Laranail\DbTools\Support\ConnectionContext;
 use Simtabi\Laranail\DbTools\Concerns\ManagesForeignKeyChecks;
+use Illuminate\Contracts\Config\Repository as ConfigRepository;
 use Simtabi\Laranail\DbTools\Exceptions\CleanDatabaseException;
 use Simtabi\Laranail\DbTools\Schema\Contracts\DatabaseTableVerifierInterface;
 use Simtabi\Laranail\DbTools\Services\Contracts\CleanDatabaseServiceInterface;
-use Simtabi\Laranail\DbTools\Support\ConnectionContext;
 
 /**
  * Truncate tables without leaving the database half-emptied.
@@ -87,7 +87,7 @@ final class CleanDatabaseService implements CleanDatabaseServiceInterface
         // ("main.authors" on SQLite, "public.users" on PostgreSQL), which no
         // exclusion list would ever match and no ->table() call wants.
         $all = $this->normalize(
-            ConnectionContext::for($connection)->schema()->getTableListing(schemaQualified: false)
+            ConnectionContext::for($connection)->schema()->getTableListing(schemaQualified: false),
         );
 
         $excluded = $this->normalize([...$except, ...$this->protectedTables()]);
@@ -119,8 +119,8 @@ final class CleanDatabaseService implements CleanDatabaseServiceInterface
     /**
      * Truncate the resolved targets with constraints off, inside a transaction.
      *
-     * @param  list<string>  $targets
-     * @param  list<string>  $skipped
+     * @param list<string> $targets
+     * @param list<string> $skipped
      */
     private function run(array $targets, array $skipped, ?string $connection): CleanDatabaseResult
     {
@@ -146,7 +146,8 @@ final class CleanDatabaseService implements CleanDatabaseServiceInterface
     /**
      * Trim, drop blanks, de-duplicate, re-index.
      *
-     * @param  array<int|string, mixed>  $tables
+     * @param array<int|string, mixed> $tables
+     *
      * @return list<string>
      */
     private function normalize(array $tables): array

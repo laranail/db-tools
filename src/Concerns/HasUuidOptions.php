@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Simtabi\Laranail\DbTools\Concerns;
 
 use Closure;
+use Ramsey\Uuid\Uuid;
 use Illuminate\Support\Str;
 use InvalidArgumentException;
-use Ramsey\Uuid\Uuid;
 use Simtabi\Laranail\DbTools\Exceptions\UuidException;
 
 trait HasUuidOptions
@@ -25,6 +25,17 @@ trait HasUuidOptions
     public static function generateUuidUsing(?Closure $resolver): void
     {
         self::$uuidGenerator = $resolver;
+    }
+
+    /**
+     * Static call to search for a record via the UUID
+     *
+     *
+     * @return mixed
+     */
+    public static function findByUuid($uuid)
+    {
+        return static::byUuid($uuid)->first();
     }
 
     /**
@@ -149,7 +160,8 @@ trait HasUuidOptions
     /**
      * Set the uuid value.
      *
-     * @param  string  $value
+     * @param string $value
+     *
      * @return static
      */
     public function setUuid($value)
@@ -204,9 +216,20 @@ trait HasUuidOptions
                 ? (string) Str::orderedUuid()
                 : (string) Str::uuid(),
             default => throw new InvalidArgumentException(
-                "Unsupported \$uuidVersion [{$version}] on ".static::class.'. Supported versions are 1, 3, 4 and 5.'
+                "Unsupported \$uuidVersion [{$version}] on " . static::class . '. Supported versions are 1, 3, 4 and 5.',
             ),
         };
+    }
+
+    /**
+     *  Scoping method to search for a record via the UUID
+     *
+     *
+     * @return mixed
+     */
+    public function scopeByUuid($query, $uuid)
+    {
+        return $query->where($this->getUuidColumnName(), $uuid);
     }
 
     /**
@@ -233,32 +256,10 @@ trait HasUuidOptions
 
         if (trim($name) === '') {
             throw new InvalidArgumentException(
-                'UUID version '.$version.' is name-based and needs a $uuidString on '.static::class.'.'
+                'UUID version ' . $version . ' is name-based and needs a $uuidString on ' . static::class . '.',
             );
         }
 
         return $name;
-    }
-
-    /**
-     *  Scoping method to search for a record via the UUID
-     *
-     *
-     * @return mixed
-     */
-    public function scopeByUuid($query, $uuid)
-    {
-        return $query->where($this->getUuidColumnName(), $uuid);
-    }
-
-    /**
-     * Static call to search for a record via the UUID
-     *
-     *
-     * @return mixed
-     */
-    public static function findByUuid($uuid)
-    {
-        return static::byUuid($uuid)->first();
     }
 }

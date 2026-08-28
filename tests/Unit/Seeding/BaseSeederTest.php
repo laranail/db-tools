@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Simtabi\Laranail\DbTools\Tests\Unit\Seeding;
 
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\Schema;
+use Simtabi\Laranail\DbTools\Tests\TestCase;
 use Simtabi\Laranail\DbTools\Seeding\BaseSeeder;
 use Simtabi\Laranail\DbTools\Seeding\UpsertResult;
-use Simtabi\Laranail\DbTools\Tests\TestCase;
 
 /**
  * @property string $code
@@ -17,11 +17,11 @@ use Simtabi\Laranail\DbTools\Tests\TestCase;
  */
 final class SeederRole extends Model
 {
+    public $timestamps = false;
+
     protected $table = 'seeder_roles';
 
     protected $guarded = [];
-
-    public $timestamps = false;
 }
 
 final class ExampleSeeder extends BaseSeeder
@@ -34,7 +34,7 @@ final class ExampleSeeder extends BaseSeeder
     public function run(): void
     {
         $this->result = $this->upsertAll(SeederRole::class, 'code', $this->rows);
-        $this->tell('info', 'seeded '.$this->result->summary());
+        $this->tell('info', 'seeded ' . $this->result->summary());
     }
 
     public function callConsole(): ?object
@@ -59,14 +59,6 @@ final class BaseSeederTest extends TestCase
             $table->string('code')->unique();
             $table->string('label')->nullable();
         });
-    }
-
-    private function seeder(array $rows): ExampleSeeder
-    {
-        $seeder = new ExampleSeeder;
-        $seeder->rows = $rows;
-
-        return $seeder;
     }
 
     // -------------------------------------------------------------------
@@ -212,5 +204,13 @@ final class BaseSeederTest extends TestCase
         } finally {
             $this->app['env'] = 'testing';
         }
+    }
+
+    private function seeder(array $rows): ExampleSeeder
+    {
+        $seeder = new ExampleSeeder;
+        $seeder->rows = $rows;
+
+        return $seeder;
     }
 }

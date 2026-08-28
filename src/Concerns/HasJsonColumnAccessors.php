@@ -59,6 +59,15 @@ trait HasJsonColumnAccessors
         return $attributes;
     }
 
+    public function setAttribute($key, $value)
+    {
+        if ($this->isJsonColumn($key) && (is_array($value) || is_object($value))) {
+            $value = json_encode($value, JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES);
+        }
+
+        return parent::setAttribute($key, $value);
+    }
+
     /**
      * Decode a stored json column, leaving malformed values as they are so a
      * bad row surfaces rather than silently becoming null.
@@ -68,15 +77,6 @@ trait HasJsonColumnAccessors
         $decoded = json_decode($value, true);
 
         return $decoded === null && json_last_error() !== JSON_ERROR_NONE ? $value : $decoded;
-    }
-
-    public function setAttribute($key, $value)
-    {
-        if ($this->isJsonColumn($key) && (is_array($value) || is_object($value))) {
-            $value = json_encode($value, JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES);
-        }
-
-        return parent::setAttribute($key, $value);
     }
 
     protected function isJsonColumn(string $key): bool

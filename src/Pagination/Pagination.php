@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Simtabi\Laranail\DbTools\Pagination;
 
-use Illuminate\Contracts\Pagination\LengthAwarePaginator as LengthAwarePaginatorContract;
-use Illuminate\Database\Eloquent\Builder as EloquentBuilder;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Query\Builder;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Database\Eloquent\Builder as EloquentBuilder;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator as LengthAwarePaginatorContract;
 
 /**
  * Offset (page-number) pagination helpers, for cases where a numbered pager is
@@ -19,8 +19,9 @@ final class Pagination
     /**
      * Paginate an in-memory array slice into a length-aware paginator.
      *
-     * @param  array<array-key, mixed>  $items
-     * @param  array<string, mixed>  $options
+     * @param array<array-key, mixed> $items
+     * @param array<string, mixed> $options
+     *
      * @return LengthAwarePaginator<int, mixed>
      */
     public static function paginate(array $items, int $perPage, int $currentPage, array $options = []): LengthAwarePaginator
@@ -35,15 +36,16 @@ final class Pagination
             count($items),
             $perPage,
             $currentPage,
-            $options
+            $options,
         );
     }
 
     /**
      * Paginate an Eloquent or query builder, appending the given query options.
      *
-     * @param  Builder|EloquentBuilder<Model>  $query
-     * @param  array<string, mixed>  $options
+     * @param Builder|EloquentBuilder<Model> $query
+     * @param array<string, mixed> $options
+     *
      * @return LengthAwarePaginatorContract<int, mixed>
      */
     public static function paginateQuery($query, int $perPage, ?int $page = null, array $options = []): LengthAwarePaginatorContract

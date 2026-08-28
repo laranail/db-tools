@@ -4,18 +4,18 @@ declare(strict_types=1);
 
 namespace Simtabi\Laranail\DbTools\Tests\Unit\Concerns;
 
-use Illuminate\Database\Eloquent\Model;
 use Override;
-use Simtabi\Laranail\DbTools\Concerns\HasMergedFillable;
+use Illuminate\Database\Eloquent\Model;
 use Simtabi\Laranail\DbTools\Tests\TestCase;
+use Simtabi\Laranail\DbTools\Concerns\HasMergedFillable;
 
 class MergedFillableBase extends Model
 {
     use HasMergedFillable;
 
-    protected $table = 'merged_fillable_models';
-
     public $timestamps = false;
+
+    protected $table = 'merged_fillable_models';
 
     protected $fillable = ['email', 'name'];
 }

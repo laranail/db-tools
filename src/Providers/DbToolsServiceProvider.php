@@ -4,56 +4,56 @@ declare(strict_types=1);
 
 namespace Simtabi\Laranail\DbTools\Providers;
 
-use Illuminate\Console\Events\CommandStarting;
-use Illuminate\Contracts\Http\Kernel as HttpKernelContract;
-use Illuminate\Database\Schema\Blueprint as IlluminateBlueprint;
-use Illuminate\Foundation\AliasLoader;
-use Illuminate\Routing\Router;
-use Illuminate\Support\ServiceProvider;
 use Override;
+use Throwable;
 use Psr\Log\LoggerInterface;
+use Illuminate\Routing\Router;
+use Illuminate\Foundation\AliasLoader;
+use Illuminate\Support\ServiceProvider;
+use Illuminate\Console\Events\CommandStarting;
+use Simtabi\Laranail\DbTools\Guard\DatabaseGuard;
 use Simtabi\Laranail\DbTools\Backup\BackupManager;
-use Simtabi\Laranail\DbTools\Backup\Contracts\BackupManagerInterface;
-use Simtabi\Laranail\DbTools\Console\DbToolsCommand;
 use Simtabi\Laranail\DbTools\Console\HealthCommand;
-use Simtabi\Laranail\DbTools\Events\DatabaseUnavailable;
 use Simtabi\Laranail\DbTools\Events\SchemaNotReady;
 use Simtabi\Laranail\DbTools\Facades\DbToolsFacade;
-use Simtabi\Laranail\DbTools\Files\Contracts\DatabaseFileServiceInterface;
-use Simtabi\Laranail\DbTools\Files\DatabaseFileService;
-use Simtabi\Laranail\DbTools\Guard\Contracts\DatabaseAvailabilityInterface;
-use Simtabi\Laranail\DbTools\Guard\DatabaseGuard;
-use Simtabi\Laranail\DbTools\Http\Middleware\EnsureSchemaIsReady;
-use Simtabi\Laranail\DbTools\Listeners\LogDatabaseIssues;
-use Simtabi\Laranail\DbTools\Migrations\GuardsDestructiveCommands;
-use Simtabi\Laranail\DbTools\Schema\AuditColumnsMacro;
+use Simtabi\Laranail\DbTools\Console\DbToolsCommand;
 use Simtabi\Laranail\DbTools\Schema\BlueprintMacros;
-use Simtabi\Laranail\DbTools\Schema\ConfiguredMorphsMacro;
-use Simtabi\Laranail\DbTools\Schema\Contracts\DatabaseConnectionTesterInterface;
-use Simtabi\Laranail\DbTools\Schema\Contracts\DatabaseSchemaInspectorInterface;
-use Simtabi\Laranail\DbTools\Schema\Contracts\DatabaseTableVerifierInterface;
-use Simtabi\Laranail\DbTools\Schema\Contracts\SchemaReadinessInterface;
-use Simtabi\Laranail\DbTools\Schema\DatabaseConnectionTester;
-use Simtabi\Laranail\DbTools\Schema\DatabaseSchemaInspector;
-use Simtabi\Laranail\DbTools\Schema\DatabaseTableVerifier;
-use Simtabi\Laranail\DbTools\Schema\FieldGroupMacros;
 use Simtabi\Laranail\DbTools\Schema\SchemaReadiness;
-use Simtabi\Laranail\DbTools\Schema\SoftDeleteHistoryMacro;
-use Simtabi\Laranail\DbTools\Schema\SoftDeletesWithUndoMacro;
-use Simtabi\Laranail\DbTools\Services\CleanDatabaseService;
-use Simtabi\Laranail\DbTools\Services\Contracts\CleanDatabaseServiceInterface;
-use Simtabi\Laranail\DbTools\Services\Contracts\DatabaseServiceInterface;
-use Simtabi\Laranail\DbTools\Services\Contracts\MaintenanceServiceInterface;
+use Simtabi\Laranail\DbTools\Schema\FieldGroupMacros;
+use Simtabi\Laranail\DbTools\Schema\AuditColumnsMacro;
 use Simtabi\Laranail\DbTools\Services\DatabaseService;
+use Simtabi\Laranail\DbTools\Files\DatabaseFileService;
+use Simtabi\Laranail\DbTools\Events\DatabaseUnavailable;
+use Simtabi\Laranail\DbTools\Listeners\LogDatabaseIssues;
 use Simtabi\Laranail\DbTools\Services\MaintenanceService;
-use Throwable;
+use Simtabi\Laranail\DbTools\Schema\ConfiguredMorphsMacro;
+use Simtabi\Laranail\DbTools\Schema\DatabaseTableVerifier;
+use Illuminate\Contracts\Http\Kernel as HttpKernelContract;
+use Simtabi\Laranail\DbTools\Schema\SoftDeleteHistoryMacro;
+use Simtabi\Laranail\DbTools\Services\CleanDatabaseService;
+use Simtabi\Laranail\DbTools\Schema\DatabaseSchemaInspector;
+use Simtabi\Laranail\DbTools\Schema\DatabaseConnectionTester;
+use Simtabi\Laranail\DbTools\Schema\SoftDeletesWithUndoMacro;
+use Illuminate\Database\Schema\Blueprint as IlluminateBlueprint;
+use Simtabi\Laranail\DbTools\Http\Middleware\EnsureSchemaIsReady;
+use Simtabi\Laranail\DbTools\Migrations\GuardsDestructiveCommands;
+use Simtabi\Laranail\DbTools\Backup\Contracts\BackupManagerInterface;
+use Simtabi\Laranail\DbTools\Schema\Contracts\SchemaReadinessInterface;
+use Simtabi\Laranail\DbTools\Services\Contracts\DatabaseServiceInterface;
+use Simtabi\Laranail\DbTools\Files\Contracts\DatabaseFileServiceInterface;
+use Simtabi\Laranail\DbTools\Guard\Contracts\DatabaseAvailabilityInterface;
+use Simtabi\Laranail\DbTools\Services\Contracts\MaintenanceServiceInterface;
+use Simtabi\Laranail\DbTools\Schema\Contracts\DatabaseTableVerifierInterface;
+use Simtabi\Laranail\DbTools\Services\Contracts\CleanDatabaseServiceInterface;
+use Simtabi\Laranail\DbTools\Schema\Contracts\DatabaseSchemaInspectorInterface;
+use Simtabi\Laranail\DbTools\Schema\Contracts\DatabaseConnectionTesterInterface;
 
 final class DbToolsServiceProvider extends ServiceProvider
 {
     #[Override]
     public function register(): void
     {
-        $this->mergeConfigFrom(__DIR__.'/../../config/db-tools.php', 'laranail.db-tools');
+        $this->mergeConfigFrom(__DIR__ . '/../../config/db-tools.php', 'laranail.db-tools');
 
         // Backup
         $this->app->singleton(BackupManagerInterface::class, BackupManager::class);
@@ -130,11 +130,11 @@ final class DbToolsServiceProvider extends ServiceProvider
             // not collide loudly -- it would silently replace this one, and surface as the wrong file
             // published. The vendor scope is what makes the key unambiguous.
             $this->publishes([
-                __DIR__.'/../../config/db-tools.php' => config_path('laranail/db-tools.php'),
+                __DIR__ . '/../../config/db-tools.php' => config_path('laranail/db-tools.php'),
             ], 'laranail::db-tools-config');
 
             $this->publishes([
-                __DIR__.'/../../database/migrations/0001_01_01_000000_create_soft_delete_history_table.php.stub' => database_path('migrations/'.date('Y_m_d_His').'_create_soft_delete_history_table.php'),
+                __DIR__ . '/../../database/migrations/0001_01_01_000000_create_soft_delete_history_table.php.stub' => database_path('migrations/' . date('Y_m_d_His') . '_create_soft_delete_history_table.php'),
             ], 'laranail::db-tools-migrations');
         }
 

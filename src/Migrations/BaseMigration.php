@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Simtabi\Laranail\DbTools\Migrations;
 
-use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Builder;
+use Illuminate\Database\Migrations\Migration;
 use Simtabi\Laranail\DbTools\Support\ConnectionContext;
 
 /**
@@ -27,13 +27,6 @@ use Simtabi\Laranail\DbTools\Support\ConnectionContext;
 abstract class BaseMigration extends Migration
 {
     /**
-     * The tables this migration owns, in creation order.
-     *
-     * @return list<string>
-     */
-    abstract protected function tables(): array;
-
-    /**
      * Drop in reverse creation order, so dependent tables go before their
      * parents and the foreign keys resolve.
      *
@@ -50,6 +43,13 @@ abstract class BaseMigration extends Migration
             $schema->dropIfExists($table);
         }
     }
+
+    /**
+     * The tables this migration owns, in creation order.
+     *
+     * @return list<string>
+     */
+    abstract protected function tables(): array;
 
     /**
      * The connection this migration's tables live on.

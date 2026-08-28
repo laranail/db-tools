@@ -4,15 +4,15 @@ declare(strict_types=1);
 
 namespace Simtabi\Laranail\DbTools\Schema;
 
+use PDO;
 use Exception;
+use PDOException;
+use InvalidArgumentException;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Database\Connection;
 use Illuminate\Support\Facades\Config;
-use Illuminate\Support\Facades\DB;
-use InvalidArgumentException;
-use PDO;
-use PDOException;
-use Simtabi\Laranail\DbTools\Schema\Contracts\DatabaseConnectionTesterInterface;
 use Simtabi\Laranail\DbTools\Support\ConnectionContext;
+use Simtabi\Laranail\DbTools\Schema\Contracts\DatabaseConnectionTesterInterface;
 
 /**
  * Class DatabaseConnectionTester
@@ -25,7 +25,8 @@ class DatabaseConnectionTester implements DatabaseConnectionTesterInterface
     /**
      * Test if a database connection is working
      *
-     * @param  string|null  $connection  Connection name (null for default)
+     * @param string|null $connection Connection name (null for default)
+     *
      * @return bool True if connection successful
      */
     public function test(?string $connection = null): bool
@@ -90,6 +91,123 @@ class DatabaseConnectionTester implements DatabaseConnectionTesterInterface
     }
 
     /**
+     * Test connection and return detailed information
+     *
+     * @param string|null $connection Connection name (null for default)
+     *
+     * @return array Connection details
+     */
+    public function testDetailed(?string $connection = null): array
+    {
+        try {
+            $conn = $this->getConnection($connection);
+            $conn->getPdo();
+
+            return [
+                'success'    => true,
+                'message'    => 'Connection successful',
+                'connection' => ConnectionContext::for($connection)->key(),
+                'driver'     => $conn->getDriverName(),
+                'version'    => $this->getVersion($connection),
+                'database'   => $conn->getDatabaseName(),
+            ];
+        } catch (PDOException $e) {
+            return [
+                'success'    => false,
+                'message'    => 'Database error: ' . $e->getMessage(),
+                'connection' => ConnectionContext::for($connection)->key(),
+            ];
+        } catch (InvalidArgumentException $e) {
+            return [
+                'success'    => false,
+                'message'    => 'Configuration error: ' . $e->getMessage(),
+                'connection' => ConnectionContext::for($connection)->key(),
+            ];
+        } catch (Exception $e) {
+            return [
+                'success'    => false,
+                'message'    => 'Connection failed: ' . $e->getMessage(),
+                'connection' => ConnectionContext::for($connection)->key(),
+            ];
+        }
+    }
+
+    /**
+     * Get the database driver name
+     *
+     * @param string|null $connection Connection name (null for default)
+     *
+     * @return string Driver name
+     */
+    public function getDriver(?string $connection = null): string
+    {
+        try {
+            return $this->getConnection($connection)->getDriverName();
+        } catch (Exception) {
+            return 'unknown';
+        }
+    }
+
+    /**
+     * Get the database server version
+     *
+     * @param string|null $connection Connection name (null for default)
+     *
+     * @return string|null Version string
+     */
+    public function getVersion(?string $connection = null): ?string
+    {
+        try {
+            $conn = $this->getConnection($connection);
+            $driver = $conn->getDriverName();
+
+            $query = match ($driver) {
+                'mysql', 'mariadb' => 'SELECT VERSION() as version',
+                'pgsql'            => 'SELECT version() as version',
+                'sqlite'           => 'SELECT sqlite_version() as version',
+                'sqlsrv'           => 'SELECT @@VERSION as version',
+                default            => null,
+            };
+
+            if (! $query) {
+                return null;
+            }
+
+            $result = $conn->selectOne($query);
+
+            return $this->normalizeVersion($result);
+        } catch (Exception) {
+            return null;
+        }
+    }
+
+    /**
+     * Get the database name
+     *
+     * @param string|null $connection Connection name (null for default)
+     *
+     * @return string|null Database name
+     */
+    public function getDatabaseName(?string $connection = null): ?string
+    {
+        try {
+            return $this->getConnection($connection)->getDatabaseName();
+        } catch (Exception) {
+            return null;
+        }
+    }
+
+    /**
+     * Get a database connection instance
+     *
+     * @param string|null $connection Connection name (null for default)
+     */
+    protected function getConnection(?string $connection = null): Connection
+    {
+        return ConnectionContext::for($connection)->connection();
+    }
+
+    /**
      * The database connections already resolved this request, keyed by name.
      *
      * @return array<string, mixed>
@@ -120,7 +238,8 @@ class DatabaseConnectionTester implements DatabaseConnectionTesterInterface
      *                  correct connect-only knob.
      *   sqlite         local; never reached (short-circuited in probe()).
      *
-     * @param  array<string, mixed>  $config
+     * @param array<string, mixed> $config
+     *
      * @return array<string, mixed>
      */
     private function withConnectTimeout(array $config, int $timeout): array
@@ -146,94 +265,6 @@ class DatabaseConnectionTester implements DatabaseConnectionTesterInterface
     }
 
     /**
-     * Test connection and return detailed information
-     *
-     * @param  string|null  $connection  Connection name (null for default)
-     * @return array Connection details
-     */
-    public function testDetailed(?string $connection = null): array
-    {
-        try {
-            $conn = $this->getConnection($connection);
-            $conn->getPdo();
-
-            return [
-                'success' => true,
-                'message' => 'Connection successful',
-                'connection' => ConnectionContext::for($connection)->key(),
-                'driver' => $conn->getDriverName(),
-                'version' => $this->getVersion($connection),
-                'database' => $conn->getDatabaseName(),
-            ];
-        } catch (PDOException $e) {
-            return [
-                'success' => false,
-                'message' => 'Database error: '.$e->getMessage(),
-                'connection' => ConnectionContext::for($connection)->key(),
-            ];
-        } catch (InvalidArgumentException $e) {
-            return [
-                'success' => false,
-                'message' => 'Configuration error: '.$e->getMessage(),
-                'connection' => ConnectionContext::for($connection)->key(),
-            ];
-        } catch (Exception $e) {
-            return [
-                'success' => false,
-                'message' => 'Connection failed: '.$e->getMessage(),
-                'connection' => ConnectionContext::for($connection)->key(),
-            ];
-        }
-    }
-
-    /**
-     * Get the database driver name
-     *
-     * @param  string|null  $connection  Connection name (null for default)
-     * @return string Driver name
-     */
-    public function getDriver(?string $connection = null): string
-    {
-        try {
-            return $this->getConnection($connection)->getDriverName();
-        } catch (Exception) {
-            return 'unknown';
-        }
-    }
-
-    /**
-     * Get the database server version
-     *
-     * @param  string|null  $connection  Connection name (null for default)
-     * @return string|null Version string
-     */
-    public function getVersion(?string $connection = null): ?string
-    {
-        try {
-            $conn = $this->getConnection($connection);
-            $driver = $conn->getDriverName();
-
-            $query = match ($driver) {
-                'mysql', 'mariadb' => 'SELECT VERSION() as version',
-                'pgsql' => 'SELECT version() as version',
-                'sqlite' => 'SELECT sqlite_version() as version',
-                'sqlsrv' => 'SELECT @@VERSION as version',
-                default => null,
-            };
-
-            if (! $query) {
-                return null;
-            }
-
-            $result = $conn->selectOne($query);
-
-            return $this->normalizeVersion($result);
-        } catch (Exception) {
-            return null;
-        }
-    }
-
-    /**
      * Normalize a version result that may come back as a scalar, an array, or
      * an object depending on the driver (e.g. SQLite's sqlite_version()
      * returns a scalar where MySQL/PostgreSQL return a "version" column).
@@ -249,36 +280,11 @@ class DatabaseConnectionTester implements DatabaseConnectionTesterInterface
         }
 
         $value = match (true) {
-            is_array($result) => $result['version'] ?? $result[0] ?? reset($result),
+            is_array($result)  => $result['version'] ?? $result[0] ?? reset($result),
             is_object($result) => $result->version ?? null,
-            default => null,
+            default            => null,
         };
 
         return is_scalar($value) ? (string) $value : null;
-    }
-
-    /**
-     * Get the database name
-     *
-     * @param  string|null  $connection  Connection name (null for default)
-     * @return string|null Database name
-     */
-    public function getDatabaseName(?string $connection = null): ?string
-    {
-        try {
-            return $this->getConnection($connection)->getDatabaseName();
-        } catch (Exception) {
-            return null;
-        }
-    }
-
-    /**
-     * Get a database connection instance
-     *
-     * @param  string|null  $connection  Connection name (null for default)
-     */
-    protected function getConnection(?string $connection = null): Connection
-    {
-        return ConnectionContext::for($connection)->connection();
     }
 }

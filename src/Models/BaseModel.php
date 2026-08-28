@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Simtabi\Laranail\DbTools\Models;
 
-use Carbon\CarbonInterface;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Override;
+use Carbon\CarbonInterface;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Simtabi\Laranail\DbTools\Concerns\HasUuidsOrIntegerIds;
 
 /**
@@ -30,6 +30,8 @@ abstract class BaseModel extends Model
 
     public const string UPDATED_AT = 'updated_at';
 
+    public $timestamps = true;
+
     /**
      * @var array<string, string>
      */
@@ -38,54 +40,11 @@ abstract class BaseModel extends Model
         'updated_at' => 'datetime',
     ];
 
-    public $timestamps = true;
-
-    /**
-     * Boot the model and wire lifecycle hook stubs.
-     */
-    #[Override]
-    protected static function boot(): void
-    {
-        parent::boot();
-
-        static::creating(static fn (self $model) => $model->handleCreating());
-        static::created(static fn (self $model) => $model->handleCreated());
-        static::updating(static fn (self $model) => $model->handleUpdating());
-        static::updated(static fn (self $model) => $model->handleUpdated());
-        static::deleting(static fn (self $model) => $model->handleDeleting());
-        static::deleted(static fn (self $model) => $model->handleDeleted());
-    }
-
-    /** Override in child classes if needed. */
-    protected function handleCreating(): void {}
-
-    /** Override in child classes if needed. */
-    protected function handleCreated(): void {}
-
-    /** Override in child classes if needed. */
-    protected function handleUpdating(): void {}
-
-    /** Override in child classes if needed. */
-    protected function handleUpdated(): void {}
-
-    /** Override in child classes if needed. */
-    protected function handleDeleting(): void {}
-
-    /** Override in child classes if needed. */
-    protected function handleDeleted(): void {}
-
-    /**
-     * Column the time-based scopes operate on (defaults to the created-at column).
-     */
-    protected function timeScopeColumn(): string
-    {
-        return static::CREATED_AT;
-    }
-
     /**
      * Scope to records created today.
      *
-     * @param  Builder<static>  $query
+     * @param Builder<static> $query
+     *
      * @return Builder<static>
      */
     public function scopeToday(Builder $query): Builder
@@ -96,7 +55,8 @@ abstract class BaseModel extends Model
     /**
      * Scope to records created this week.
      *
-     * @param  Builder<static>  $query
+     * @param Builder<static> $query
+     *
      * @return Builder<static>
      */
     public function scopeThisWeek(Builder $query): Builder
@@ -107,7 +67,8 @@ abstract class BaseModel extends Model
     /**
      * Scope to records created this month.
      *
-     * @param  Builder<static>  $query
+     * @param Builder<static> $query
+     *
      * @return Builder<static>
      */
     public function scopeThisMonth(Builder $query): Builder
@@ -119,7 +80,8 @@ abstract class BaseModel extends Model
     /**
      * Scope to records created this year.
      *
-     * @param  Builder<static>  $query
+     * @param Builder<static> $query
+     *
      * @return Builder<static>
      */
     public function scopeThisYear(Builder $query): Builder
@@ -130,7 +92,8 @@ abstract class BaseModel extends Model
     /**
      * Scope to records created within the last N days.
      *
-     * @param  Builder<static>  $query
+     * @param Builder<static> $query
+     *
      * @return Builder<static>
      */
     public function scopeRecent(Builder $query, int $days = 7): Builder
@@ -204,10 +167,10 @@ abstract class BaseModel extends Model
         $array = $this->toArray();
 
         $array['_metadata'] = [
-            'model_name' => $this->getModelName(),
-            'table_name' => $this->getTableName(),
-            'is_new' => $this->isNew(),
-            'is_modified' => $this->isModified(),
+            'model_name'       => $this->getModelName(),
+            'table_name'       => $this->getTableName(),
+            'is_new'           => $this->isNew(),
+            'is_modified'      => $this->isModified(),
             'created_at_human' => $this->getCreatedAtForHumans(),
             'updated_at_human' => $this->getUpdatedAtForHumans(),
         ];
@@ -245,5 +208,47 @@ abstract class BaseModel extends Model
         $this->syncOriginal();
 
         return $this;
+    }
+
+    /**
+     * Boot the model and wire lifecycle hook stubs.
+     */
+    #[Override]
+    protected static function boot(): void
+    {
+        parent::boot();
+
+        static::creating(static fn (self $model) => $model->handleCreating());
+        static::created(static fn (self $model) => $model->handleCreated());
+        static::updating(static fn (self $model) => $model->handleUpdating());
+        static::updated(static fn (self $model) => $model->handleUpdated());
+        static::deleting(static fn (self $model) => $model->handleDeleting());
+        static::deleted(static fn (self $model) => $model->handleDeleted());
+    }
+
+    /** Override in child classes if needed. */
+    protected function handleCreating(): void {}
+
+    /** Override in child classes if needed. */
+    protected function handleCreated(): void {}
+
+    /** Override in child classes if needed. */
+    protected function handleUpdating(): void {}
+
+    /** Override in child classes if needed. */
+    protected function handleUpdated(): void {}
+
+    /** Override in child classes if needed. */
+    protected function handleDeleting(): void {}
+
+    /** Override in child classes if needed. */
+    protected function handleDeleted(): void {}
+
+    /**
+     * Column the time-based scopes operate on (defaults to the created-at column).
+     */
+    protected function timeScopeColumn(): string
+    {
+        return static::CREATED_AT;
     }
 }

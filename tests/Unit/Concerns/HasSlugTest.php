@@ -4,20 +4,20 @@ declare(strict_types=1);
 
 namespace Simtabi\Laranail\DbTools\Tests\Unit\Concerns;
 
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Schema;
-use Simtabi\Laranail\DbTools\Concerns\HasSlug;
+use Illuminate\Database\Eloquent\Model;
 use Simtabi\Laranail\DbTools\Tests\TestCase;
+use Simtabi\Laranail\DbTools\Concerns\HasSlug;
 
 final class PageModel extends Model
 {
     use HasSlug;
 
+    public $timestamps = false;
+
     protected $table = 'pages';
 
     protected $guarded = [];
-
-    public $timestamps = false;
 }
 
 /**
@@ -28,11 +28,11 @@ final class PermalinkPageModel extends Model
 {
     use HasSlug;
 
+    public $timestamps = false;
+
     protected $table = 'permalink_pages';
 
     protected $guarded = [];
-
-    public $timestamps = false;
 
     protected string $slugDestColumnName = 'permalink';
 }

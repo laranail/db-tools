@@ -4,20 +4,20 @@ declare(strict_types=1);
 
 namespace Simtabi\Laranail\DbTools\Tests\Unit\Concerns;
 
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Schema;
-use Simtabi\Laranail\DbTools\Concerns\HasUuid;
+use Illuminate\Database\Eloquent\Model;
 use Simtabi\Laranail\DbTools\Tests\TestCase;
+use Simtabi\Laranail\DbTools\Concerns\HasUuid;
 
 final class HookedUuidModel extends Model
 {
     use HasUuid;
 
+    public $timestamps = false;
+
     protected $table = 'hooked_uuid_models';
 
     protected $guarded = [];
-
-    public $timestamps = false;
 }
 
 final class HasUuidGeneratorHookTest extends TestCase
@@ -55,7 +55,7 @@ final class HasUuidGeneratorHookTest extends TestCase
 
         self::assertMatchesRegularExpression(
             '/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i',
-            (string) $model->uuid
+            (string) $model->uuid,
         );
     }
 }

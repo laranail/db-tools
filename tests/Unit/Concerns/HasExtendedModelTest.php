@@ -4,19 +4,19 @@ declare(strict_types=1);
 
 namespace Simtabi\Laranail\DbTools\Tests\Unit\Concerns;
 
-use Illuminate\Database\Eloquent\MassAssignmentException;
-use Illuminate\Database\Eloquent\Model;
 use Override;
-use Simtabi\Laranail\DbTools\Concerns\HasExtendedModel;
+use Illuminate\Database\Eloquent\Model;
 use Simtabi\Laranail\DbTools\Tests\TestCase;
+use Simtabi\Laranail\DbTools\Concerns\HasExtendedModel;
+use Illuminate\Database\Eloquent\MassAssignmentException;
 
 class ExtendedModelBase extends Model
 {
     use HasExtendedModel;
 
-    protected $table = 'extended_models';
-
     public $timestamps = false;
+
+    protected $table = 'extended_models';
 
     protected $fillable = ['email', 'password'];
 
@@ -59,9 +59,9 @@ final class ExtendedModelUnguarded extends Model
 {
     use HasExtendedModel;
 
-    protected $table = 'extended_models';
-
     public $timestamps = false;
+
+    protected $table = 'extended_models';
 }
 
 /**
@@ -72,11 +72,11 @@ final class ExtendedModelOwnGuarded extends Model
 {
     use HasExtendedModel;
 
+    public $timestamps = false;
+
     protected $table = 'extended_models';
 
     protected $guarded = ['id'];
-
-    public $timestamps = false;
 }
 
 final class HasExtendedModelTest extends TestCase

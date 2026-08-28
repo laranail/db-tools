@@ -4,21 +4,21 @@ declare(strict_types=1);
 
 namespace Simtabi\Laranail\DbTools\Tests\Unit\Concerns;
 
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\Schema;
-use Simtabi\Laranail\DbTools\Concerns\HasUlid;
-use Simtabi\Laranail\DbTools\Tests\TestCase;
 use Symfony\Component\Uid\Ulid;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Database\Eloquent\Model;
+use Simtabi\Laranail\DbTools\Tests\TestCase;
+use Simtabi\Laranail\DbTools\Concerns\HasUlid;
 
 final class HasUlidModel extends Model
 {
     use HasUlid;
 
+    public $timestamps = false;
+
     protected $table = 'has_ulid_models';
 
     protected $guarded = [];
-
-    public $timestamps = false;
 }
 
 final class HasUlidTest extends TestCase

@@ -25,8 +25,8 @@ final class DbToolsCommandTest extends TestCase
     public function test_dry_run_export_succeeds_without_touching_db(): void
     {
         $this->artisan('laranail::db-tools.db', [
-            'action' => 'export',
-            '--path' => '/tmp/does-not-matter.sql',
+            'action'    => 'export',
+            '--path'    => '/tmp/does-not-matter.sql',
             '--dry-run' => true,
         ])->assertExitCode(0);
     }
@@ -34,9 +34,9 @@ final class DbToolsCommandTest extends TestCase
     public function test_clean_rejects_unknown_tables(): void
     {
         $this->artisan('laranail::db-tools.db', [
-            'action' => 'clean',
+            'action'   => 'clean',
             '--tables' => 'ghost_table',
-            '--force' => true,
+            '--force'  => true,
         ])->assertExitCode(1);
     }
 
@@ -49,7 +49,7 @@ final class DbToolsCommandTest extends TestCase
         DB::table('keep_widgets')->insert([['name' => 'a'], ['name' => 'b']]);
 
         $this->artisan('laranail::db-tools.db', [
-            'action' => 'clean',
+            'action'   => 'clean',
             '--tables' => 'keep_widgets',
         ])
             ->expectsConfirmation('About to TRUNCATE keep_widgets. Continue?', 'no')
@@ -71,9 +71,9 @@ final class DbToolsCommandTest extends TestCase
         self::assertSame(2, DB::table('clean_widgets')->count());
 
         $this->artisan('laranail::db-tools.db', [
-            'action' => 'clean',
+            'action'   => 'clean',
             '--tables' => 'clean_widgets',
-            '--force' => true,
+            '--force'  => true,
         ])->assertExitCode(0);
 
         self::assertSame(0, DB::table('clean_widgets')->count());
@@ -90,8 +90,8 @@ final class DbToolsCommandTest extends TestCase
         // having printed nothing about what it would have done. A dry run
         // destroys nothing, so it must never need confirming.
         $this->artisan('laranail::db-tools.db', [
-            'action' => 'clean',
-            '--tables' => 'dry_widgets',
+            'action'    => 'clean',
+            '--tables'  => 'dry_widgets',
             '--dry-run' => true,
         ])
             ->expectsOutputToContain('[dry-run] would truncate dry_widgets')
@@ -110,8 +110,8 @@ final class DbToolsCommandTest extends TestCase
         // database that was never restored. Nobody declined here — there was no
         // terminal to ask — so the caller must not read this as done.
         $this->artisan('laranail::db-tools.db', [
-            'action' => 'clean',
-            '--tables' => 'chained_widgets',
+            'action'           => 'clean',
+            '--tables'         => 'chained_widgets',
             '--no-interaction' => true,
         ])
             ->expectsOutputToContain('re-run with --force')

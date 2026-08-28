@@ -4,52 +4,22 @@ declare(strict_types=1);
 
 namespace Simtabi\Laranail\DbTools\Tests\Unit\Guard;
 
-use Illuminate\Database\Events\ConnectionEstablished;
+use PDO;
+use Override;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
-use Illuminate\Support\Facades\Schema;
-use Override;
-use PDO;
 use Simtabi\Laranail\DbTools\DbTools;
+use Illuminate\Support\Facades\Schema;
+use Simtabi\Laranail\DbTools\Tests\TestCase;
+use Simtabi\Laranail\DbTools\Guard\DatabaseGuard;
+use Illuminate\Database\Events\ConnectionEstablished;
 use Simtabi\Laranail\DbTools\Events\DatabaseUnavailable;
 use Simtabi\Laranail\DbTools\Guard\Contracts\DatabaseAvailabilityInterface;
-use Simtabi\Laranail\DbTools\Guard\DatabaseGuard;
-use Simtabi\Laranail\DbTools\Schema\Contracts\DatabaseConnectionTesterInterface;
 use Simtabi\Laranail\DbTools\Schema\Contracts\DatabaseSchemaInspectorInterface;
-use Simtabi\Laranail\DbTools\Tests\TestCase;
+use Simtabi\Laranail\DbTools\Schema\Contracts\DatabaseConnectionTesterInterface;
 
 final class DatabaseGuardTest extends TestCase
 {
-    #[Override]
-    protected function defineEnvironment($app): void
-    {
-        parent::defineEnvironment($app);
-
-        // A deliberately unreachable connection: loopback port 1 refuses the TCP
-        // connection instantly (no blackhole hang).
-        $app['config']->set('database.connections.down', [
-            'driver' => 'mysql',
-            'host' => '127.0.0.1',
-            'port' => 1,
-            'database' => 'nope',
-            'username' => 'nope',
-            'password' => 'nope',
-            'options' => [PDO::ATTR_TIMEOUT => 1],
-        ]);
-
-        // A blackholed host: packets are dropped, so the connect would block
-        // for the driver default without a bounded probe. probe_timeout caps it.
-        $app['config']->set('laranail.db-tools.guard.probe_timeout', 1);
-        $app['config']->set('database.connections.blackhole', [
-            'driver' => 'mysql',
-            'host' => '10.255.255.1',
-            'port' => 3306,
-            'database' => 'nope',
-            'username' => 'nope',
-            'password' => 'nope',
-        ]);
-    }
-
     public function test_the_guard_contract_is_bound(): void
     {
         self::assertInstanceOf(DatabaseGuard::class, app(DatabaseAvailabilityInterface::class));
@@ -167,7 +137,7 @@ final class DatabaseGuardTest extends TestCase
 
         self::assertNull(
             config('database.connections.__db_tools_probe__'),
-            'The probe must not leave a throwaway connection in config.'
+            'The probe must not leave a throwaway connection in config.',
         );
     }
 
@@ -178,7 +148,7 @@ final class DatabaseGuardTest extends TestCase
             ConnectionEstablished::class,
             function () use (&$established): void {
                 $established++;
-            }
+            },
         );
 
         // First contact with the default connection is the probe; the follow-up
@@ -200,7 +170,7 @@ final class DatabaseGuardTest extends TestCase
             $before,
             config('database.connections.down'),
             'The probe overlays a connect timeout for its own attempt; it must not leave it '
-            .'in config, where any later rebuild would silently re-apply it.'
+            . 'in config, where any later rebuild would silently re-apply it.',
         );
     }
 
@@ -259,5 +229,35 @@ final class DatabaseGuardTest extends TestCase
         $guard->isAvailable('down');
 
         Event::assertDispatchedTimes(DatabaseUnavailable::class, 2);
+    }
+
+    #[Override]
+    protected function defineEnvironment($app): void
+    {
+        parent::defineEnvironment($app);
+
+        // A deliberately unreachable connection: loopback port 1 refuses the TCP
+        // connection instantly (no blackhole hang).
+        $app['config']->set('database.connections.down', [
+            'driver'   => 'mysql',
+            'host'     => '127.0.0.1',
+            'port'     => 1,
+            'database' => 'nope',
+            'username' => 'nope',
+            'password' => 'nope',
+            'options'  => [PDO::ATTR_TIMEOUT => 1],
+        ]);
+
+        // A blackholed host: packets are dropped, so the connect would block
+        // for the driver default without a bounded probe. probe_timeout caps it.
+        $app['config']->set('laranail.db-tools.guard.probe_timeout', 1);
+        $app['config']->set('database.connections.blackhole', [
+            'driver'   => 'mysql',
+            'host'     => '10.255.255.1',
+            'port'     => 3306,
+            'database' => 'nope',
+            'username' => 'nope',
+            'password' => 'nope',
+        ]);
     }
 }

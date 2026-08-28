@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Simtabi\Laranail\DbTools\Tests\Unit\Concerns;
 
-use Illuminate\Database\Eloquent\Model;
 use Override;
-use Simtabi\Laranail\DbTools\Concerns\HasMergedCasts;
+use Illuminate\Database\Eloquent\Model;
 use Simtabi\Laranail\DbTools\Tests\TestCase;
+use Simtabi\Laranail\DbTools\Concerns\HasMergedCasts;
 
 /**
  * Declares its cast map with the idiomatic Laravel 11+ `casts()` method — the
@@ -17,11 +17,11 @@ class MergedCastsMethodBase extends Model
 {
     use HasMergedCasts;
 
+    public $timestamps = false;
+
     protected $table = 'merged_casts_models';
 
     protected $guarded = [];
-
-    public $timestamps = false;
 
     #[Override]
     protected function casts(): array
@@ -44,11 +44,11 @@ class MergedCastsPropertyBase extends Model
 {
     use HasMergedCasts;
 
+    public $timestamps = false;
+
     protected $table = 'merged_casts_models';
 
     protected $guarded = [];
-
-    public $timestamps = false;
 
     protected $casts = ['flags' => 'array'];
 }

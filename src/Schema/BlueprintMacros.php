@@ -5,12 +5,12 @@ declare(strict_types=1);
 namespace Simtabi\Laranail\DbTools\Schema;
 
 use Closure;
-use Illuminate\Database\Connection;
-use Illuminate\Database\Schema\Blueprint as IlluminateBlueprint;
-use Illuminate\Database\Schema\ColumnDefinition;
 use Override;
-use Simtabi\Laranail\DbTools\Providers\DbToolsServiceProvider;
 use Throwable;
+use Illuminate\Database\Connection;
+use Illuminate\Database\Schema\ColumnDefinition;
+use Simtabi\Laranail\DbTools\Providers\DbToolsServiceProvider;
+use Illuminate\Database\Schema\Blueprint as IlluminateBlueprint;
 
 /**
  * An `Illuminate\Database\Schema\Blueprint` whose `id()`, `foreignId()`,
@@ -48,6 +48,13 @@ class BlueprintMacros extends IlluminateBlueprint
      * @var array<string, true>
      */
     private static array $driverSetupRan = [];
+
+    public function __construct(Connection $connection, $table, ?Closure $callback = null)
+    {
+        parent::__construct($connection, $table, $callback);
+
+        $this->runDriverSetup($connection);
+    }
 
     /**
      * Set custom ID type resolver
@@ -88,11 +95,64 @@ class BlueprintMacros extends IlluminateBlueprint
         self::$driverSetupRan = [];
     }
 
-    public function __construct(Connection $connection, $table, ?Closure $callback = null)
+    #[Override]
+    public function id($column = 'id'): ColumnDefinition
     {
-        parent::__construct($connection, $table, $callback);
+        $idType = self::$idTypeResolver instanceof Closure
+            ? (self::$idTypeResolver)()
+            : 'BIGINT';
 
-        $this->runDriverSetup($connection);
+        return match ($idType) {
+            'UUID'  => $this->uuid($column)->primary(),
+            'ULID'  => $this->ulid($column)->primary(),
+            default => parent::id($column),
+        };
+    }
+
+    #[Override]
+    public function foreignId($column): ColumnDefinition
+    {
+        $idType = self::$idTypeResolver instanceof Closure
+            ? (self::$idTypeResolver)()
+            : 'BIGINT';
+
+        return match ($idType) {
+            'UUID'  => $this->foreignUuid($column),
+            'ULID'  => $this->foreignUlid($column),
+            default => parent::foreignId($column),
+        };
+    }
+
+    #[Override]
+    public function morphs($name, $indexName = null, $after = null): void
+    {
+        $idType = self::$idTypeResolver instanceof Closure
+            ? (self::$idTypeResolver)()
+            : 'BIGINT';
+
+        // uuidMorphs()/ulidMorphs() accept $after just as morphs() does, but
+        // it used to be dropped on these two paths — so a migration placing
+        // morph columns at a chosen position silently got them appended, on
+        // exactly the id types this class exists to support.
+        match ($idType) {
+            'UUID'  => $this->uuidMorphs($name, $indexName, $after),
+            'ULID'  => $this->ulidMorphs($name, $indexName, $after),
+            default => parent::morphs($name, $indexName, $after),
+        };
+    }
+
+    #[Override]
+    public function nullableMorphs($name, $indexName = null, $after = null): void
+    {
+        $idType = self::$idTypeResolver instanceof Closure
+            ? (self::$idTypeResolver)()
+            : 'BIGINT';
+
+        match ($idType) {
+            'UUID'  => $this->nullableUuidMorphs($name, $indexName, $after),
+            'ULID'  => $this->nullableUlidMorphs($name, $indexName, $after),
+            default => parent::nullableMorphs($name, $indexName, $after),
+        };
     }
 
     /**
@@ -106,7 +166,7 @@ class BlueprintMacros extends IlluminateBlueprint
             return;
         }
 
-        $key = $driver.'@'.$connection->getName();
+        $key = $driver . '@' . $connection->getName();
 
         if (isset(self::$driverSetupRan[$key])) {
             return;
@@ -125,65 +185,5 @@ class BlueprintMacros extends IlluminateBlueprint
                 $e->getMessage(),
             ));
         }
-    }
-
-    #[Override]
-    public function id($column = 'id'): ColumnDefinition
-    {
-        $idType = self::$idTypeResolver instanceof Closure
-            ? (self::$idTypeResolver)()
-            : 'BIGINT';
-
-        return match ($idType) {
-            'UUID' => $this->uuid($column)->primary(),
-            'ULID' => $this->ulid($column)->primary(),
-            default => parent::id($column),
-        };
-    }
-
-    #[Override]
-    public function foreignId($column): ColumnDefinition
-    {
-        $idType = self::$idTypeResolver instanceof Closure
-            ? (self::$idTypeResolver)()
-            : 'BIGINT';
-
-        return match ($idType) {
-            'UUID' => $this->foreignUuid($column),
-            'ULID' => $this->foreignUlid($column),
-            default => parent::foreignId($column),
-        };
-    }
-
-    #[Override]
-    public function morphs($name, $indexName = null, $after = null): void
-    {
-        $idType = self::$idTypeResolver instanceof Closure
-            ? (self::$idTypeResolver)()
-            : 'BIGINT';
-
-        // uuidMorphs()/ulidMorphs() accept $after just as morphs() does, but
-        // it used to be dropped on these two paths — so a migration placing
-        // morph columns at a chosen position silently got them appended, on
-        // exactly the id types this class exists to support.
-        match ($idType) {
-            'UUID' => $this->uuidMorphs($name, $indexName, $after),
-            'ULID' => $this->ulidMorphs($name, $indexName, $after),
-            default => parent::morphs($name, $indexName, $after),
-        };
-    }
-
-    #[Override]
-    public function nullableMorphs($name, $indexName = null, $after = null): void
-    {
-        $idType = self::$idTypeResolver instanceof Closure
-            ? (self::$idTypeResolver)()
-            : 'BIGINT';
-
-        match ($idType) {
-            'UUID' => $this->nullableUuidMorphs($name, $indexName, $after),
-            'ULID' => $this->nullableUlidMorphs($name, $indexName, $after),
-            default => parent::nullableMorphs($name, $indexName, $after),
-        };
     }
 }

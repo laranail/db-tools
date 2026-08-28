@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Simtabi\Laranail\DbTools\Tests\Unit\Concerns;
 
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\Schema;
-use Simtabi\Laranail\DbTools\Concerns\LoadsAggregatesIfMissing;
+use Illuminate\Database\Eloquent\Model;
 use Simtabi\Laranail\DbTools\Tests\TestCase;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Simtabi\Laranail\DbTools\Concerns\LoadsAggregatesIfMissing;
 
 final class AggregateParent extends Model
 {
@@ -48,17 +48,6 @@ final class LoadsAggregatesIfMissingTest extends TestCase
             $t->integer('score')->default(0);
             $t->timestamps();
         });
-    }
-
-    private function seedParentWithChildren(int $count, array $scores = []): AggregateParent
-    {
-        $parent = AggregateParent::create();
-
-        for ($i = 0; $i < $count; $i++) {
-            $parent->children()->create(['score' => $scores[$i] ?? 0]);
-        }
-
-        return $parent;
     }
 
     public function test_load_if_missing_loads_only_absent_relations(): void
@@ -158,5 +147,16 @@ final class LoadsAggregatesIfMissingTest extends TestCase
         ]);
 
         self::assertSame(3, (int) $parent->children_count);
+    }
+
+    private function seedParentWithChildren(int $count, array $scores = []): AggregateParent
+    {
+        $parent = AggregateParent::create();
+
+        for ($i = 0; $i < $count; $i++) {
+            $parent->children()->create(['score' => $scores[$i] ?? 0]);
+        }
+
+        return $parent;
     }
 }

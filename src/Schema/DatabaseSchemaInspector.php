@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace Simtabi\Laranail\DbTools\Schema;
 
 use Exception;
-use Illuminate\Support\Facades\Log;
-use Simtabi\Laranail\DbTools\Schema\Contracts\DatabaseSchemaInspectorInterface;
-use Simtabi\Laranail\DbTools\Support\ConnectionContext;
 use Throwable;
+use Illuminate\Support\Facades\Log;
+use Simtabi\Laranail\DbTools\Support\ConnectionContext;
+use Simtabi\Laranail\DbTools\Schema\Contracts\DatabaseSchemaInspectorInterface;
 
 /**
  * Class DatabaseSchemaInspector
@@ -21,7 +21,8 @@ class DatabaseSchemaInspector implements DatabaseSchemaInspectorInterface
     /**
      * Get all table names in the database
      *
-     * @param  string|null  $connection  Connection name (null for default)
+     * @param string|null $connection Connection name (null for default)
+     *
      * @return array List of table names
      */
     public function getTables(?string $connection = null): array
@@ -40,8 +41,9 @@ class DatabaseSchemaInspector implements DatabaseSchemaInspectorInterface
     /**
      * Check if a specific table exists
      *
-     * @param  string  $table  Table name
-     * @param  string|null  $connection  Connection name (null for default)
+     * @param string $table Table name
+     * @param string|null $connection Connection name (null for default)
+     *
      * @return bool True if table exists
      */
     public function hasTable(string $table, ?string $connection = null): bool
@@ -64,23 +66,10 @@ class DatabaseSchemaInspector implements DatabaseSchemaInspectorInterface
     }
 
     /**
-     * Whether the connection can actually be opened.
-     */
-    private function isReachable(ConnectionContext $context): bool
-    {
-        try {
-            $context->connection()->getPdo();
-
-            return true;
-        } catch (Throwable) {
-            return false;
-        }
-    }
-
-    /**
      * Get total count of tables in the database
      *
-     * @param  string|null  $connection  Connection name (null for default)
+     * @param string|null $connection Connection name (null for default)
+     *
      * @return int Number of tables
      */
     public function getTableCount(?string $connection = null): int
@@ -96,7 +85,7 @@ class DatabaseSchemaInspector implements DatabaseSchemaInspectorInterface
                 // (it uses getTableListing()). Without it the two disagreed on any
                 // schema containing a view.
                 'mysql', 'mariadb' => [
-                    'sql' => "SELECT COUNT(*) as count FROM information_schema.tables WHERE table_schema = ? AND table_type = 'BASE TABLE'",
+                    'sql'      => "SELECT COUNT(*) as count FROM information_schema.tables WHERE table_schema = ? AND table_type = 'BASE TABLE'",
                     'bindings' => [$database],
                 ],
                 // Read the schema off the connection being counted. Hardcoding
@@ -104,15 +93,15 @@ class DatabaseSchemaInspector implements DatabaseSchemaInspectorInterface
                 // connection's schema — or, with no connection literally named
                 // "pgsql", silently falling back to "public".
                 'pgsql' => [
-                    'sql' => "SELECT COUNT(*) as count FROM information_schema.tables WHERE table_schema = ? AND table_type = 'BASE TABLE'",
+                    'sql'      => "SELECT COUNT(*) as count FROM information_schema.tables WHERE table_schema = ? AND table_type = 'BASE TABLE'",
                     'bindings' => [$this->postgresSchema($context)],
                 ],
                 'sqlite' => [
-                    'sql' => "SELECT COUNT(*) as count FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%'",
+                    'sql'      => "SELECT COUNT(*) as count FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%'",
                     'bindings' => [],
                 ],
                 'sqlsrv' => [
-                    'sql' => "SELECT COUNT(*) as count FROM information_schema.tables WHERE table_catalog = ? AND table_type = 'BASE TABLE'",
+                    'sql'      => "SELECT COUNT(*) as count FROM information_schema.tables WHERE table_catalog = ? AND table_type = 'BASE TABLE'",
                     'bindings' => [$database],
                 ],
                 default => null,
@@ -148,8 +137,9 @@ class DatabaseSchemaInspector implements DatabaseSchemaInspectorInterface
     /**
      * Get all column names for a specific table
      *
-     * @param  string  $table  Table name
-     * @param  string|null  $connection  Connection name (null for default)
+     * @param string $table Table name
+     * @param string|null $connection Connection name (null for default)
+     *
      * @return array List of column names
      */
     public function getColumns(string $table, ?string $connection = null): array
@@ -169,9 +159,10 @@ class DatabaseSchemaInspector implements DatabaseSchemaInspectorInterface
     /**
      * Check if a table has a specific column
      *
-     * @param  string  $table  Table name
-     * @param  string  $column  Column name
-     * @param  string|null  $connection  Connection name (null for default)
+     * @param string $table Table name
+     * @param string $column Column name
+     * @param string|null $connection Connection name (null for default)
+     *
      * @return bool True if column exists
      */
     public function hasColumn(string $table, string $column, ?string $connection = null): bool
@@ -192,9 +183,10 @@ class DatabaseSchemaInspector implements DatabaseSchemaInspectorInterface
     /**
      * Check if a table has multiple columns
      *
-     * @param  string  $table  Table name
-     * @param  array  $columns  Column names
-     * @param  string|null  $connection  Connection name (null for default)
+     * @param string $table Table name
+     * @param array $columns Column names
+     * @param string|null $connection Connection name (null for default)
+     *
      * @return bool True if all columns exist
      */
     public function hasColumns(string $table, array $columns, ?string $connection = null): bool
@@ -208,6 +200,20 @@ class DatabaseSchemaInspector implements DatabaseSchemaInspectorInterface
                 throw $e;
             }
 
+            return false;
+        }
+    }
+
+    /**
+     * Whether the connection can actually be opened.
+     */
+    private function isReachable(ConnectionContext $context): bool
+    {
+        try {
+            $context->connection()->getPdo();
+
+            return true;
+        } catch (Throwable) {
             return false;
         }
     }

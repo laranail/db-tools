@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Simtabi\Laranail\DbTools\Backup\Concerns;
 
-use Illuminate\Support\Facades\Config;
 use RuntimeException;
+use Illuminate\Support\Facades\Config;
 
 /**
  * Shared backup/restore option resolution: optional binary paths, gzip toggle
@@ -84,7 +84,7 @@ trait ResolvesBackupOptions
             return $temp;
         }
 
-        $withSuffix = $temp.$suffix;
+        $withSuffix = $temp . $suffix;
 
         // The rename's result used to be discarded, so a failure returned a
         // path that had never been exclusively created — the caller then wrote

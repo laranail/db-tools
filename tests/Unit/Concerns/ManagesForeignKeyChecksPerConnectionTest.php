@@ -5,26 +5,12 @@ declare(strict_types=1);
 namespace Simtabi\Laranail\DbTools\Tests\Unit\Concerns;
 
 use Override;
-use Simtabi\Laranail\DbTools\Concerns\ManagesForeignKeyChecks;
 use Simtabi\Laranail\DbTools\Tests\TestCase;
+use Simtabi\Laranail\DbTools\Concerns\ManagesForeignKeyChecks;
 
 final class ManagesForeignKeyChecksPerConnectionTest extends TestCase
 {
     private object $subject;
-
-    #[Override]
-    protected function defineEnvironment($app): void
-    {
-        parent::defineEnvironment($app);
-
-        // A second, independent SQLite connection so the per-connection
-        // nesting counter can be exercised in isolation.
-        $app['config']->set('database.connections.secondary', [
-            'driver' => 'sqlite',
-            'database' => ':memory:',
-            'prefix' => '',
-        ]);
-    }
 
     protected function setUp(): void
     {
@@ -84,5 +70,19 @@ final class ManagesForeignKeyChecksPerConnectionTest extends TestCase
         $value = $this->subject->withoutForeignKeyChecks(fn (): string => 'ok', 'secondary');
 
         self::assertSame('ok', $value);
+    }
+
+    #[Override]
+    protected function defineEnvironment($app): void
+    {
+        parent::defineEnvironment($app);
+
+        // A second, independent SQLite connection so the per-connection
+        // nesting counter can be exercised in isolation.
+        $app['config']->set('database.connections.secondary', [
+            'driver'   => 'sqlite',
+            'database' => ':memory:',
+            'prefix'   => '',
+        ]);
     }
 }

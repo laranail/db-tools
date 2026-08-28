@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Simtabi\Laranail\DbTools\Concerns;
 
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Str;
-use Spatie\Sluggable\HasSlug as SpatieHasSlug;
 use Spatie\Sluggable\SlugOptions;
+use Illuminate\Database\Eloquent\Builder;
+use Spatie\Sluggable\HasSlug as SpatieHasSlug;
 
 /**
  * Opinionated wrapper around spatie/laravel-sluggable with configurable
@@ -20,6 +20,40 @@ use Spatie\Sluggable\SlugOptions;
 trait HasSlug
 {
     use SpatieHasSlug;
+
+    /**
+     * Return a unique variant of the slug if it already exists.
+     *
+     * WARNING — this is a best-effort, check-then-append helper and is subject
+     * to a time-of-check/time-of-use race: two requests can both see the slug
+     * as free and then both write it. For guaranteed uniqueness, rely on
+     * spatie/laravel-sluggable's built-in unique-slug generation (the default
+     * behaviour configured in getSlugOptions(), which runs at save time) and
+     * enforce a UNIQUE index on the slug column at the database level. This
+     * method is retained for callers that need an ad-hoc candidate slug, not as
+     * a uniqueness guarantee.
+     */
+    public static function checkModelSlug(string $slug): string
+    {
+        return static::slugExists($slug) ? $slug . '-' . Str::lower((string) Str::ulid()) : $slug;
+    }
+
+    /**
+     * Whether a record with the given slug already exists.
+     *
+     * Passing null uses the model's configured destination column. These
+     * helpers used to default to a literal 'slug', ignoring
+     * getSlugDestColumnName(), so on a model that stores its slug elsewhere
+     * they queried a column that does not exist — or, worse, on a table that
+     * also happens to carry a 'slug' column, quietly answered about the wrong
+     * one.
+     */
+    public static function slugExists(string $slug, ?string $columnName = null): bool
+    {
+        return static::withoutGlobalScopes()
+            ->where($columnName ?? (new static)->getSlugDestColumnName(), $slug)
+            ->exists();
+    }
 
     /**
      * Build the spatie slug options from the configured columns.
@@ -67,45 +101,12 @@ trait HasSlug
     }
 
     /**
-     * Return a unique variant of the slug if it already exists.
-     *
-     * WARNING — this is a best-effort, check-then-append helper and is subject
-     * to a time-of-check/time-of-use race: two requests can both see the slug
-     * as free and then both write it. For guaranteed uniqueness, rely on
-     * spatie/laravel-sluggable's built-in unique-slug generation (the default
-     * behaviour configured in getSlugOptions(), which runs at save time) and
-     * enforce a UNIQUE index on the slug column at the database level. This
-     * method is retained for callers that need an ad-hoc candidate slug, not as
-     * a uniqueness guarantee.
-     */
-    public static function checkModelSlug(string $slug): string
-    {
-        return static::slugExists($slug) ? $slug.'-'.Str::lower((string) Str::ulid()) : $slug;
-    }
-
-    /**
-     * Whether a record with the given slug already exists.
-     *
-     * Passing null uses the model's configured destination column. These
-     * helpers used to default to a literal 'slug', ignoring
-     * getSlugDestColumnName(), so on a model that stores its slug elsewhere
-     * they queried a column that does not exist — or, worse, on a table that
-     * also happens to carry a 'slug' column, quietly answered about the wrong
-     * one.
-     */
-    public static function slugExists(string $slug, ?string $columnName = null): bool
-    {
-        return static::withoutGlobalScopes()
-            ->where($columnName ?? (new static)->getSlugDestColumnName(), $slug)
-            ->exists();
-    }
-
-    /**
      * Scope a query to a slug value.
      *
      * Passing null uses the model's configured destination column.
      *
-     * @param  Builder<static>  $query
+     * @param Builder<static> $query
+     *
      * @return Builder<static>
      */
     public function scopeBySlug(Builder $query, string $slug, ?string $columnName = null): Builder

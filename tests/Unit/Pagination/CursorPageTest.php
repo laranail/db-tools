@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Simtabi\Laranail\DbTools\Tests\Unit\Pagination;
 
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Schema;
-use Simtabi\Laranail\DbTools\Pagination\CursorPage;
+use Illuminate\Database\Eloquent\Model;
 use Simtabi\Laranail\DbTools\Tests\TestCase;
+use Simtabi\Laranail\DbTools\Pagination\CursorPage;
 
 final class CursorPageFixture extends Model
 {
@@ -33,13 +33,6 @@ final class CursorPageTest extends TestCase
         foreach (range(1, 5) as $i) {
             CursorPageFixture::create(['name' => "row {$i}"]);
         }
-    }
-
-    private function firstPage(int $perPage = 2): CursorPage
-    {
-        $paginator = CursorPageFixture::query()->orderBy('id')->cursorPaginate($perPage);
-
-        return CursorPage::fromPaginator($paginator);
     }
 
     public function test_to_array_shape(): void
@@ -92,5 +85,12 @@ final class CursorPageTest extends TestCase
         // The data block carries the paginated models, serialized.
         self::assertCount(2, $decoded['data']);
         self::assertSame('row 1', $decoded['data'][0]['name']);
+    }
+
+    private function firstPage(int $perPage = 2): CursorPage
+    {
+        $paginator = CursorPageFixture::query()->orderBy('id')->cursorPaginate($perPage);
+
+        return CursorPage::fromPaginator($paginator);
     }
 }

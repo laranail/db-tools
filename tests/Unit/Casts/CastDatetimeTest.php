@@ -5,16 +5,11 @@ declare(strict_types=1);
 namespace Simtabi\Laranail\DbTools\Tests\Unit\Casts;
 
 use Illuminate\Database\Eloquent\Model;
-use Simtabi\Laranail\DbTools\Casts\CastDatetime;
 use Simtabi\Laranail\DbTools\Tests\TestCase;
+use Simtabi\Laranail\DbTools\Casts\CastDatetime;
 
 final class CastDatetimeTest extends TestCase
 {
-    private function model(): Model
-    {
-        return new class extends Model {};
-    }
-
     public function test_get_presents_stored_utc_in_display_timezone(): void
     {
         $result = (new CastDatetime('Europe/Paris'))->get($this->model(), 'at', '2024-01-01 12:00:00', []);
@@ -37,5 +32,10 @@ final class CastDatetimeTest extends TestCase
 
         self::assertNull($cast->get($this->model(), 'at', null, []));
         self::assertNull($cast->set($this->model(), 'at', null, []));
+    }
+
+    private function model(): Model
+    {
+        return new class extends Model {};
     }
 }

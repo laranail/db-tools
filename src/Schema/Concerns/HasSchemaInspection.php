@@ -56,28 +56,6 @@ trait HasSchemaInspection
     }
 
     /**
-     * The column names for THIS instance's table and connection.
-     *
-     * The static accessors answer for a fresh instance, so they cannot see a
-     * connection set per instance — tenancy, a read replica, an explicit
-     * setConnection(). Use this when the instance's own connection matters.
-     *
-     * @return list<string>
-     */
-    public function schemaColumns(): array
-    {
-        return SchemaColumnCache::columns($this);
-    }
-
-    /**
-     * Whether THIS instance's table and connection has the given column.
-     */
-    public function hasSchemaColumn(string $name): bool
-    {
-        return in_array($name, $this->schemaColumns(), true);
-    }
-
-    /**
      * Clear the cached column listing for this model class.
      *
      * The cache lives for the whole request (or the whole test process), so it
@@ -101,5 +79,27 @@ trait HasSchemaInspection
     public static function clearAllSchemaCaches(): void
     {
         SchemaColumnCache::flush();
+    }
+
+    /**
+     * The column names for THIS instance's table and connection.
+     *
+     * The static accessors answer for a fresh instance, so they cannot see a
+     * connection set per instance — tenancy, a read replica, an explicit
+     * setConnection(). Use this when the instance's own connection matters.
+     *
+     * @return list<string>
+     */
+    public function schemaColumns(): array
+    {
+        return SchemaColumnCache::columns($this);
+    }
+
+    /**
+     * Whether THIS instance's table and connection has the given column.
+     */
+    public function hasSchemaColumn(string $name): bool
+    {
+        return in_array($name, $this->schemaColumns(), true);
     }
 }

@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Simtabi\Laranail\DbTools\Concerns;
 
 use Closure;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Builder;
 use Simtabi\Laranail\DbTools\Schema\Scopes\ArchiveScope;
 
 /**
@@ -25,6 +25,46 @@ use Simtabi\Laranail\DbTools\Schema\Scopes\ArchiveScope;
 trait HasArchiver
 {
     /**
+     * Boot the archiving trait for a model.
+     */
+    public static function bootHasArchiver(): void
+    {
+        static::addGlobalScope(new ArchiveScope);
+    }
+
+    /**
+     * Register an "archiving" model event callback with the dispatcher.
+     */
+    public static function archiving(Closure|string $callback): void
+    {
+        static::registerModelEvent('archiving', $callback);
+    }
+
+    /**
+     * Register an "archived" model event callback with the dispatcher.
+     */
+    public static function archived(Closure|string $callback): void
+    {
+        static::registerModelEvent('archived', $callback);
+    }
+
+    /**
+     * Register an "un-archiving" model event callback with the dispatcher.
+     */
+    public static function unArchiving(Closure|string $callback): void
+    {
+        static::registerModelEvent('unArchiving', $callback);
+    }
+
+    /**
+     * Register an "un-archived" model event callback with the dispatcher.
+     */
+    public static function unArchived(Closure|string $callback): void
+    {
+        static::registerModelEvent('unArchived', $callback);
+    }
+
+    /**
      * Whether the archive scope should hide archived rows for this model.
      *
      * Nothing used to read $archives at all, so the documented opt-out had no
@@ -37,14 +77,6 @@ trait HasArchiver
         // `public bool $archives = false;` on a model was a fatal error rather
         // than a configuration. Nothing read $archives at all before 0.6.0.
         return property_exists($this, 'archives') ? (bool) $this->archives : true;
-    }
-
-    /**
-     * Boot the archiving trait for a model.
-     */
-    public static function bootHasArchiver(): void
-    {
-        static::addGlobalScope(new ArchiveScope);
     }
 
     /**
@@ -142,38 +174,6 @@ trait HasArchiver
     public function isArchived(): bool
     {
         return $this->{$this->getArchivedAtColumn()} !== null;
-    }
-
-    /**
-     * Register an "archiving" model event callback with the dispatcher.
-     */
-    public static function archiving(Closure|string $callback): void
-    {
-        static::registerModelEvent('archiving', $callback);
-    }
-
-    /**
-     * Register an "archived" model event callback with the dispatcher.
-     */
-    public static function archived(Closure|string $callback): void
-    {
-        static::registerModelEvent('archived', $callback);
-    }
-
-    /**
-     * Register an "un-archiving" model event callback with the dispatcher.
-     */
-    public static function unArchiving(Closure|string $callback): void
-    {
-        static::registerModelEvent('unArchiving', $callback);
-    }
-
-    /**
-     * Register an "un-archived" model event callback with the dispatcher.
-     */
-    public static function unArchived(Closure|string $callback): void
-    {
-        static::registerModelEvent('unArchived', $callback);
     }
 
     /**

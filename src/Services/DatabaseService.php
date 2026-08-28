@@ -5,12 +5,12 @@ declare(strict_types=1);
 namespace Simtabi\Laranail\DbTools\Services;
 
 use Exception;
-use Illuminate\Database\Eloquent\Builder as EloquentBuilder;
+use Illuminate\Support\Str;
+use Psr\Log\LoggerInterface;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Database\Query\Builder as QueryBuilder;
-use Illuminate\Support\Str;
-use Psr\Log\LoggerInterface;
+use Illuminate\Database\Eloquent\Builder as EloquentBuilder;
 use Simtabi\Laranail\DbTools\Services\Contracts\DatabaseServiceInterface;
 
 /**
@@ -22,7 +22,7 @@ use Simtabi\Laranail\DbTools\Services\Contracts\DatabaseServiceInterface;
 final readonly class DatabaseService implements DatabaseServiceInterface
 {
     public function __construct(
-        private LoggerInterface $logger
+        private LoggerInterface $logger,
     ) {}
 
     /**
@@ -78,8 +78,8 @@ final readonly class DatabaseService implements DatabaseServiceInterface
 
             if ($result) {
                 $this->logger->info('Model timestamps modified', [
-                    'model' => $model::class,
-                    'id' => $model->getKey(),
+                    'model'   => $model::class,
+                    'id'      => $model->getKey(),
                     'columns' => array_keys($dates),
                 ]);
             }
@@ -103,7 +103,7 @@ final readonly class DatabaseService implements DatabaseServiceInterface
     public function handleViewCount(Model $object, string $sessionName): bool
     {
 
-        $sessionKey = $sessionName.'.'.$object->getKey();
+        $sessionKey = $sessionName . '.' . $object->getKey();
 
         if (session()->has($sessionKey)) {
             return false;
@@ -117,7 +117,7 @@ final readonly class DatabaseService implements DatabaseServiceInterface
 
             $this->logger->debug('View count incremented', [
                 'model' => $object::class,
-                'id' => $object->getKey(),
+                'id'    => $object->getKey(),
             ]);
 
             return true;
@@ -155,7 +155,7 @@ final readonly class DatabaseService implements DatabaseServiceInterface
     public function generateRelationshipSyncData(
         string|array $ids,
         array $data = [],
-        string $columnName = 'id'
+        string $columnName = 'id',
     ): array {
         $ids = is_array($ids) ? $ids : [$ids];
         $out = [];

@@ -4,34 +4,34 @@ declare(strict_types=1);
 
 namespace Simtabi\Laranail\DbTools\Tests\Unit\Concerns;
 
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\Schema;
-use InvalidArgumentException;
 use Ramsey\Uuid\Uuid;
+use InvalidArgumentException;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Database\Eloquent\Model;
+use Simtabi\Laranail\DbTools\Tests\TestCase;
 use Simtabi\Laranail\DbTools\Concerns\HasUuid;
 use Simtabi\Laranail\DbTools\Support\SchemaColumnCache;
-use Simtabi\Laranail\DbTools\Tests\TestCase;
 
 final class UuidV4Model extends Model
 {
     use HasUuid;
 
+    public $timestamps = false;
+
     protected $table = 'uuid_version_models';
 
     protected $guarded = [];
-
-    public $timestamps = false;
 }
 
 final class UuidV5Model extends Model
 {
     use HasUuid;
 
+    public $timestamps = false;
+
     protected $table = 'uuid_version_models';
 
     protected $guarded = [];
-
-    public $timestamps = false;
 
     protected $uuidVersion = 5;
 
@@ -42,11 +42,11 @@ final class UuidV3Model extends Model
 {
     use HasUuid;
 
+    public $timestamps = false;
+
     protected $table = 'uuid_version_models';
 
     protected $guarded = [];
-
-    public $timestamps = false;
 
     protected $uuidVersion = 3;
 
@@ -57,11 +57,11 @@ final class UuidV1Model extends Model
 {
     use HasUuid;
 
+    public $timestamps = false;
+
     protected $table = 'uuid_version_models';
 
     protected $guarded = [];
-
-    public $timestamps = false;
 
     protected $uuidVersion = 1;
 }
@@ -70,11 +70,11 @@ final class UuidV5NoStringModel extends Model
 {
     use HasUuid;
 
+    public $timestamps = false;
+
     protected $table = 'uuid_version_models';
 
     protected $guarded = [];
-
-    public $timestamps = false;
 
     protected $uuidVersion = 5;
 }
@@ -99,11 +99,6 @@ final class HasUuidVersionTest extends TestCase
             $t->id();
             $t->string('uuid')->nullable();
         });
-    }
-
-    private function versionOf(string $uuid): int
-    {
-        return Uuid::fromString($uuid)->getFields()->getVersion() ?? 0;
     }
 
     public function test_default_is_still_a_random_v4(): void
@@ -150,5 +145,10 @@ final class HasUuidVersionTest extends TestCase
         $this->expectExceptionMessage('$uuidString');
 
         UuidV5NoStringModel::create([]);
+    }
+
+    private function versionOf(string $uuid): int
+    {
+        return Uuid::fromString($uuid)->getFields()->getVersion() ?? 0;
     }
 }

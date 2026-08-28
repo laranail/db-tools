@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Simtabi\Laranail\DbTools\Tests\Integration;
 
-use Illuminate\Database\Schema\Blueprint as IlluminateBlueprint;
-use Illuminate\Support\Facades\Schema;
 use RuntimeException;
+use Illuminate\Support\Facades\Schema;
+use Simtabi\Laranail\DbTools\Tests\TestCase;
 use Simtabi\Laranail\DbTools\Schema\BlueprintMacros;
 use Simtabi\Laranail\DbTools\Support\ConnectionContext;
-use Simtabi\Laranail\DbTools\Tests\TestCase;
+use Illuminate\Database\Schema\Blueprint as IlluminateBlueprint;
 
 /**
  * `BlueprintMacros` shipped inert: nothing installed it, so its id()/foreignId()
@@ -26,14 +26,6 @@ final class BlueprintMacrosBindingTest extends TestCase
         parent::tearDown();
     }
 
-    protected function getEnvironmentSetUp($app): void
-    {
-        parent::getEnvironmentSetUp($app);
-
-        $app['config']->set('laranail.db-tools.schema.blueprint_macros', true);
-        $app['config']->set('laranail.db-tools.using_uuids_for_id', true);
-    }
-
     public function test_the_binding_is_installed_when_enabled(): void
     {
         self::assertTrue($this->app->bound(IlluminateBlueprint::class));
@@ -45,7 +37,7 @@ final class BlueprintMacrosBindingTest extends TestCase
 
         $blueprint = $this->app->make(IlluminateBlueprint::class, [
             'connection' => $context->connection(),
-            'table' => 'probe',
+            'table'      => 'probe',
         ]);
 
         self::assertInstanceOf(BlueprintMacros::class, $blueprint);
@@ -108,5 +100,13 @@ final class BlueprintMacrosBindingTest extends TestCase
         Schema::create('resilient', fn (IlluminateBlueprint $t) => $t->string('x')->nullable());
 
         self::assertTrue(Schema::hasTable('resilient'));
+    }
+
+    protected function getEnvironmentSetUp($app): void
+    {
+        parent::getEnvironmentSetUp($app);
+
+        $app['config']->set('laranail.db-tools.schema.blueprint_macros', true);
+        $app['config']->set('laranail.db-tools.using_uuids_for_id', true);
     }
 }

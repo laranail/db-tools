@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Simtabi\Laranail\DbTools\Tests\Unit\Migrations;
 
-use Illuminate\Console\Events\CommandStarting;
 use RuntimeException;
-use Simtabi\Laranail\DbTools\Migrations\GuardsDestructiveCommands;
 use Simtabi\Laranail\DbTools\Tests\TestCase;
+use Illuminate\Console\Events\CommandStarting;
 use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Output\NullOutput;
+use Simtabi\Laranail\DbTools\Migrations\GuardsDestructiveCommands;
 
 /**
  * The gap a `BaseMigration::down()` guard cannot close.
@@ -33,13 +33,6 @@ final class GuardsDestructiveCommandsTest extends TestCase
         config()->set('laranail.db-tools.migrations.allow_rollback', false);
 
         parent::tearDown();
-    }
-
-    private function fire(string $command, array $parameters = []): void
-    {
-        new GuardsDestructiveCommands()->handle(
-            new CommandStarting($command, new ArrayInput($parameters), new NullOutput),
-        );
     }
 
     public function test_it_refuses_migrate_fresh_on_an_unlisted_environment(): void
@@ -122,6 +115,13 @@ final class GuardsDestructiveCommandsTest extends TestCase
         self::assertTrue(
             $this->app->make('events')->hasListeners(CommandStarting::class),
             'The guard listens for CommandStarting; without the registration it never fires.',
+        );
+    }
+
+    private function fire(string $command, array $parameters = []): void
+    {
+        new GuardsDestructiveCommands()->handle(
+            new CommandStarting($command, new ArrayInput($parameters), new NullOutput),
         );
     }
 }

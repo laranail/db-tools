@@ -33,6 +33,16 @@ use Illuminate\Database\Eloquent\Model;
 trait HasMergedCasts
 {
     /**
+     * The inherited cast map plus this model's additions.
+     *
+     * @return array<string, string>
+     */
+    public function getCasts(): array
+    {
+        return array_merge(parent::getCasts(), $this->additionalCasts());
+    }
+
+    /**
      * Casts this model adds to the ones it inherits.
      *
      * Override in a subclass. An entry here overrides an inherited cast for the
@@ -43,15 +53,5 @@ trait HasMergedCasts
     protected function additionalCasts(): array
     {
         return [];
-    }
-
-    /**
-     * The inherited cast map plus this model's additions.
-     *
-     * @return array<string, string>
-     */
-    public function getCasts(): array
-    {
-        return array_merge(parent::getCasts(), $this->additionalCasts());
     }
 }

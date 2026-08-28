@@ -4,36 +4,36 @@ declare(strict_types=1);
 
 namespace Simtabi\Laranail\DbTools\Tests\Unit\Concerns;
 
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\Schema;
 use Ramsey\Uuid\Uuid;
-use Simtabi\Laranail\DbTools\Concerns\HasUuidsOrIntegerIds;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Database\Eloquent\Model;
 use Simtabi\Laranail\DbTools\Tests\TestCase;
+use Simtabi\Laranail\DbTools\Concerns\HasUuidsOrIntegerIds;
 
 final class HasUuidsOrIntegerIdsIntegerModel extends Model
 {
     use HasUuidsOrIntegerIds;
 
+    public $timestamps = false;
+
     protected $table = 'has_id_int_models';
 
     protected $guarded = [];
-
-    public $timestamps = false;
 }
 
 final class HasUuidsOrIntegerIdsStringModel extends Model
 {
     use HasUuidsOrIntegerIds;
 
+    public $incrementing = false;
+
+    public $timestamps = false;
+
     protected $table = 'has_id_string_models';
 
     protected $keyType = 'string';
 
-    public $incrementing = false;
-
     protected $guarded = [];
-
-    public $timestamps = false;
 }
 
 final class HasUuidsOrIntegerIdsTest extends TestCase
@@ -154,7 +154,7 @@ final class HasUuidsOrIntegerIdsTest extends TestCase
     public function test_boolean_flags_take_precedence_over_id_type(): void
     {
         config([
-            'laranail.db-tools.id_type' => 'BIGINT',
+            'laranail.db-tools.id_type'            => 'BIGINT',
             'laranail.db-tools.using_uuids_for_id' => true,
         ]);
 

@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Simtabi\Laranail\DbTools\Observers;
 
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\Auth;
-use Simtabi\Laranail\DbTools\Support\ConnectionContext;
 use Throwable;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Database\Eloquent\Model;
+use Simtabi\Laranail\DbTools\Support\ConnectionContext;
 
 /**
  * Stamps `created_by` / `updated_by` / `deleted_by` from the authenticated
@@ -29,6 +29,15 @@ class AuditObserver
      * @var array<string, bool>
      */
     private static array $columnCache = [];
+
+    /**
+     * Forget memoised column lookups. For test suites that create and drop
+     * tables between cases.
+     */
+    public static function flushColumnCache(): void
+    {
+        self::$columnCache = [];
+    }
 
     public function creating(Model $model): void
     {
@@ -147,7 +156,7 @@ class AuditObserver
     protected function modelHasColumn(Model $model, string $column): bool
     {
         $context = ConnectionContext::forModel($model);
-        $key = $context->key().'|'.$model->getTable().'|'.$column;
+        $key = $context->key() . '|' . $model->getTable() . '|' . $column;
 
         if (array_key_exists($key, self::$columnCache)) {
             return self::$columnCache[$key];
@@ -161,14 +170,5 @@ class AuditObserver
             // "yes" would turn a connection error into a confusing column error.
             return false;
         }
-    }
-
-    /**
-     * Forget memoised column lookups. For test suites that create and drop
-     * tables between cases.
-     */
-    public static function flushColumnCache(): void
-    {
-        self::$columnCache = [];
     }
 }

@@ -4,19 +4,19 @@ declare(strict_types=1);
 
 namespace Simtabi\Laranail\DbTools\Tests\Unit\Concerns;
 
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\Schema;
 use RuntimeException;
-use Simtabi\Laranail\DbTools\Concerns\ManagesTransactions;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Database\Eloquent\Model;
 use Simtabi\Laranail\DbTools\Tests\TestCase;
+use Simtabi\Laranail\DbTools\Concerns\ManagesTransactions;
 
 final class ManagesTransactionsRow extends Model
 {
+    public $timestamps = false;
+
     protected $table = 'manages_transactions_rows';
 
     protected $guarded = [];
-
-    public $timestamps = false;
 }
 
 final class ManagesTransactionsTest extends TestCase

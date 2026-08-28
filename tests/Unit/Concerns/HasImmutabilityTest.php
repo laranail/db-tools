@@ -4,21 +4,21 @@ declare(strict_types=1);
 
 namespace Simtabi\Laranail\DbTools\Tests\Unit\Concerns;
 
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Database\Eloquent\Model;
+use Simtabi\Laranail\DbTools\Tests\TestCase;
 use Simtabi\Laranail\DbTools\Concerns\HasImmutability;
 use Simtabi\Laranail\DbTools\Exceptions\ImmutableDataException;
-use Simtabi\Laranail\DbTools\Tests\TestCase;
 
 final class AlwaysImmutableModel extends Model
 {
     use HasImmutability;
 
+    public $timestamps = false;
+
     protected $table = 'immutable_models';
 
     protected $guarded = [];
-
-    public $timestamps = false;
 }
 
 final class ConditionallyImmutableModel extends Model
@@ -27,11 +27,11 @@ final class ConditionallyImmutableModel extends Model
 
     public bool $locked = false;
 
+    public $timestamps = false;
+
     protected $table = 'immutable_models';
 
     protected $guarded = [];
-
-    public $timestamps = false;
 
     public function isImmutable(): bool
     {

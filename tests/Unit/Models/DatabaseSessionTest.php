@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Simtabi\Laranail\DbTools\Tests\Unit\Models;
 
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
-use Simtabi\Laranail\DbTools\Models\DatabaseSession;
+use Illuminate\Database\Eloquent\Model;
 use Simtabi\Laranail\DbTools\Tests\TestCase;
+use Simtabi\Laranail\DbTools\Models\DatabaseSession;
 
 final class DatabaseSessionTest extends TestCase
 {
@@ -25,9 +25,9 @@ final class DatabaseSessionTest extends TestCase
         });
 
         DB::table('sessions')->insert([
-            'id' => 'sess-1',
-            'user_id' => 7,
-            'payload' => base64_encode(serialize(['_token' => 'abc', 'locale' => 'en'])),
+            'id'            => 'sess-1',
+            'user_id'       => 7,
+            'payload'       => base64_encode(serialize(['_token' => 'abc', 'locale' => 'en'])),
             'last_activity' => 1_700_000_000,
         ]);
     }

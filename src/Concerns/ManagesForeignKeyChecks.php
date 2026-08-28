@@ -32,7 +32,7 @@ trait ManagesForeignKeyChecks
     /**
      * Run a callback with foreign key constraints disabled.
      *
-     * @param  string|null  $connection  Connection name (null for default)
+     * @param string|null $connection Connection name (null for default)
      *
      * @example
      * $this->withoutForeignKeyChecks(function (): void {
@@ -49,6 +49,14 @@ trait ManagesForeignKeyChecks
         } finally {
             $this->enableForeignKeyChecks($connection);
         }
+    }
+
+    /**
+     * Current nesting level for a connection (useful for debugging/testing).
+     */
+    protected function getForeignKeyCheckNestingLevel(?string $connection = null): int
+    {
+        return self::$foreignKeyNestingLevels[$this->foreignKeyConnectionKey($connection)] ?? 0;
     }
 
     /**
@@ -82,14 +90,6 @@ trait ManagesForeignKeyChecks
         }
 
         self::$foreignKeyNestingLevels[$key] = $level;
-    }
-
-    /**
-     * Current nesting level for a connection (useful for debugging/testing).
-     */
-    protected function getForeignKeyCheckNestingLevel(?string $connection = null): int
-    {
-        return self::$foreignKeyNestingLevels[$this->foreignKeyConnectionKey($connection)] ?? 0;
     }
 
     /**

@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Simtabi\Laranail\DbTools\Tests\Unit\Concerns;
 
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Schema;
-use Simtabi\Laranail\DbTools\Concerns\HasArchiver;
+use Illuminate\Database\Eloquent\Model;
 use Simtabi\Laranail\DbTools\Tests\TestCase;
+use Simtabi\Laranail\DbTools\Concerns\HasArchiver;
 
 final class ArchivableWidget extends Model
 {
@@ -25,11 +25,11 @@ final class UnarchivableWidget extends Model
 {
     use HasArchiver;
 
+    public bool $archives = false;
+
     protected $table = 'archivable_widgets';
 
     protected $guarded = [];
-
-    public bool $archives = false;
 }
 
 final class HasArchiverTest extends TestCase

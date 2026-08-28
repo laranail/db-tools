@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Simtabi\Laranail\DbTools\Tests\Unit\Schema;
 
-use Illuminate\Database\Schema\ColumnDefinition;
 use Illuminate\Support\Facades\DB;
-use PHPUnit\Framework\Attributes\DataProvider;
-use Simtabi\Laranail\DbTools\Schema\BlueprintMacros;
 use Simtabi\Laranail\DbTools\Tests\TestCase;
+use PHPUnit\Framework\Attributes\DataProvider;
+use Illuminate\Database\Schema\ColumnDefinition;
+use Simtabi\Laranail\DbTools\Schema\BlueprintMacros;
 
 /**
  * morphs() and nullableMorphs() take a third $after argument and pass it to
@@ -25,32 +25,6 @@ final class BlueprintMacrosAfterTest extends TestCase
     public static function idTypes(): array
     {
         return ['UUID' => ['UUID'], 'ULID' => ['ULID'], 'BIGINT' => ['BIGINT']];
-    }
-
-    private function blueprint(string $idType): BlueprintMacros
-    {
-        BlueprintMacros::setIdTypeResolver(static fn (): string => $idType);
-
-        $connection = DB::connection();
-
-        // The schema grammar is only wired up once the schema builder has been
-        // resolved; without it Blueprint's constructor rejects a null grammar.
-        $connection->getSchemaBuilder();
-
-        return new BlueprintMacros($connection, 'after_fixtures');
-    }
-
-    /**
-     * The `after` value recorded on the generated column definitions.
-     *
-     * @return list<string|null>
-     */
-    private function afterValues(BlueprintMacros $blueprint): array
-    {
-        return array_values(array_map(
-            static fn (ColumnDefinition $column) => $column->after,
-            $blueprint->getColumns(),
-        ));
     }
 
     #[DataProvider('idTypes')]
@@ -83,5 +57,31 @@ final class BlueprintMacrosAfterTest extends TestCase
         $blueprint->morphs('taggable');
 
         self::assertSame([null, null], $this->afterValues($blueprint));
+    }
+
+    private function blueprint(string $idType): BlueprintMacros
+    {
+        BlueprintMacros::setIdTypeResolver(static fn (): string => $idType);
+
+        $connection = DB::connection();
+
+        // The schema grammar is only wired up once the schema builder has been
+        // resolved; without it Blueprint's constructor rejects a null grammar.
+        $connection->getSchemaBuilder();
+
+        return new BlueprintMacros($connection, 'after_fixtures');
+    }
+
+    /**
+     * The `after` value recorded on the generated column definitions.
+     *
+     * @return list<string|null>
+     */
+    private function afterValues(BlueprintMacros $blueprint): array
+    {
+        return array_values(array_map(
+            static fn (ColumnDefinition $column) => $column->after,
+            $blueprint->getColumns(),
+        ));
     }
 }

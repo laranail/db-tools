@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Simtabi\Laranail\DbTools\Tests\Unit\Concerns;
 
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\Schema;
 use Override;
-use Simtabi\Laranail\DbTools\Concerns\HasQuietSaving;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Database\Eloquent\Model;
 use Simtabi\Laranail\DbTools\Tests\TestCase;
+use Simtabi\Laranail\DbTools\Concerns\HasQuietSaving;
 
 final class QuietSavingModel extends Model
 {
@@ -16,11 +16,11 @@ final class QuietSavingModel extends Model
 
     public static int $savedEvents = 0;
 
+    public $timestamps = false;
+
     protected $table = 'quiet_models';
 
     protected $guarded = [];
-
-    public $timestamps = false;
 
     #[Override]
     protected static function booted(): void

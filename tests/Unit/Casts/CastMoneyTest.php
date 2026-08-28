@@ -4,39 +4,39 @@ declare(strict_types=1);
 
 namespace Simtabi\Laranail\DbTools\Tests\Unit\Casts;
 
-use Brick\Money\Context\CustomContext;
+use stdClass;
 use Brick\Money\Money;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\Schema;
 use InvalidArgumentException;
+use Brick\Money\Context\CustomContext;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Database\Eloquent\Model;
+use Simtabi\Laranail\DbTools\Tests\TestCase;
 use Simtabi\Laranail\DbTools\Casts\CastMoney;
 use Simtabi\Laranail\DbTools\Exceptions\MoneyCurrencyException;
-use Simtabi\Laranail\DbTools\Tests\TestCase;
-use stdClass;
 
 final class MoneyModel extends Model
 {
+    public $timestamps = false;
+
     protected $table = 'money_models';
 
     protected $guarded = [];
 
-    public $timestamps = false;
-
     /** @var array<string, string> */
-    protected $casts = ['price' => CastMoney::class.':USD'];
+    protected $casts = ['price' => CastMoney::class . ':USD'];
 }
 
 /** A multi-currency table: the amount means nothing without the row's currency. */
 final class MultiCurrencyMoneyModel extends Model
 {
+    public $timestamps = false;
+
     protected $table = 'multi_currency_money_models';
 
     protected $guarded = [];
 
-    public $timestamps = false;
-
     /** @var array<string, string> */
-    protected $casts = ['balance' => CastMoney::class.':@currency'];
+    protected $casts = ['balance' => CastMoney::class . ':@currency'];
 }
 
 enum TestCurrency: string
@@ -61,11 +61,6 @@ final class CastMoneyTest extends TestCase
             $t->integer('balance')->nullable();
             $t->string('currency')->nullable();
         });
-    }
-
-    private function model(): Model
-    {
-        return new class extends Model {};
     }
 
     public function test_get_converts_minor_units_to_money(): void
@@ -154,7 +149,7 @@ final class CastMoneyTest extends TestCase
 
         self::assertSame(
             ['amount' => '12.34', 'currency' => 'USD'],
-            (new CastMoney('USD'))->serialize($this->model(), 'price', $money, [])
+            (new CastMoney('USD'))->serialize($this->model(), 'price', $money, []),
         );
     }
 
@@ -177,7 +172,7 @@ final class CastMoneyTest extends TestCase
 
         self::assertSame(
             ['amount' => '12.34', 'currency' => 'USD'],
-            $model->fresh()->toArray()['price']
+            $model->fresh()->toArray()['price'],
         );
     }
 
@@ -252,7 +247,7 @@ final class CastMoneyTest extends TestCase
         self::assertSame(
             500,
             (new CastMoney('@currency'))
-                ->set($this->model(), 'balance', Money::of('5.00', 'KES'), ['currency' => 'KES'])
+                ->set($this->model(), 'balance', Money::of('5.00', 'KES'), ['currency' => 'KES']),
         );
     }
 
@@ -262,7 +257,7 @@ final class CastMoneyTest extends TestCase
         // create() the currency may not be set yet. That is not a mismatch.
         self::assertSame(
             500,
-            (new CastMoney('@currency'))->set($this->model(), 'balance', Money::of('5.00', 'USD'), [])
+            (new CastMoney('@currency'))->set($this->model(), 'balance', Money::of('5.00', 'USD'), []),
         );
     }
 
@@ -271,7 +266,7 @@ final class CastMoneyTest extends TestCase
         self::assertSame(
             ['amount' => '100.00', 'currency' => 'KES'],
             (new CastMoney('@currency'))
-                ->serialize($this->model(), 'balance', 10000, ['currency' => 'KES'])
+                ->serialize($this->model(), 'balance', 10000, ['currency' => 'KES']),
         );
     }
 
@@ -331,7 +326,7 @@ final class CastMoneyTest extends TestCase
     {
         // Money carries its own currency, so it needs no lookup and no ordering.
         $model = MultiCurrencyMoneyModel::create([
-            'balance' => Money::of('100.00', 'KES'),
+            'balance'  => Money::of('100.00', 'KES'),
             'currency' => 'KES',
         ]);
 
@@ -379,5 +374,10 @@ final class CastMoneyTest extends TestCase
         $this->expectExceptionCode(2104);
 
         (new CastMoney('USD'))->get($this->model(), 'price', 'not-a-number', []);
+    }
+
+    private function model(): Model
+    {
+        return new class extends Model {};
     }
 }

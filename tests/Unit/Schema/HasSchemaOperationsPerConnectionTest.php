@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Simtabi\Laranail\DbTools\Tests\Unit\Schema;
 
-use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\Schema;
 use Override;
-use Simtabi\Laranail\DbTools\Schema\Concerns\HasSchemaOperations;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Database\Schema\Blueprint;
 use Simtabi\Laranail\DbTools\Tests\TestCase;
+use Simtabi\Laranail\DbTools\Schema\Concerns\HasSchemaOperations;
 
 /**
  * Every operation in HasSchemaOperations went through the Schema facade, which
@@ -24,24 +24,6 @@ final class HasSchemaOperationsPerConnectionTest extends TestCase
     private object $ops;
 
     private string $secondaryFile = '';
-
-    #[Override]
-    protected function defineEnvironment($app): void
-    {
-        parent::defineEnvironment($app);
-
-        // A file, not :memory:. Two in-memory SQLite connections would each get
-        // their own blank database, which is enough here, but a file makes the
-        // "wrote to the wrong database" failure legible when it happens.
-        $this->secondaryFile = tempnam(sys_get_temp_dir(), 'dbt-ops-').'.sqlite';
-        touch($this->secondaryFile);
-
-        $app['config']->set('database.connections.secondary', [
-            'driver' => 'sqlite',
-            'database' => $this->secondaryFile,
-            'prefix' => '',
-        ]);
-    }
 
     protected function setUp(): void
     {
@@ -125,5 +107,23 @@ final class HasSchemaOperationsPerConnectionTest extends TestCase
 
         self::assertFalse(Schema::hasColumn('twin', 'legacy'));
         self::assertTrue(Schema::connection('secondary')->hasColumn('twin', 'legacy'));
+    }
+
+    #[Override]
+    protected function defineEnvironment($app): void
+    {
+        parent::defineEnvironment($app);
+
+        // A file, not :memory:. Two in-memory SQLite connections would each get
+        // their own blank database, which is enough here, but a file makes the
+        // "wrote to the wrong database" failure legible when it happens.
+        $this->secondaryFile = tempnam(sys_get_temp_dir(), 'dbt-ops-') . '.sqlite';
+        touch($this->secondaryFile);
+
+        $app['config']->set('database.connections.secondary', [
+            'driver'   => 'sqlite',
+            'database' => $this->secondaryFile,
+            'prefix'   => '',
+        ]);
     }
 }

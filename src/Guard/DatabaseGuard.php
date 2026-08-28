@@ -5,17 +5,17 @@ declare(strict_types=1);
 namespace Simtabi\Laranail\DbTools\Guard;
 
 use Closure;
+use Throwable;
 use Illuminate\Container\Container;
 use Illuminate\Support\Traits\Macroable;
-use Simtabi\Laranail\DbTools\Events\DatabaseUnavailable;
-use Simtabi\Laranail\DbTools\Guard\Contracts\DatabaseAvailabilityInterface;
-use Simtabi\Laranail\DbTools\Schema\Contracts\DatabaseConnectionTesterInterface;
-use Simtabi\Laranail\DbTools\Schema\Contracts\DatabaseSchemaInspectorInterface;
-use Simtabi\Laranail\DbTools\Schema\DatabaseConnectionTester;
-use Simtabi\Laranail\DbTools\Schema\DatabaseSchemaInspector;
-use Simtabi\Laranail\DbTools\Support\ConnectionContext;
 use Simtabi\Laranail\DbTools\Support\SafeEvent;
-use Throwable;
+use Simtabi\Laranail\DbTools\Support\ConnectionContext;
+use Simtabi\Laranail\DbTools\Events\DatabaseUnavailable;
+use Simtabi\Laranail\DbTools\Schema\DatabaseSchemaInspector;
+use Simtabi\Laranail\DbTools\Schema\DatabaseConnectionTester;
+use Simtabi\Laranail\DbTools\Guard\Contracts\DatabaseAvailabilityInterface;
+use Simtabi\Laranail\DbTools\Schema\Contracts\DatabaseSchemaInspectorInterface;
+use Simtabi\Laranail\DbTools\Schema\Contracts\DatabaseConnectionTesterInterface;
 
 /**
  * Boot-safe database-availability guard.
@@ -67,6 +67,57 @@ final class DatabaseGuard implements DatabaseAvailabilityInterface
         private readonly bool $emitEvents = true,
     ) {}
 
+    /**
+     * Provider-independent shortcut: true when the connection is reachable.
+     * Safe at the earliest boot — self-bootstraps from the container.
+     */
+    public static function reachable(?string $connection = null): bool
+    {
+        return self::resolve()->isAvailable($connection);
+    }
+
+    /**
+     * Provider-independent shortcut: true when the connection is reachable AND
+     * the table exists. Use in place of a bare Schema::hasTable() guard that must
+     * not throw when the database is down.
+     */
+    public static function tableExists(string $table, ?string $connection = null): bool
+    {
+        return self::resolve()->hasTable($table, $connection);
+    }
+
+    /**
+     * The bound singleton, or a self-bootstrapped instance built from the
+     * (no-arg) tester/inspector and stored back into the container.
+     */
+    public static function resolve(): DatabaseAvailabilityInterface
+    {
+        $container = Container::getInstance();
+
+        if ($container->bound(DatabaseAvailabilityInterface::class)) {
+            $bound = $container->make(DatabaseAvailabilityInterface::class);
+
+            if ($bound instanceof DatabaseAvailabilityInterface) {
+                return $bound;
+            }
+        }
+
+        $guard = new self(
+            $container->bound(DatabaseConnectionTesterInterface::class)
+                ? $container->make(DatabaseConnectionTesterInterface::class)
+                : new DatabaseConnectionTester,
+            $container->bound(DatabaseSchemaInspectorInterface::class)
+                ? $container->make(DatabaseSchemaInspectorInterface::class)
+                : new DatabaseSchemaInspector,
+            self::configFlag($container, 'memoize'),
+            self::configFlag($container, 'emit_events'),
+        );
+
+        $container->instance(DatabaseAvailabilityInterface::class, $guard);
+
+        return $guard;
+    }
+
     public function isAvailable(?string $connection = null): bool
     {
         if ($this->suspended) {
@@ -103,27 +154,6 @@ final class DatabaseGuard implements DatabaseAvailabilityInterface
         return $result;
     }
 
-    /**
-     * Memo key for a connection. `null` and the explicit default-connection name
-     * address the same physical connection, so they must share one entry —
-     * otherwise the same connection is probed twice and `flush('mysql')` leaves
-     * a stale entry behind for the `null` form.
-     */
-    private function resolveKey(?string $connection): string
-    {
-        return ConnectionContext::for($connection)->key();
-    }
-
-    /**
-     * The built-in probe: a bounded-timeout connection attempt so an
-     * unreachable or blackholed host fails fast instead of blocking for the
-     * driver's default connect timeout.
-     */
-    private function probeDefault(?string $connection): bool
-    {
-        return $this->tester->probe($connection);
-    }
-
     public function hasTable(string $table, ?string $connection = null): bool
     {
         if (! $this->isAvailable($connection)) {
@@ -148,8 +178,9 @@ final class DatabaseGuard implements DatabaseAvailabilityInterface
      *
      * @template TValue
      *
-     * @param  callable():TValue  $callback
-     * @param  TValue  $default
+     * @param callable():TValue $callback
+     * @param TValue $default
+     *
      * @return TValue
      */
     public function whenTable(string $table, callable $callback, mixed $default = null, ?string $connection = null): mixed
@@ -212,57 +243,6 @@ final class DatabaseGuard implements DatabaseAvailabilityInterface
     }
 
     /**
-     * Provider-independent shortcut: true when the connection is reachable.
-     * Safe at the earliest boot — self-bootstraps from the container.
-     */
-    public static function reachable(?string $connection = null): bool
-    {
-        return self::resolve()->isAvailable($connection);
-    }
-
-    /**
-     * Provider-independent shortcut: true when the connection is reachable AND
-     * the table exists. Use in place of a bare Schema::hasTable() guard that must
-     * not throw when the database is down.
-     */
-    public static function tableExists(string $table, ?string $connection = null): bool
-    {
-        return self::resolve()->hasTable($table, $connection);
-    }
-
-    /**
-     * The bound singleton, or a self-bootstrapped instance built from the
-     * (no-arg) tester/inspector and stored back into the container.
-     */
-    public static function resolve(): DatabaseAvailabilityInterface
-    {
-        $container = Container::getInstance();
-
-        if ($container->bound(DatabaseAvailabilityInterface::class)) {
-            $bound = $container->make(DatabaseAvailabilityInterface::class);
-
-            if ($bound instanceof DatabaseAvailabilityInterface) {
-                return $bound;
-            }
-        }
-
-        $guard = new self(
-            $container->bound(DatabaseConnectionTesterInterface::class)
-                ? $container->make(DatabaseConnectionTesterInterface::class)
-                : new DatabaseConnectionTester,
-            $container->bound(DatabaseSchemaInspectorInterface::class)
-                ? $container->make(DatabaseSchemaInspectorInterface::class)
-                : new DatabaseSchemaInspector,
-            self::configFlag($container, 'memoize'),
-            self::configFlag($container, 'emit_events'),
-        );
-
-        $container->instance(DatabaseAvailabilityInterface::class, $guard);
-
-        return $guard;
-    }
-
-    /**
      * Read a `guard.*` boolean, defaulting to true when config is unavailable.
      *
      * Without this a self-bootstrapped guard silently ignores the application's
@@ -280,5 +260,26 @@ final class DatabaseGuard implements DatabaseAvailabilityInterface
         } catch (Throwable) {
             return true;
         }
+    }
+
+    /**
+     * Memo key for a connection. `null` and the explicit default-connection name
+     * address the same physical connection, so they must share one entry —
+     * otherwise the same connection is probed twice and `flush('mysql')` leaves
+     * a stale entry behind for the `null` form.
+     */
+    private function resolveKey(?string $connection): string
+    {
+        return ConnectionContext::for($connection)->key();
+    }
+
+    /**
+     * The built-in probe: a bounded-timeout connection attempt so an
+     * unreachable or blackholed host fails fast instead of blocking for the
+     * driver's default connect timeout.
+     */
+    private function probeDefault(?string $connection): bool
+    {
+        return $this->tester->probe($connection);
     }
 }
