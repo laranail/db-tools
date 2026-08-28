@@ -54,7 +54,8 @@
         "phpstan/phpstan": "^2.0",
         "phpunit/phpunit": "^12.5",
         "rector/rector": "^2.5.8",
-        "roave/security-advisories": "dev-latest"
+        "roave/security-advisories": "dev-latest",
+        "laranail/package-tools": "^0.1"
     },
     "autoload": {
         "psr-4": {
@@ -107,5 +108,11 @@
     "prefer-stable": true,
     "suggest": {
         "fakerphp/faker": "Enables the Faker generator in Seeding\\Concerns\\InteractsWithSeedFiles. Not required \u2014 seed fixtures work without it."
-    }
+    },
+    "repositories": [
+        {
+            "type": "vcs",
+            "url": "https://github.com/laranail/package-tools"
+        }
+    ]
 }
