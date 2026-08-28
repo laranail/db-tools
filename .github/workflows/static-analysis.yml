@@ -1,8 +1,6 @@
 name: Static analysis
 
 on:
-  push:
-    branches: [main]
   pull_request:
     branches: [main]
   workflow_dispatch:
@@ -21,6 +19,7 @@ jobs:
   branch-alias:
     name: Branch alias
     runs-on: ubuntu-latest
+    timeout-minutes: 15
 
     steps:
       - name: Checkout
@@ -48,6 +47,7 @@ jobs:
   static:
     name: ${{ matrix.name }}
     runs-on: ubuntu-latest
+    timeout-minutes: 15
 
     strategy:
       fail-fast: false
