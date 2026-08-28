@@ -89,8 +89,8 @@
             "@phpstan",
             "@rector"
         ],
-        "pint": "vendor/bin/pint --test --config vendor/laranail/package-tools/pint.json",
-        "pint-fix": "vendor/bin/pint --parallel --config vendor/laranail/package-tools/pint.json",
+        "pint": "@php vendor/bin/laranail-pint --test",
+        "pint-fix": "@php vendor/bin/laranail-pint --parallel",
         "phpstan": "vendor/bin/phpstan analyse --no-progress",
         "rector": "vendor/bin/rector process --dry-run",
         "rector-fix": "vendor/bin/rector process",
