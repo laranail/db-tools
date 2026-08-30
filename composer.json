@@ -96,7 +96,7 @@
         "phpstan": "vendor/bin/phpstan analyse --no-progress",
         "rector": "vendor/bin/rector process --dry-run",
         "rector-fix": "vendor/bin/rector process",
-        "audit": "@composer audit",
+        "composer-audit": "@composer audit",
         "format": "@pint-fix"
     },
     "config": {
