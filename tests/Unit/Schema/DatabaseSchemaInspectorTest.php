@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Simtabi\Laranail\DbTools\Tests\Unit\Schema;
 
-use ReflectionMethod;
 use Illuminate\Support\Facades\Schema;
-use Simtabi\Laranail\DbTools\Tests\TestCase;
 use PHPUnit\Framework\Attributes\DataProvider;
-use Simtabi\Laranail\DbTools\Support\ConnectionContext;
+use ReflectionMethod;
 use Simtabi\Laranail\DbTools\Schema\DatabaseSchemaInspector;
+use Simtabi\Laranail\DbTools\Support\ConnectionContext;
+use Simtabi\Laranail\DbTools\Tests\TestCase;
 
 final class DatabaseSchemaInspectorTest extends TestCase
 {
@@ -35,12 +35,12 @@ final class DatabaseSchemaInspectorTest extends TestCase
     public static function postgresSchemaCases(): array
     {
         return [
-            'search_path wins'       => [['search_path' => 'tenant_a'], 'tenant_a'],
+            'search_path wins' => [['search_path' => 'tenant_a'], 'tenant_a'],
             'comma list takes first' => [['search_path' => 'tenant_a, public'], 'tenant_a'],
-            'array takes first'      => [['search_path' => ['tenant_a', 'public']], 'tenant_a'],
-            'falls back to schema'   => [['schema' => 'reporting'], 'reporting'],
-            'defaults to public'     => [[], 'public'],
-            'blank defaults'         => [['search_path' => '   '], 'public'],
+            'array takes first' => [['search_path' => ['tenant_a', 'public']], 'tenant_a'],
+            'falls back to schema' => [['schema' => 'reporting'], 'reporting'],
+            'defaults to public' => [[], 'public'],
+            'blank defaults' => [['search_path' => '   '], 'public'],
         ];
     }
 
@@ -115,7 +115,7 @@ final class DatabaseSchemaInspectorTest extends TestCase
     }
 
     /**
-     * @param array<string, mixed> $connectionConfig
+     * @param  array<string, mixed>  $connectionConfig
      */
     #[DataProvider('postgresSchemaCases')]
     public function test_postgres_schema_is_read_from_the_connection_being_counted(

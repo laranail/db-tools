@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Simtabi\Laranail\DbTools\Concerns;
 
 use Closure;
-use Throwable;
 use Illuminate\Database\ConnectionInterface;
 use Simtabi\Laranail\DbTools\Support\ConnectionContext;
+use Throwable;
 
 /**
  * Trait ManagesTransactions
@@ -24,9 +24,8 @@ trait ManagesTransactions
      *
      * @template TReturn
      *
-     * @param Closure(): TReturn $callback The callback to execute
-     * @param int $attempts Number of attempts if deadlock occurs
-     *
+     * @param  Closure(): TReturn  $callback  The callback to execute
+     * @param  int  $attempts  Number of attempts if deadlock occurs
      * @return TReturn The callback return value
      *
      * @throws Throwable If transaction fails
@@ -51,8 +50,7 @@ trait ManagesTransactions
      *
      * @template TReturn
      *
-     * @param Closure(): TReturn $callback The callback to execute
-     *
+     * @param  Closure(): TReturn  $callback  The callback to execute
      * @return TReturn The callback return value
      *
      * @throws Throwable If transaction fails (after rollback)

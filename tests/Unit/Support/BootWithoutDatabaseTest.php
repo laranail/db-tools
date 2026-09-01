@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Simtabi\Laranail\DbTools\Tests\Unit\Support;
 
 use Illuminate\Support\Facades\Config;
-use Simtabi\Laranail\DbTools\Tests\TestCase;
 use Simtabi\Laranail\DbTools\Support\BootWithoutDatabase;
+use Simtabi\Laranail\DbTools\Tests\TestCase;
 
 final class BootWithoutDatabaseTest extends TestCase
 {

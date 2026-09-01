@@ -4,14 +4,14 @@ declare(strict_types=1);
 
 namespace Simtabi\Laranail\DbTools\Backup;
 
-use RuntimeException;
 use InvalidArgumentException;
-use Simtabi\Laranail\DbTools\Support\ConnectionContext;
-use Simtabi\Laranail\DbTools\Backup\Drivers\MysqlBackupDriver;
-use Simtabi\Laranail\DbTools\Backup\Drivers\SqliteBackupDriver;
-use Simtabi\Laranail\DbTools\Backup\Drivers\PostgresBackupDriver;
+use RuntimeException;
 use Simtabi\Laranail\DbTools\Backup\Contracts\BackupDriverInterface;
 use Simtabi\Laranail\DbTools\Backup\Contracts\BackupManagerInterface;
+use Simtabi\Laranail\DbTools\Backup\Drivers\MysqlBackupDriver;
+use Simtabi\Laranail\DbTools\Backup\Drivers\PostgresBackupDriver;
+use Simtabi\Laranail\DbTools\Backup\Drivers\SqliteBackupDriver;
+use Simtabi\Laranail\DbTools\Support\ConnectionContext;
 
 /**
  * Class BackupManager
@@ -49,9 +49,8 @@ class BackupManager implements BackupManagerInterface
     /**
      * Create a backup of the database
      *
-     * @param string $path Absolute path where backup should be saved
-     * @param string|null $connection Connection name (null for default)
-     *
+     * @param  string  $path  Absolute path where backup should be saved
+     * @param  string|null  $connection  Connection name (null for default)
      * @return bool True if backup successful
      *
      * @throws RuntimeException If backup fails
@@ -71,9 +70,8 @@ class BackupManager implements BackupManagerInterface
     /**
      * Restore database from a backup file
      *
-     * @param string $path Absolute path to backup file
-     * @param string|null $connection Connection name (null for default)
-     *
+     * @param  string  $path  Absolute path to backup file
+     * @param  string|null  $connection  Connection name (null for default)
      * @return bool True if restore successful
      *
      * @throws RuntimeException If restore fails
@@ -94,8 +92,7 @@ class BackupManager implements BackupManagerInterface
     /**
      * Check if the manager supports the given database driver
      *
-     * @param string $driver Driver name (mysql, pgsql, sqlite, etc)
-     *
+     * @param  string  $driver  Driver name (mysql, pgsql, sqlite, etc)
      * @return bool True if driver is supported
      */
     public function supportsDriver(string $driver): bool
@@ -132,8 +129,7 @@ class BackupManager implements BackupManagerInterface
     /**
      * Get database connection configuration
      *
-     * @param string|null $connection Connection name (null for default)
-     *
+     * @param  string|null  $connection  Connection name (null for default)
      * @return array Connection configuration
      *
      * @throws InvalidArgumentException If connection doesn't exist

@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Simtabi\Laranail\DbTools\Tests\Unit\Exceptions;
 
 use PHPUnit\Framework\TestCase;
-use Simtabi\Laranail\DbTools\Exceptions\UuidException;
 use Simtabi\Laranail\DbTools\Exceptions\DbToolsException;
 use Simtabi\Laranail\DbTools\Exceptions\MissingUuidColumnException;
+use Simtabi\Laranail\DbTools\Exceptions\UuidException;
 
 final class ExceptionsTest extends TestCase
 {

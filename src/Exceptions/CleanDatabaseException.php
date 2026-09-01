@@ -25,7 +25,7 @@ class CleanDatabaseException extends DbToolsException
     {
         return new self(
             message: "The [{$table}] table is protected and will not be truncated. "
-                . "Remove it from [{$configKey}] if you really mean to.",
+                ."Remove it from [{$configKey}] if you really mean to.",
             code: 2201,
             context: ['table' => $table, 'config_key' => $configKey],
         );
@@ -34,12 +34,12 @@ class CleanDatabaseException extends DbToolsException
     /**
      * One or more named tables do not exist on the connection.
      *
-     * @param list<string> $tables
+     * @param  list<string>  $tables
      */
     public static function unknownTables(array $tables, string $connection): self
     {
         return new self(
-            message: 'Unknown table(s) on connection [' . $connection . ']: ' . implode(', ', $tables) . '.',
+            message: 'Unknown table(s) on connection ['.$connection.']: '.implode(', ', $tables).'.',
             code: 2202,
             context: ['tables' => $tables, 'connection' => $connection],
         );

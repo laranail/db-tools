@@ -18,8 +18,8 @@ use Illuminate\Contracts\Support\Arrayable;
 final readonly class CleanDatabaseResult implements Arrayable
 {
     /**
-     * @param list<string> $truncated
-     * @param list<string> $skipped
+     * @param  list<string>  $truncated
+     * @param  list<string>  $skipped
      */
     public function __construct(
         public array $truncated,
@@ -48,10 +48,10 @@ final readonly class CleanDatabaseResult implements Arrayable
     public function toArray(): array
     {
         return [
-            'truncated'  => $this->truncated,
-            'skipped'    => $this->skipped,
+            'truncated' => $this->truncated,
+            'skipped' => $this->skipped,
             'connection' => $this->connection,
-            'count'      => $this->count(),
+            'count' => $this->count(),
         ];
     }
 }

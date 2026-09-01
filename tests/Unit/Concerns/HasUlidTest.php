@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Simtabi\Laranail\DbTools\Tests\Unit\Concerns;
 
-use Symfony\Component\Uid\Ulid;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Database\Eloquent\Model;
-use Simtabi\Laranail\DbTools\Tests\TestCase;
+use Illuminate\Support\Facades\Schema;
 use Simtabi\Laranail\DbTools\Concerns\HasUlid;
+use Simtabi\Laranail\DbTools\Tests\TestCase;
+use Symfony\Component\Uid\Ulid;
 
 final class HasUlidModel extends Model
 {

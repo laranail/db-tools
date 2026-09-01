@@ -47,8 +47,8 @@ final class FieldGroupMacros
             // a string identifier, which will not fit an unsignedBigInteger.
             foreach ($columns as $column) {
                 match (ConfiguredMorphsMacro::idType()) {
-                    'UUID'  => $this->foreignUuid($column)->nullable(),
-                    'ULID'  => $this->foreignUlid($column)->nullable(),
+                    'UUID' => $this->foreignUuid($column)->nullable(),
+                    'ULID' => $this->foreignUlid($column)->nullable(),
                     default => $this->foreignId($column)->nullable(),
                 };
             }
@@ -103,7 +103,7 @@ final class FieldGroupMacros
                 // report — makes the conventional name work everywhere.
                 $conventional = $columns === []
                     ? ''
-                    : $table . '_' . implode('_', $columns) . '_foreign';
+                    : $table.'_'.implode('_', $columns).'_foreign';
 
                 $matches = $index === $name
                     || $index === $conventional
@@ -152,7 +152,7 @@ final class FieldGroupMacros
 
         Blueprint::macro('addImageFields', function (string $prefix = ''): void {
             /** @var Blueprint $this */
-            $prefix = $prefix !== '' ? $prefix . '_' : '';
+            $prefix = $prefix !== '' ? $prefix.'_' : '';
 
             $this->string("{$prefix}image")->nullable();
             $this->string("{$prefix}image_alt")->nullable();
@@ -189,8 +189,8 @@ final class FieldGroupMacros
             // Id-type-aware nullable polymorphic columns (mirrors configuredNullableMorphs);
             // the `{name}_id` matches the configured key type rather than always BIGINT.
             match (ConfiguredMorphsMacro::idType()) {
-                'UUID'  => $this->nullableUuidMorphs($name, $indexName),
-                'ULID'  => $this->nullableUlidMorphs($name, $indexName),
+                'UUID' => $this->nullableUuidMorphs($name, $indexName),
+                'ULID' => $this->nullableUlidMorphs($name, $indexName),
                 default => $this->nullableMorphs($name, $indexName),
             };
         });
@@ -201,8 +201,8 @@ final class FieldGroupMacros
             $this->boolean("is_{$name}")->default(false);
             $this->timestamp("{$name}_at")->nullable();
             match (ConfiguredMorphsMacro::idType()) {
-                'UUID'  => $this->foreignUuid("{$name}_by")->nullable(),
-                'ULID'  => $this->foreignUlid("{$name}_by")->nullable(),
+                'UUID' => $this->foreignUuid("{$name}_by")->nullable(),
+                'ULID' => $this->foreignUlid("{$name}_by")->nullable(),
                 default => $this->foreignId("{$name}_by")->nullable(),
             };
             $this->text("{$name}_remarks")->nullable();

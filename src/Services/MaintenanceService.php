@@ -5,13 +5,13 @@ declare(strict_types=1);
 namespace Simtabi\Laranail\DbTools\Services;
 
 use Exception;
-use Psr\Log\LoggerInterface;
-use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Event;
-use Symfony\Component\Finder\SplFileInfo;
+use Illuminate\Support\Facades\File;
+use Psr\Log\LoggerInterface;
 use Simtabi\Laranail\DbTools\Concerns\ValidatesFilePaths;
 use Simtabi\Laranail\DbTools\Services\Contracts\MaintenanceServiceInterface;
+use Symfony\Component\Finder\SplFileInfo;
 
 /**
  * Maintenance Service Implementation
@@ -38,7 +38,7 @@ final readonly class MaintenanceService implements MaintenanceServiceInterface
             Event::dispatch('cache:clearing');
             Cache::flush();
 
-            $path = $this->basePath . '/storage/framework/cache';
+            $path = $this->basePath.'/storage/framework/cache';
             if (File::exists($path)) {
                 foreach (File::files($path) as $file) {
                     /** @var SplFileInfo $file */
@@ -48,7 +48,7 @@ final readonly class MaintenanceService implements MaintenanceServiceInterface
                 }
             }
 
-            $path = $this->basePath . '/bootstrap/cache';
+            $path = $this->basePath.'/bootstrap/cache';
             if (File::exists($path)) {
                 foreach (File::allFiles($path) as $file) {
                     /** @var SplFileInfo $file */
@@ -83,7 +83,7 @@ final readonly class MaintenanceService implements MaintenanceServiceInterface
             $directories = ['clockwork', 'debugbar', 'logs'];
 
             foreach ($directories as $directory) {
-                $path = $this->basePath . '/storage/' . $directory;
+                $path = $this->basePath.'/storage/'.$directory;
 
                 if (File::exists($path)) {
                     foreach (File::allFiles($path) as $file) {
@@ -115,7 +115,7 @@ final readonly class MaintenanceService implements MaintenanceServiceInterface
     public function deleteStorageSymlink(): bool
     {
         try {
-            $publicStorage = $this->basePath . '/public/storage';
+            $publicStorage = $this->basePath.'/public/storage';
 
             // is_link() first: file_exists() follows the link and answers false
             // for a dangling one — the case most worth cleaning up.

@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Simtabi\Laranail\DbTools\Tests\Unit\Concerns;
 
-use Simtabi\Laranail\DbTools\Tests\TestCase;
 use Simtabi\Laranail\DbTools\Concerns\ManagesForeignKeyChecks;
+use Simtabi\Laranail\DbTools\Tests\TestCase;
 
 final class ManagesForeignKeyChecksTest extends TestCase
 {

@@ -110,14 +110,14 @@ return [
     */
 
     'backup' => [
-        'gzip'     => false,
-        'exclude'  => [],
+        'gzip' => false,
+        'exclude' => [],
         'binaries' => [
-            'mysqldump'  => null,
-            'mysql'      => null,
-            'pg_dump'    => null,
+            'mysqldump' => null,
+            'mysql' => null,
+            'pg_dump' => null,
             'pg_restore' => null,
-            'psql'       => null,
+            'psql' => null,
         ],
     ],
 
@@ -170,10 +170,10 @@ return [
     */
 
     'guard' => [
-        'memoize'       => env('DB_TOOLS_GUARD_MEMOIZE', true),
+        'memoize' => env('DB_TOOLS_GUARD_MEMOIZE', true),
         'probe_timeout' => (int) env('DB_TOOLS_GUARD_PROBE_TIMEOUT', 2),
-        'emit_events'   => env('DB_TOOLS_GUARD_EMIT_EVENTS', true),
-        'log_events'    => env('DB_TOOLS_GUARD_LOG_EVENTS', true),
+        'emit_events' => env('DB_TOOLS_GUARD_EMIT_EVENTS', true),
+        'log_events' => env('DB_TOOLS_GUARD_LOG_EVENTS', true),
     ],
 
     /*
@@ -198,11 +198,11 @@ return [
         | ready. `cache_store` must not depend on the database (default: file).
         */
         'middleware' => [
-            'enabled'        => true,
-            'cache_store'    => 'file',
-            'cache_key'      => 'db-tools.schema_ready',
-            'cache_ttl'      => 60,
-            'header_status'  => 'X-Schema-Status',
+            'enabled' => true,
+            'cache_store' => 'file',
+            'cache_key' => 'db-tools.schema_ready',
+            'cache_ttl' => 60,
+            'header_status' => 'X-Schema-Status',
             'header_message' => 'X-Schema-Message',
         ],
     ],
@@ -221,7 +221,7 @@ return [
     'boot_without_database' => [
         'drivers' => [
             'session.driver' => ['database' => 'file'],
-            'cache.default'  => ['database' => 'file'],
+            'cache.default' => ['database' => 'file'],
             // 'queue.default' => ['database' => 'sync'],
         ],
     ],
@@ -254,8 +254,8 @@ return [
     */
 
     'migrations' => [
-        'reversible_environments'    => ['local', 'development', 'dev', 'testing'],
-        'allow_rollback'             => env('DB_TOOLS_ALLOW_ROLLBACK', false),
+        'reversible_environments' => ['local', 'development', 'dev', 'testing'],
+        'allow_rollback' => env('DB_TOOLS_ALLOW_ROLLBACK', false),
         'guard_destructive_commands' => env('DB_TOOLS_GUARD_DESTRUCTIVE', true),
     ],
 
@@ -274,7 +274,7 @@ return [
     */
 
     'seeding' => [
-        'files_path'   => env('DB_TOOLS_SEED_FILES_PATH'),
+        'files_path' => env('DB_TOOLS_SEED_FILES_PATH'),
         'faker_locale' => env('DB_TOOLS_FAKER_LOCALE', 'en_US'),
     ],
 

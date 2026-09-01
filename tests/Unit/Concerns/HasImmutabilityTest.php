@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Simtabi\Laranail\DbTools\Tests\Unit\Concerns;
 
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Database\Eloquent\Model;
-use Simtabi\Laranail\DbTools\Tests\TestCase;
+use Illuminate\Support\Facades\Schema;
 use Simtabi\Laranail\DbTools\Concerns\HasImmutability;
 use Simtabi\Laranail\DbTools\Exceptions\ImmutableDataException;
+use Simtabi\Laranail\DbTools\Tests\TestCase;
 
 final class AlwaysImmutableModel extends Model
 {

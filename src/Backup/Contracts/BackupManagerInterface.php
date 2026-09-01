@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Simtabi\Laranail\DbTools\Backup\Contracts;
 
-use RuntimeException;
 use InvalidArgumentException;
+use RuntimeException;
 
 /**
  * Interface BackupManagerInterface
@@ -18,9 +18,8 @@ interface BackupManagerInterface
     /**
      * Create a backup of the database to the specified path
      *
-     * @param string $path Absolute path where backup file should be saved
-     * @param string|null $connection Connection name (null for default)
-     *
+     * @param  string  $path  Absolute path where backup file should be saved
+     * @param  string|null  $connection  Connection name (null for default)
      * @return bool True if backup successful
      *
      * @throws RuntimeException If backup fails
@@ -31,9 +30,8 @@ interface BackupManagerInterface
     /**
      * Restore database from a backup file
      *
-     * @param string $path Absolute path to backup file
-     * @param string|null $connection Connection name (null for default)
-     *
+     * @param  string  $path  Absolute path to backup file
+     * @param  string|null  $connection  Connection name (null for default)
      * @return bool True if restore successful
      *
      * @throws RuntimeException If restore fails
@@ -44,8 +42,7 @@ interface BackupManagerInterface
     /**
      * Check if the manager supports the given database driver
      *
-     * @param string $driver Driver name (mysql, pgsql, sqlite, etc)
-     *
+     * @param  string  $driver  Driver name (mysql, pgsql, sqlite, etc)
      * @return bool True if driver is supported
      */
     public function supportsDriver(string $driver): bool;

@@ -24,7 +24,7 @@ trait HasSchemaOperations
     /**
      * Drop columns from a table, skipping any that are not present.
      *
-     * @param array<int, string>|string $columns
+     * @param  array<int, string>|string  $columns
      */
     protected function dropColumnsFromTable(string $table, array|string $columns, ?string $connection = null): void
     {
@@ -90,7 +90,7 @@ trait HasSchemaOperations
     /**
      * Drop tables if they exist.
      *
-     * @param array<int, string>|string $tables
+     * @param  array<int, string>|string  $tables
      */
     protected function dropTablesIfExist(string|array $tables, ?string $connection = null): void
     {
@@ -109,7 +109,7 @@ trait HasSchemaOperations
      * form. Existence is checked first so dropping a missing index is a no-op
      * rather than a driver error.
      *
-     * @param array<int, string>|string $index
+     * @param  array<int, string>|string  $index
      */
     protected function dropIndexIfExists(string $table, string|array $index, ?string $connection = null): void
     {

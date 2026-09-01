@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Simtabi\Laranail\DbTools\Tests\Unit\Backup;
 
-use RuntimeException;
 use InvalidArgumentException;
-use Simtabi\Laranail\DbTools\Tests\TestCase;
+use RuntimeException;
 use Simtabi\Laranail\DbTools\Backup\BackupManager;
 use Simtabi\Laranail\DbTools\Backup\Contracts\BackupDriverInterface;
+use Simtabi\Laranail\DbTools\Tests\TestCase;
 
 /**
  * A fake backup driver that records the arguments it was called with and
@@ -82,7 +82,7 @@ final class BackupManagerTest extends TestCase
     public function test_restore_delegates_to_resolved_driver_for_connection_driver(): void
     {
         config()->set('database.connections.fake_restore', [
-            'driver'   => 'oracle',
+            'driver' => 'oracle',
             'database' => 'whatever',
         ]);
 
@@ -101,7 +101,7 @@ final class BackupManagerTest extends TestCase
     public function test_backup_delegates_to_resolved_driver(): void
     {
         config()->set('database.connections.fake_backup', [
-            'driver'   => 'oracle',
+            'driver' => 'oracle',
             'database' => 'whatever',
         ]);
 
@@ -120,7 +120,7 @@ final class BackupManagerTest extends TestCase
     public function test_restore_throws_for_unsupported_driver(): void
     {
         config()->set('database.connections.unsupported', [
-            'driver'   => 'definitely-not-a-real-driver',
+            'driver' => 'definitely-not-a-real-driver',
             'database' => 'whatever',
         ]);
 

@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Simtabi\Laranail\DbTools\Tests\Unit\Concerns;
 
-use Simtabi\Laranail\DbTools\Tests\TestCase;
 use Simtabi\Laranail\DbTools\Concerns\ValidatesFilePaths;
+use Simtabi\Laranail\DbTools\Tests\TestCase;
 
 final class ValidatesFilePathsTest extends TestCase
 {
@@ -44,7 +44,7 @@ final class ValidatesFilePathsTest extends TestCase
     public function test_validates_a_real_php_file(): void
     {
         self::assertTrue($this->subject->isValidPhpFile(__FILE__));
-        self::assertFalse($this->subject->isValidPhpFile(__DIR__ . '/does-not-exist.php'));
+        self::assertFalse($this->subject->isValidPhpFile(__DIR__.'/does-not-exist.php'));
     }
 
     public function test_extracts_extension_and_name(): void

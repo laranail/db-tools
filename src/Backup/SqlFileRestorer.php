@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Simtabi\Laranail\DbTools\Backup;
 
-use RuntimeException;
-use InvalidArgumentException;
-use Illuminate\Support\Facades\File;
 use Illuminate\Database\QueryException;
-use Simtabi\Laranail\DbTools\Support\ConnectionContext;
+use Illuminate\Support\Facades\File;
+use InvalidArgumentException;
+use RuntimeException;
 use Simtabi\Laranail\DbTools\Concerns\ManagesTransactions;
+use Simtabi\Laranail\DbTools\Support\ConnectionContext;
 
 /**
  * Class SqlFileRestorer
@@ -24,9 +24,8 @@ class SqlFileRestorer
     /**
      * Restore database from an SQL file
      *
-     * @param string $path Path to SQL dump file
-     * @param string|null $connection Connection name (null for default)
-     *
+     * @param  string  $path  Path to SQL dump file
+     * @param  string|null  $connection  Connection name (null for default)
      * @return bool True if restore successful
      *
      * @throws InvalidArgumentException If file doesn't exist or is empty
@@ -46,7 +45,7 @@ class SqlFileRestorer
         try {
             return $this->executeStatements($statements, $connection);
         } catch (QueryException $e) {
-            throw new RuntimeException('Database restoration failed: ' . $e->getMessage(), 0, $e);
+            throw new RuntimeException('Database restoration failed: '.$e->getMessage(), 0, $e);
         }
     }
 
@@ -84,8 +83,7 @@ class SqlFileRestorer
      * sizes this restorer targets (typical app dumps, not multi-GB exports);
      * a tokenising SQL parser would be heavier without practical benefit here.
      *
-     * @param string $sql Raw SQL content
-     *
+     * @param  string  $sql  Raw SQL content
      * @return array Array of SQL statements
      */
     private function parseStatements(string $sql): array
@@ -167,7 +165,7 @@ class SqlFileRestorer
             } elseif ($inString && $char === $stringChar) {
                 if ($nextChar === $stringChar) {
                     // Doubled quote is an escaped quote, not a string close.
-                    $current .= $char . $nextChar;
+                    $current .= $char.$nextChar;
                     $i++;
                 } else {
                     $inString = false;
@@ -195,9 +193,8 @@ class SqlFileRestorer
     /**
      * Execute SQL statements with transaction support
      *
-     * @param array $statements Array of SQL statements
-     * @param string|null $connection Connection name
-     *
+     * @param  array  $statements  Array of SQL statements
+     * @param  string|null  $connection  Connection name
      * @return bool True if all statements executed successfully
      *
      * @throws QueryException If any statement fails

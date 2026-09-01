@@ -5,17 +5,17 @@ declare(strict_types=1);
 namespace Simtabi\Laranail\DbTools\Guard;
 
 use Closure;
-use Throwable;
 use Illuminate\Container\Container;
 use Illuminate\Support\Traits\Macroable;
-use Simtabi\Laranail\DbTools\Support\SafeEvent;
-use Simtabi\Laranail\DbTools\Support\ConnectionContext;
 use Simtabi\Laranail\DbTools\Events\DatabaseUnavailable;
-use Simtabi\Laranail\DbTools\Schema\DatabaseSchemaInspector;
-use Simtabi\Laranail\DbTools\Schema\DatabaseConnectionTester;
 use Simtabi\Laranail\DbTools\Guard\Contracts\DatabaseAvailabilityInterface;
-use Simtabi\Laranail\DbTools\Schema\Contracts\DatabaseSchemaInspectorInterface;
 use Simtabi\Laranail\DbTools\Schema\Contracts\DatabaseConnectionTesterInterface;
+use Simtabi\Laranail\DbTools\Schema\Contracts\DatabaseSchemaInspectorInterface;
+use Simtabi\Laranail\DbTools\Schema\DatabaseConnectionTester;
+use Simtabi\Laranail\DbTools\Schema\DatabaseSchemaInspector;
+use Simtabi\Laranail\DbTools\Support\ConnectionContext;
+use Simtabi\Laranail\DbTools\Support\SafeEvent;
+use Throwable;
 
 /**
  * Boot-safe database-availability guard.
@@ -178,9 +178,8 @@ final class DatabaseGuard implements DatabaseAvailabilityInterface
      *
      * @template TValue
      *
-     * @param callable():TValue $callback
-     * @param TValue $default
-     *
+     * @param  callable():TValue  $callback
+     * @param  TValue  $default
      * @return TValue
      */
     public function whenTable(string $table, callable $callback, mixed $default = null, ?string $connection = null): mixed

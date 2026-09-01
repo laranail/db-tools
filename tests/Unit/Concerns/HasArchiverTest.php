@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Simtabi\Laranail\DbTools\Tests\Unit\Concerns;
 
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Database\Eloquent\Model;
-use Simtabi\Laranail\DbTools\Tests\TestCase;
+use Illuminate\Support\Facades\Schema;
 use Simtabi\Laranail\DbTools\Concerns\HasArchiver;
+use Simtabi\Laranail\DbTools\Tests\TestCase;
 
 final class ArchivableWidget extends Model
 {

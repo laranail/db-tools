@@ -17,9 +17,8 @@ interface BackupDriverInterface
     /**
      * Create a backup of the database
      *
-     * @param array $config Database connection configuration
-     * @param string $path Absolute path where backup should be saved
-     *
+     * @param  array  $config  Database connection configuration
+     * @param  string  $path  Absolute path where backup should be saved
      * @return bool True if backup successful
      *
      * @throws RuntimeException If backup fails
@@ -33,10 +32,9 @@ interface BackupDriverInterface
      * produce — e.g. PostgreSQL custom-format dumps restore via pg_restore,
      * while plain ".sql" files replay through the SQL text path.
      *
-     * @param array $config Database connection configuration
-     * @param string $path Absolute path to the backup file
-     * @param string|null $connection Connection name (null for default)
-     *
+     * @param  array  $config  Database connection configuration
+     * @param  string  $path  Absolute path to the backup file
+     * @param  string|null  $connection  Connection name (null for default)
      * @return bool True if restore successful
      *
      * @throws RuntimeException If restore fails
@@ -46,8 +44,7 @@ interface BackupDriverInterface
     /**
      * Check if this driver supports the given database driver
      *
-     * @param string $driver Driver name (mysql, pgsql, sqlite, etc)
-     *
+     * @param  string  $driver  Driver name (mysql, pgsql, sqlite, etc)
      * @return bool True if driver is supported
      */
     public function supports(string $driver): bool;

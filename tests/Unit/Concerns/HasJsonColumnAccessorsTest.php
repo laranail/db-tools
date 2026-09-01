@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace Simtabi\Laranail\DbTools\Tests\Unit\Concerns;
 
 use DB;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Database\Eloquent\Model;
-use Simtabi\Laranail\DbTools\Tests\TestCase;
+use Illuminate\Support\Facades\Schema;
 use Simtabi\Laranail\DbTools\Concerns\HasJsonColumnAccessors;
+use Simtabi\Laranail\DbTools\Tests\TestCase;
 
 final class JsonAccessorModel extends Model
 {
@@ -42,7 +42,7 @@ final class HasJsonColumnAccessorsTest extends TestCase
     {
         $model = JsonAccessorModel::create([
             'metadata' => ['key' => 'value', 'count' => 42],
-            'plain'    => 'hello',
+            'plain' => 'hello',
         ]);
 
         $raw = $model->getRawOriginal('metadata');

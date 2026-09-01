@@ -4,15 +4,15 @@ declare(strict_types=1);
 
 namespace Simtabi\Laranail\DbTools\Tests\Unit\Casts;
 
-use stdClass;
-use Brick\Money\Money;
-use InvalidArgumentException;
 use Brick\Money\Context\CustomContext;
-use Illuminate\Support\Facades\Schema;
+use Brick\Money\Money;
 use Illuminate\Database\Eloquent\Model;
-use Simtabi\Laranail\DbTools\Tests\TestCase;
+use Illuminate\Support\Facades\Schema;
+use InvalidArgumentException;
 use Simtabi\Laranail\DbTools\Casts\CastMoney;
 use Simtabi\Laranail\DbTools\Exceptions\MoneyCurrencyException;
+use Simtabi\Laranail\DbTools\Tests\TestCase;
+use stdClass;
 
 final class MoneyModel extends Model
 {
@@ -23,7 +23,7 @@ final class MoneyModel extends Model
     protected $guarded = [];
 
     /** @var array<string, string> */
-    protected $casts = ['price' => CastMoney::class . ':USD'];
+    protected $casts = ['price' => CastMoney::class.':USD'];
 }
 
 /** A multi-currency table: the amount means nothing without the row's currency. */
@@ -36,7 +36,7 @@ final class MultiCurrencyMoneyModel extends Model
     protected $guarded = [];
 
     /** @var array<string, string> */
-    protected $casts = ['balance' => CastMoney::class . ':@currency'];
+    protected $casts = ['balance' => CastMoney::class.':@currency'];
 }
 
 enum TestCurrency: string
@@ -326,7 +326,7 @@ final class CastMoneyTest extends TestCase
     {
         // Money carries its own currency, so it needs no lookup and no ordering.
         $model = MultiCurrencyMoneyModel::create([
-            'balance'  => Money::of('100.00', 'KES'),
+            'balance' => Money::of('100.00', 'KES'),
             'currency' => 'KES',
         ]);
 

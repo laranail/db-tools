@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Simtabi\Laranail\DbTools\Tests\Unit\Schema;
 
 use Override;
-use Simtabi\Laranail\DbTools\Tests\TestCase;
-use Simtabi\Laranail\DbTools\Schema\DatabaseTableVerifier;
 use Simtabi\Laranail\DbTools\Schema\DatabaseSchemaInspector;
+use Simtabi\Laranail\DbTools\Schema\DatabaseTableVerifier;
+use Simtabi\Laranail\DbTools\Tests\TestCase;
 
 /**
  * hasTable() caught every exception and answered false, so "this table does
@@ -78,9 +78,9 @@ final class UnreachableConnectionTest extends TestCase
         // A directory that cannot exist, so opening the database fails at
         // connect time rather than producing an empty schema.
         $app['config']->set('database.connections.unreachable', [
-            'driver'   => 'sqlite',
-            'database' => '/nonexistent-' . self::class . '/does/not/exist.sqlite',
-            'prefix'   => '',
+            'driver' => 'sqlite',
+            'database' => '/nonexistent-'.self::class.'/does/not/exist.sqlite',
+            'prefix' => '',
         ]);
     }
 }

@@ -32,7 +32,7 @@ trait ManagesForeignKeyChecks
     /**
      * Run a callback with foreign key constraints disabled.
      *
-     * @param string|null $connection Connection name (null for default)
+     * @param  string|null  $connection  Connection name (null for default)
      *
      * @example
      * $this->withoutForeignKeyChecks(function (): void {

@@ -5,12 +5,12 @@ declare(strict_types=1);
 namespace Simtabi\Laranail\DbTools\Schema;
 
 use Illuminate\Support\Facades\Config;
-use Simtabi\Laranail\DbTools\Support\SafeEvent;
 use Simtabi\Laranail\DbTools\Events\SchemaNotReady;
-use Simtabi\Laranail\DbTools\Support\ConnectionContext;
-use Simtabi\Laranail\DbTools\Schema\Contracts\SchemaReadinessInterface;
 use Simtabi\Laranail\DbTools\Guard\Contracts\DatabaseAvailabilityInterface;
 use Simtabi\Laranail\DbTools\Schema\Contracts\DatabaseTableVerifierInterface;
+use Simtabi\Laranail\DbTools\Schema\Contracts\SchemaReadinessInterface;
+use Simtabi\Laranail\DbTools\Support\ConnectionContext;
+use Simtabi\Laranail\DbTools\Support\SafeEvent;
 
 /**
  * Boot-safe schema-readiness reporter. Layered on the availability guard (is the
@@ -37,7 +37,7 @@ final class SchemaReadiness implements SchemaReadinessInterface
     public function report(array $requiredTables = [], ?string $connection = null): SchemaReadinessReport
     {
         $required = $this->resolveRequired($requiredTables);
-        $key = $this->connectionKey($connection) . '|' . implode(',', $required);
+        $key = $this->connectionKey($connection).'|'.implode(',', $required);
 
         if (array_key_exists($key, $this->reports)) {
             return $this->reports[$key];
@@ -66,7 +66,7 @@ final class SchemaReadiness implements SchemaReadinessInterface
         if ($connection === null) {
             $this->reports = [];
         } else {
-            $prefix = $this->connectionKey($connection) . '|';
+            $prefix = $this->connectionKey($connection).'|';
 
             foreach (array_keys($this->reports) as $key) {
                 if (str_starts_with($key, $prefix)) {
@@ -94,7 +94,7 @@ final class SchemaReadiness implements SchemaReadinessInterface
     }
 
     /**
-     * @param list<string> $required
+     * @param  list<string>  $required
      */
     private function build(array $required, ?string $connection): SchemaReadinessReport
     {
@@ -141,8 +141,7 @@ final class SchemaReadiness implements SchemaReadinessInterface
     }
 
     /**
-     * @param list<string> $requiredTables
-     *
+     * @param  list<string>  $requiredTables
      * @return list<string>
      */
     private function resolveRequired(array $requiredTables): array

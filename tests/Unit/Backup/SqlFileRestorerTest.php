@@ -5,13 +5,13 @@ declare(strict_types=1);
 namespace Simtabi\Laranail\DbTools\Tests\Unit\Backup;
 
 use DB;
-use ReflectionMethod;
-use RuntimeException;
-use InvalidArgumentException;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Schema;
-use Simtabi\Laranail\DbTools\Tests\TestCase;
+use InvalidArgumentException;
+use ReflectionMethod;
+use RuntimeException;
 use Simtabi\Laranail\DbTools\Backup\SqlFileRestorer;
+use Simtabi\Laranail\DbTools\Tests\TestCase;
 
 final class SqlFileRestorerTest extends TestCase
 {
@@ -144,7 +144,7 @@ final class SqlFileRestorerTest extends TestCase
 
         $path = $this->writeTempSql(
             "INSERT INTO sql_restore_target (id, name) VALUES (1, 'alpha');\n"
-            . "INSERT INTO sql_restore_target (id, name) VALUES (2, 'beta');\n",
+            ."INSERT INTO sql_restore_target (id, name) VALUES (2, 'beta');\n",
         );
 
         $result = (new SqlFileRestorer)->restore($path);
@@ -161,7 +161,7 @@ final class SqlFileRestorerTest extends TestCase
 
         $path = $this->writeTempSql(
             "INSERT INTO sql_restore_rollback (id) VALUES (1);\n"
-            . "INSERT INTO this_table_does_not_exist (id) VALUES (2);\n",
+            ."INSERT INTO this_table_does_not_exist (id) VALUES (2);\n",
         );
 
         try {
@@ -191,9 +191,9 @@ final class SqlFileRestorerTest extends TestCase
         // while the statements ran on $connection, so a non-default restore had
         // no atomicity at all and a partial restore stayed committed.
         config()->set('database.connections.secondary', [
-            'driver'   => 'sqlite',
+            'driver' => 'sqlite',
             'database' => ':memory:',
-            'prefix'   => '',
+            'prefix' => '',
         ]);
 
         Schema::connection('secondary')->create('sql_restore_secondary', function ($t): void {
@@ -202,7 +202,7 @@ final class SqlFileRestorerTest extends TestCase
 
         $path = $this->writeTempSql(
             "INSERT INTO sql_restore_secondary (id) VALUES (1);\n"
-            . "INSERT INTO no_such_table_here (id) VALUES (2);\n",
+            ."INSERT INTO no_such_table_here (id) VALUES (2);\n",
         );
 
         try {
@@ -234,7 +234,7 @@ final class SqlFileRestorerTest extends TestCase
 
     private function writeTempSql(string $contents): string
     {
-        $path = tempnam(sys_get_temp_dir(), 'dbt-restorer-') . '.sql';
+        $path = tempnam(sys_get_temp_dir(), 'dbt-restorer-').'.sql';
         File::put($path, $contents);
         $this->tempFiles[] = $path;
 

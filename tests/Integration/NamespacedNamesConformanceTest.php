@@ -2,8 +2,8 @@
 
 declare(strict_types=1);
 
-use Symfony\Component\Console\Command\Command as SymfonyCommand;
 use Simtabi\Laranail\DbTools\Console\Concerns\SupportsNamespacedNames as NamespacedNames;
+use Symfony\Component\Console\Command\Command as SymfonyCommand;
 
 /**
  * Conformance for the `laranail::<slug>.<command>` naming trait.

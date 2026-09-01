@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Simtabi\Laranail\DbTools\Events;
 
-use Override;
 use Illuminate\Http\Request;
+use Override;
 
 /**
  * Database Events
@@ -47,7 +47,7 @@ class DatabaseEvents extends BaseEvent
         $event = new self;
         $event->createEvent('connection_failed', 'database', $request, $metadata);
         $event->metadata = array_merge($event->metadata, [
-            'reason'          => $reason,
+            'reason' => $reason,
             'database_config' => $databaseConfig,
         ]);
 
@@ -87,7 +87,7 @@ class DatabaseEvents extends BaseEvent
         $event->createEvent('migration_failed', 'database', $request, $metadata);
         $event->metadata = array_merge($event->metadata, [
             'migration_name' => $migrationName,
-            'reason'         => $reason,
+            'reason' => $reason,
         ]);
 
         return $event;
@@ -100,13 +100,13 @@ class DatabaseEvents extends BaseEvent
     public function getDisplayName(): string
     {
         return match ($this->action) {
-            'configuring'         => 'Database Configuration Started',
-            'configured'          => 'Database Configured',
-            'connection_failed'   => 'Database Connection Failed',
-            'migration_started'   => 'Database Migration Started',
+            'configuring' => 'Database Configuration Started',
+            'configured' => 'Database Configured',
+            'connection_failed' => 'Database Connection Failed',
+            'migration_started' => 'Database Migration Started',
             'migration_completed' => 'Database Migration Completed',
-            'migration_failed'    => 'Database Migration Failed',
-            default               => parent::getDisplayName(),
+            'migration_failed' => 'Database Migration Failed',
+            default => parent::getDisplayName(),
         };
     }
 
@@ -120,13 +120,13 @@ class DatabaseEvents extends BaseEvent
         $reason = $this->metadata['reason'] ?? null;
 
         return match ($this->action) {
-            'configuring'         => 'Database configuration process has started',
-            'configured'          => 'Database has been successfully configured',
-            'connection_failed'   => 'Database connection failed: ' . ($reason ?? 'Unknown error'),
-            'migration_started'   => 'Database migration started' . ($migrationName ? " for {$migrationName}" : ''),
-            'migration_completed' => 'Database migration completed' . ($migrationName ? " for {$migrationName}" : ''),
-            'migration_failed'    => 'Database migration failed' . ($migrationName ? " for {$migrationName}" : '') . ($reason ? ": {$reason}" : ''),
-            default               => parent::getDescription(),
+            'configuring' => 'Database configuration process has started',
+            'configured' => 'Database has been successfully configured',
+            'connection_failed' => 'Database connection failed: '.($reason ?? 'Unknown error'),
+            'migration_started' => 'Database migration started'.($migrationName ? " for {$migrationName}" : ''),
+            'migration_completed' => 'Database migration completed'.($migrationName ? " for {$migrationName}" : ''),
+            'migration_failed' => 'Database migration failed'.($migrationName ? " for {$migrationName}" : '').($reason ? ": {$reason}" : ''),
+            default => parent::getDescription(),
         };
     }
 
@@ -138,9 +138,9 @@ class DatabaseEvents extends BaseEvent
     {
         return match ($this->action) {
             'connection_failed', 'migration_failed' => 'high',
-            'configured', 'migration_completed'     => 'medium',
-            'configuring', 'migration_started'      => 'low',
-            default                                 => parent::getPriorityLevel(),
+            'configured', 'migration_completed' => 'medium',
+            'configuring', 'migration_started' => 'low',
+            default => parent::getPriorityLevel(),
         };
     }
 
@@ -158,10 +158,10 @@ class DatabaseEvents extends BaseEvent
     public function getResult(): string
     {
         return match ($this->action) {
-            'configured', 'migration_completed'     => 'success',
+            'configured', 'migration_completed' => 'success',
             'connection_failed', 'migration_failed' => 'failure',
-            'configuring', 'migration_started'      => 'in_progress',
-            default                                 => 'unknown',
+            'configuring', 'migration_started' => 'in_progress',
+            default => 'unknown',
         };
     }
 

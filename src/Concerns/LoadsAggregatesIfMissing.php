@@ -29,7 +29,7 @@ trait LoadsAggregatesIfMissing
      * Thin alias for the native {@see Model::loadMissing()} — provided for
      * naming symmetry with the count/aggregate helpers below.
      *
-     * @param array<int, string>|string $relations
+     * @param  array<int, string>|string  $relations
      */
     public function loadIfMissing(array|string $relations): static
     {
@@ -43,7 +43,7 @@ trait LoadsAggregatesIfMissing
      * attribute is not already set, delegating those to native
      * {@see Model::loadCount()}.
      *
-     * @param array<int, string>|string $relations
+     * @param  array<int, string>|string  $relations
      */
     public function loadCountIfMissing(array|string $relations): static
     {
@@ -60,7 +60,7 @@ trait LoadsAggregatesIfMissing
      * Load a relationship aggregate only when its corresponding attribute is
      * missing, delegating to native {@see Model::loadAggregate()}.
      *
-     * @param array<int, string>|string $relations
+     * @param  array<int, string>|string  $relations
      */
     public function loadAggregateIfMissing(array|string $relations, string $column, string $function = 'count'): static
     {
@@ -85,8 +85,7 @@ trait LoadsAggregatesIfMissing
      * TypeError instead of loading anything. Keys and closures are preserved
      * so whatever is kept can be handed to Eloquent unchanged.
      *
-     * @param array<array-key, string|callable> $relations
-     *
+     * @param  array<array-key, string|callable>  $relations
      * @return array<array-key, string|callable>
      */
     protected function aggregatesMissing(array $relations, string $function, ?string $column = null): array

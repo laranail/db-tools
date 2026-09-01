@@ -5,15 +5,15 @@ declare(strict_types=1);
 namespace Simtabi\Laranail\DbTools\Casts;
 
 use BackedEnum;
-use Brick\Money\Money;
 use Brick\Math\BigDecimal;
-use Brick\Math\RoundingMode;
-use InvalidArgumentException;
 use Brick\Math\Exception\MathException;
-use Illuminate\Database\Eloquent\Model;
+use Brick\Math\RoundingMode;
+use Brick\Money\Money;
 use Illuminate\Contracts\Database\Eloquent\CastsAttributes;
-use Simtabi\Laranail\DbTools\Exceptions\MoneyCurrencyException;
 use Illuminate\Contracts\Database\Eloquent\SerializesCastableAttributes;
+use Illuminate\Database\Eloquent\Model;
+use InvalidArgumentException;
+use Simtabi\Laranail\DbTools\Exceptions\MoneyCurrencyException;
 
 /**
  * Cast an integer "minor unit" column (e.g. cents) to a brick/money
@@ -56,7 +56,7 @@ class CastMoney implements CastsAttributes, SerializesCastableAttributes
     /**
      * Read minor units from storage as a Money value object.
      *
-     * @param array<string, mixed> $attributes
+     * @param  array<string, mixed>  $attributes
      */
     public function get(Model $model, string $key, mixed $value, array $attributes): ?Money
     {
@@ -73,7 +73,7 @@ class CastMoney implements CastsAttributes, SerializesCastableAttributes
     /**
      * Store a Money instance, or a major-unit numeric value, as minor units.
      *
-     * @param array<string, mixed> $attributes
+     * @param  array<string, mixed>  $attributes
      */
     public function set(Model $model, string $key, mixed $value, array $attributes): ?int
     {
@@ -97,15 +97,14 @@ class CastMoney implements CastsAttributes, SerializesCastableAttributes
         }
 
         throw new InvalidArgumentException(
-            "The [{$key}] money value must be a " . Money::class . ' instance or a numeric value.',
+            "The [{$key}] money value must be a ".Money::class.' instance or a numeric value.',
         );
     }
 
     /**
      * Serialize the Money value to a plain array for toArray()/JSON output.
      *
-     * @param array<string, mixed> $attributes
-     *
+     * @param  array<string, mixed>  $attributes
      * @return array{amount: string, currency: string}|null
      */
     public function serialize(Model $model, string $key, mixed $value, array $attributes): ?array
@@ -122,7 +121,7 @@ class CastMoney implements CastsAttributes, SerializesCastableAttributes
         }
 
         return [
-            'amount'   => (string) $value->getAmount(),
+            'amount' => (string) $value->getAmount(),
             'currency' => $value->getCurrency()->getCurrencyCode(),
         ];
     }
@@ -146,7 +145,7 @@ class CastMoney implements CastsAttributes, SerializesCastableAttributes
     /**
      * Resolve the ISO 4217 currency code for this cast.
      *
-     * @param array<string, mixed> $attributes
+     * @param  array<string, mixed>  $attributes
      */
     private function currencyFor(string $key, array $attributes): string
     {
@@ -168,7 +167,7 @@ class CastMoney implements CastsAttributes, SerializesCastableAttributes
      * per-row currency has not been assigned yet: on the way in that is an
      * ordering problem with two easy fixes, not an unloaded column.
      *
-     * @param array<string, mixed> $attributes
+     * @param  array<string, mixed>  $attributes
      */
     private function currencyForWrite(string $key, array $attributes): string
     {
@@ -194,7 +193,7 @@ class CastMoney implements CastsAttributes, SerializesCastableAttributes
     }
 
     /**
-     * @param array<string, mixed> $attributes
+     * @param  array<string, mixed>  $attributes
      */
     private function currencyFromColumn(string $column, string $key, array $attributes): string
     {
@@ -239,7 +238,7 @@ class CastMoney implements CastsAttributes, SerializesCastableAttributes
      * attribute order is the caller's array order — so an unresolvable currency
      * is not treated as a mismatch.
      *
-     * @param array<string, mixed> $attributes
+     * @param  array<string, mixed>  $attributes
      */
     private function assertCurrencyMatchesRow(Money $value, string $key, array $attributes): void
     {

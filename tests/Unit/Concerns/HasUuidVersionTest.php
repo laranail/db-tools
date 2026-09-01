@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace Simtabi\Laranail\DbTools\Tests\Unit\Concerns;
 
-use Ramsey\Uuid\Uuid;
-use InvalidArgumentException;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Database\Eloquent\Model;
-use Simtabi\Laranail\DbTools\Tests\TestCase;
+use Illuminate\Support\Facades\Schema;
+use InvalidArgumentException;
+use Ramsey\Uuid\Uuid;
 use Simtabi\Laranail\DbTools\Concerns\HasUuid;
 use Simtabi\Laranail\DbTools\Support\SchemaColumnCache;
+use Simtabi\Laranail\DbTools\Tests\TestCase;
 
 final class UuidV4Model extends Model
 {

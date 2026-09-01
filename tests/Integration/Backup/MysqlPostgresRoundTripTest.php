@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Simtabi\Laranail\DbTools\Tests\Integration\Backup;
 
-use Throwable;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
-use Simtabi\Laranail\DbTools\Tests\TestCase;
 use Simtabi\Laranail\DbTools\Backup\BackupManager;
+use Simtabi\Laranail\DbTools\Tests\TestCase;
+use Throwable;
 
 /**
  * Real MySQL and PostgreSQL backup/restore round-trips.
@@ -40,13 +40,13 @@ final class MysqlPostgresRoundTripTest extends TestCase
         }
 
         $config = [
-            'driver'   => 'mysql',
-            'host'     => env('DB_MYSQL_HOST', '127.0.0.1'),
-            'port'     => env('DB_MYSQL_PORT', '3306'),
+            'driver' => 'mysql',
+            'host' => env('DB_MYSQL_HOST', '127.0.0.1'),
+            'port' => env('DB_MYSQL_PORT', '3306'),
             'database' => env('DB_MYSQL_DATABASE', 'db_tools_test'),
             'username' => env('DB_MYSQL_USERNAME', 'root'),
             'password' => env('DB_MYSQL_PASSWORD', ''),
-            'prefix'   => '',
+            'prefix' => '',
         ];
 
         if (! $this->serverReachable('mysql_rt', $config)) {
@@ -63,13 +63,13 @@ final class MysqlPostgresRoundTripTest extends TestCase
         }
 
         $config = [
-            'driver'      => 'pgsql',
-            'host'        => env('DB_PGSQL_HOST', '127.0.0.1'),
-            'port'        => env('DB_PGSQL_PORT', '5432'),
-            'database'    => env('DB_PGSQL_DATABASE', 'db_tools_test'),
-            'username'    => env('DB_PGSQL_USERNAME', 'postgres'),
-            'password'    => env('DB_PGSQL_PASSWORD', ''),
-            'prefix'      => '',
+            'driver' => 'pgsql',
+            'host' => env('DB_PGSQL_HOST', '127.0.0.1'),
+            'port' => env('DB_PGSQL_PORT', '5432'),
+            'database' => env('DB_PGSQL_DATABASE', 'db_tools_test'),
+            'username' => env('DB_PGSQL_USERNAME', 'postgres'),
+            'password' => env('DB_PGSQL_PASSWORD', ''),
+            'prefix' => '',
             'search_path' => 'public',
         ];
 
@@ -84,13 +84,13 @@ final class MysqlPostgresRoundTripTest extends TestCase
 
     private function binaryOnPath(string $name): bool
     {
-        $which = shell_exec('command -v ' . escapeshellarg($name) . ' 2>/dev/null');
+        $which = shell_exec('command -v '.escapeshellarg($name).' 2>/dev/null');
 
         return is_string($which) && trim($which) !== '';
     }
 
     /**
-     * @param array<string, mixed> $config
+     * @param  array<string, mixed>  $config
      */
     private function serverReachable(string $name, array $config): bool
     {
@@ -115,11 +115,11 @@ final class MysqlPostgresRoundTripTest extends TestCase
         });
 
         DB::connection($connection)->table('rt_widgets')->insert([
-            'id'   => 1,
+            'id' => 1,
             'name' => 'original-row',
         ]);
 
-        $backupPath = tempnam(sys_get_temp_dir(), 'dbt-server-backup-') . $suffix;
+        $backupPath = tempnam(sys_get_temp_dir(), 'dbt-server-backup-').$suffix;
         $this->tempFiles[] = $backupPath;
 
         $manager = new BackupManager;
