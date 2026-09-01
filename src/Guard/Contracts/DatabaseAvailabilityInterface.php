@@ -32,9 +32,8 @@ interface DatabaseAvailabilityInterface
      *
      * @template TValue
      *
-     * @param callable():TValue $callback
-     * @param TValue $default
-     *
+     * @param  callable():TValue  $callback
+     * @param  TValue  $default
      * @return TValue
      */
     public function whenAvailable(callable $callback, mixed $default = null, ?string $connection = null): mixed;
@@ -45,9 +44,8 @@ interface DatabaseAvailabilityInterface
      *
      * @template TValue
      *
-     * @param callable():TValue $callback
-     * @param TValue $default
-     *
+     * @param  callable():TValue  $callback
+     * @param  TValue  $default
      * @return TValue
      */
     public function whenTable(string $table, callable $callback, mixed $default = null, ?string $connection = null): mixed;

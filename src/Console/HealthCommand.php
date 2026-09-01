@@ -5,12 +5,12 @@ declare(strict_types=1);
 namespace Simtabi\Laranail\DbTools\Console;
 
 use Illuminate\Console\Command;
-use Simtabi\Laranail\DbTools\Schema\SchemaStatus;
-use Simtabi\Laranail\DbTools\Support\ConnectionContext;
 use Simtabi\Laranail\DbTools\Console\Concerns\ReadsOptions;
 use Simtabi\Laranail\DbTools\Console\Concerns\SupportsNamespacedNames;
-use Simtabi\Laranail\DbTools\Schema\Contracts\SchemaReadinessInterface;
 use Simtabi\Laranail\DbTools\Guard\Contracts\DatabaseAvailabilityInterface;
+use Simtabi\Laranail\DbTools\Schema\Contracts\SchemaReadinessInterface;
+use Simtabi\Laranail\DbTools\Schema\SchemaStatus;
+use Simtabi\Laranail\DbTools\Support\ConnectionContext;
 
 /**
  * Prints the schema-readiness report for a connection: is it reachable, is it
@@ -44,19 +44,19 @@ final class HealthCommand extends Command
 
         $report = $readiness->report($required, $connection);
 
-        $this->line('Connection: ' . ConnectionContext::for($report->connection)->key());
-        $this->line('Status:     ' . $report->status->value);
-        $this->line('Reachable:  ' . ($report->reachable ? 'yes' : 'no'));
-        $this->line('Migrated:   ' . ($report->hasMigrationsTable ? 'yes' : 'no'));
+        $this->line('Connection: '.ConnectionContext::for($report->connection)->key());
+        $this->line('Status:     '.$report->status->value);
+        $this->line('Reachable:  '.($report->reachable ? 'yes' : 'no'));
+        $this->line('Migrated:   '.($report->hasMigrationsTable ? 'yes' : 'no'));
 
         if ($report->missingTables !== []) {
-            $this->line('Missing:    ' . implode(', ', $report->missingTables));
+            $this->line('Missing:    '.implode(', ', $report->missingTables));
         }
 
         match ($report->status) {
             SchemaStatus::Ready => $this->info($report->message()),
-            SchemaStatus::Down  => $this->error($report->message()),
-            default             => $this->warn($report->message()),
+            SchemaStatus::Down => $this->error($report->message()),
+            default => $this->warn($report->message()),
         };
 
         if ($this->option('strict') && ! $report->isReady()) {

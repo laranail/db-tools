@@ -77,7 +77,7 @@ abstract class BaseEvent
     /**
      * Populate the shared event fields. Called by subclass factory methods.
      *
-     * @param array<string, mixed>|null $metadata
+     * @param  array<string, mixed>|null  $metadata
      */
     protected function createEvent(
         string $action,

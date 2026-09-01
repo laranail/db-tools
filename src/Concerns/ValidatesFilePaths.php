@@ -99,13 +99,13 @@ trait ValidatesFilePaths
             return false;
         }
 
-        $realBase = Str::rtrim($realBase, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR;
+        $realBase = Str::rtrim($realBase, DIRECTORY_SEPARATOR).DIRECTORY_SEPARATOR;
 
         if ($realPath === Str::rtrim($realBase, DIRECTORY_SEPARATOR)) {
             return true;
         }
 
-        return Str::startsWith($realPath . DIRECTORY_SEPARATOR, $realBase);
+        return Str::startsWith($realPath.DIRECTORY_SEPARATOR, $realBase);
     }
 
     /**

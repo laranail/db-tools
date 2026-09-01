@@ -32,12 +32,12 @@ trait HasNanoid
 
     public function nanoidColumn(): string
     {
-        return defined(static::class . '::NANOID_COLUMN') ? static::NANOID_COLUMN : 'nanoid';
+        return defined(static::class.'::NANOID_COLUMN') ? static::NANOID_COLUMN : 'nanoid';
     }
 
     public function nanoidLength(): int
     {
-        return defined(static::class . '::NANOID_LENGTH') ? static::NANOID_LENGTH : 21;
+        return defined(static::class.'::NANOID_LENGTH') ? static::NANOID_LENGTH : 21;
     }
 
     private static function generateNanoid(int $length): string

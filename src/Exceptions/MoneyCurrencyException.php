@@ -26,7 +26,7 @@ class MoneyCurrencyException extends DbToolsException
     {
         return new self(
             message: "The [{$key}] money cast reads its currency from the [{$column}] column, "
-                . 'which was not loaded. Select it, or give the cast a fixed currency.',
+                .'which was not loaded. Select it, or give the cast a fixed currency.',
             code: 2101,
             context: ['column' => $column, 'attribute' => $key],
         );
@@ -39,7 +39,7 @@ class MoneyCurrencyException extends DbToolsException
     {
         return new self(
             message: "The [{$key}] money cast reads its currency from the [{$column}] column, "
-                . 'which is empty. Every money row needs a currency.',
+                .'which is empty. Every money row needs a currency.',
             code: 2102,
             context: ['column' => $column, 'attribute' => $key],
         );
@@ -55,7 +55,7 @@ class MoneyCurrencyException extends DbToolsException
     {
         return new self(
             message: "The [{$key}] money value is in {$assigned} but the row's currency is {$row}. "
-                . 'Convert the amount first, or set the currency column in the same operation.',
+                .'Convert the amount first, or set the currency column in the same operation.',
             code: 2103,
             context: ['attribute' => $key, 'assigned' => $assigned, 'row' => $row],
         );
@@ -71,8 +71,8 @@ class MoneyCurrencyException extends DbToolsException
     {
         return new self(
             message: "The [{$key}] money cast needs the [{$column}] column to convert a bare number, "
-                . "and it has not been set yet. Assign [{$column}] first, or assign a Money instance, "
-                . 'which carries its own currency and needs no lookup.',
+                ."and it has not been set yet. Assign [{$column}] first, or assign a Money instance, "
+                .'which carries its own currency and needs no lookup.',
             code: 2105,
             context: ['column' => $column, 'attribute' => $key],
         );

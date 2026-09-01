@@ -4,50 +4,50 @@ declare(strict_types=1);
 
 namespace Simtabi\Laranail\DbTools\Providers;
 
-use Override;
-use Throwable;
-use Psr\Log\LoggerInterface;
-use Illuminate\Routing\Router;
-use Illuminate\Foundation\AliasLoader;
-use Simtabi\Laranail\Package\Tools\Package;
 use Illuminate\Console\Events\CommandStarting;
-use Simtabi\Laranail\DbTools\Guard\DatabaseGuard;
+use Illuminate\Contracts\Http\Kernel as HttpKernelContract;
+use Illuminate\Database\Schema\Blueprint as IlluminateBlueprint;
+use Illuminate\Foundation\AliasLoader;
+use Illuminate\Routing\Router;
+use Override;
+use Psr\Log\LoggerInterface;
 use Simtabi\Laranail\DbTools\Backup\BackupManager;
+use Simtabi\Laranail\DbTools\Backup\Contracts\BackupManagerInterface;
+use Simtabi\Laranail\DbTools\Console\DbToolsCommand;
 use Simtabi\Laranail\DbTools\Console\HealthCommand;
+use Simtabi\Laranail\DbTools\Events\DatabaseUnavailable;
 use Simtabi\Laranail\DbTools\Events\SchemaNotReady;
 use Simtabi\Laranail\DbTools\Facades\DbToolsFacade;
-use Simtabi\Laranail\DbTools\Console\DbToolsCommand;
-use Simtabi\Laranail\DbTools\Schema\BlueprintMacros;
-use Simtabi\Laranail\DbTools\Schema\SchemaReadiness;
-use Simtabi\Laranail\DbTools\Schema\FieldGroupMacros;
-use Simtabi\Laranail\DbTools\Schema\AuditColumnsMacro;
-use Simtabi\Laranail\DbTools\Services\DatabaseService;
-use Simtabi\Laranail\DbTools\Files\DatabaseFileService;
-use Simtabi\Laranail\DbTools\Events\DatabaseUnavailable;
-use Simtabi\Laranail\DbTools\Listeners\LogDatabaseIssues;
-use Simtabi\Laranail\DbTools\Services\MaintenanceService;
-use Simtabi\Laranail\DbTools\Schema\ConfiguredMorphsMacro;
-use Simtabi\Laranail\DbTools\Schema\DatabaseTableVerifier;
-use Illuminate\Contracts\Http\Kernel as HttpKernelContract;
-use Simtabi\Laranail\DbTools\Schema\SoftDeleteHistoryMacro;
-use Simtabi\Laranail\DbTools\Services\CleanDatabaseService;
-use Simtabi\Laranail\DbTools\Schema\DatabaseSchemaInspector;
-use Simtabi\Laranail\DbTools\Schema\DatabaseConnectionTester;
-use Simtabi\Laranail\DbTools\Schema\SoftDeletesWithUndoMacro;
-use Illuminate\Database\Schema\Blueprint as IlluminateBlueprint;
-use Simtabi\Laranail\DbTools\Http\Middleware\EnsureSchemaIsReady;
-use Simtabi\Laranail\DbTools\Migrations\GuardsDestructiveCommands;
-use Simtabi\Laranail\Package\Tools\Providers\PackageServiceProvider;
-use Simtabi\Laranail\DbTools\Backup\Contracts\BackupManagerInterface;
-use Simtabi\Laranail\DbTools\Schema\Contracts\SchemaReadinessInterface;
-use Simtabi\Laranail\DbTools\Services\Contracts\DatabaseServiceInterface;
 use Simtabi\Laranail\DbTools\Files\Contracts\DatabaseFileServiceInterface;
+use Simtabi\Laranail\DbTools\Files\DatabaseFileService;
 use Simtabi\Laranail\DbTools\Guard\Contracts\DatabaseAvailabilityInterface;
-use Simtabi\Laranail\DbTools\Services\Contracts\MaintenanceServiceInterface;
-use Simtabi\Laranail\DbTools\Schema\Contracts\DatabaseTableVerifierInterface;
-use Simtabi\Laranail\DbTools\Services\Contracts\CleanDatabaseServiceInterface;
-use Simtabi\Laranail\DbTools\Schema\Contracts\DatabaseSchemaInspectorInterface;
+use Simtabi\Laranail\DbTools\Guard\DatabaseGuard;
+use Simtabi\Laranail\DbTools\Http\Middleware\EnsureSchemaIsReady;
+use Simtabi\Laranail\DbTools\Listeners\LogDatabaseIssues;
+use Simtabi\Laranail\DbTools\Migrations\GuardsDestructiveCommands;
+use Simtabi\Laranail\DbTools\Schema\AuditColumnsMacro;
+use Simtabi\Laranail\DbTools\Schema\BlueprintMacros;
+use Simtabi\Laranail\DbTools\Schema\ConfiguredMorphsMacro;
 use Simtabi\Laranail\DbTools\Schema\Contracts\DatabaseConnectionTesterInterface;
+use Simtabi\Laranail\DbTools\Schema\Contracts\DatabaseSchemaInspectorInterface;
+use Simtabi\Laranail\DbTools\Schema\Contracts\DatabaseTableVerifierInterface;
+use Simtabi\Laranail\DbTools\Schema\Contracts\SchemaReadinessInterface;
+use Simtabi\Laranail\DbTools\Schema\DatabaseConnectionTester;
+use Simtabi\Laranail\DbTools\Schema\DatabaseSchemaInspector;
+use Simtabi\Laranail\DbTools\Schema\DatabaseTableVerifier;
+use Simtabi\Laranail\DbTools\Schema\FieldGroupMacros;
+use Simtabi\Laranail\DbTools\Schema\SchemaReadiness;
+use Simtabi\Laranail\DbTools\Schema\SoftDeleteHistoryMacro;
+use Simtabi\Laranail\DbTools\Schema\SoftDeletesWithUndoMacro;
+use Simtabi\Laranail\DbTools\Services\CleanDatabaseService;
+use Simtabi\Laranail\DbTools\Services\Contracts\CleanDatabaseServiceInterface;
+use Simtabi\Laranail\DbTools\Services\Contracts\DatabaseServiceInterface;
+use Simtabi\Laranail\DbTools\Services\Contracts\MaintenanceServiceInterface;
+use Simtabi\Laranail\DbTools\Services\DatabaseService;
+use Simtabi\Laranail\DbTools\Services\MaintenanceService;
+use Simtabi\Laranail\Package\Tools\Package;
+use Simtabi\Laranail\Package\Tools\Providers\PackageServiceProvider;
+use Throwable;
 
 final class DbToolsServiceProvider extends PackageServiceProvider
 {
@@ -146,7 +146,7 @@ final class DbToolsServiceProvider extends PackageServiceProvider
             // The migration is a .stub stamped with a fresh timestamp at publish time, so it stays a
             // hand-written publishes() rather than hasMigrations(). Only the tag is namespaced.
             $this->publishes([
-                $this->packagePath('database/migrations/0001_01_01_000000_create_soft_delete_history_table.php.stub') => database_path('migrations/' . date('Y_m_d_His') . '_create_soft_delete_history_table.php'),
+                $this->packagePath('database/migrations/0001_01_01_000000_create_soft_delete_history_table.php.stub') => database_path('migrations/'.date('Y_m_d_His').'_create_soft_delete_history_table.php'),
             ], $this->package->getNamespacedPublishTag('migrations'));
         }
 

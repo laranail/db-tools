@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Simtabi\Laranail\DbTools\Tests\Unit\Schema;
 
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Database\Schema\Blueprint;
-use Simtabi\Laranail\DbTools\Tests\TestCase;
+use Illuminate\Support\Facades\Schema;
 use Simtabi\Laranail\DbTools\Schema\Concerns\HasSchemaOperations;
+use Simtabi\Laranail\DbTools\Tests\TestCase;
 
 final class HasSchemaOperationsTest extends TestCase
 {

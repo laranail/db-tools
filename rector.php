@@ -6,8 +6,8 @@ use Rector\Config\RectorConfig;
 use Rector\Set\ValueObject\SetList;
 
 return RectorConfig::configure()
-    ->withPaths([__DIR__ . '/src', __DIR__ . '/tests'])
-    ->withSkipPath(__DIR__ . '/vendor')
+    ->withPaths([__DIR__.'/src', __DIR__.'/tests'])
+    ->withSkipPath(__DIR__.'/vendor')
     ->withPhpSets(php83: true)
     ->withSets([
         SetList::CODE_QUALITY,

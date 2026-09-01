@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Simtabi\Laranail\DbTools\Backup\Drivers;
 
-use RuntimeException;
 use Illuminate\Support\Facades\Process;
+use RuntimeException;
 use Simtabi\Laranail\DbTools\Backup\Concerns\ResolvesBackupOptions;
 use Simtabi\Laranail\DbTools\Backup\Contracts\BackupDriverInterface;
 
@@ -24,9 +24,8 @@ class PostgresBackupDriver implements BackupDriverInterface
     /**
      * Create a PostgreSQL backup using pg_dump (custom format)
      *
-     * @param array $config Database connection configuration
-     * @param string $path Absolute path where backup should be saved
-     *
+     * @param  array  $config  Database connection configuration
+     * @param  string  $path  Absolute path where backup should be saved
      * @return bool True if backup successful
      *
      * @throws RuntimeException If backup fails
@@ -40,21 +39,21 @@ class PostgresBackupDriver implements BackupDriverInterface
 
         $command = [
             $this->binary('pg_dump'),
-            '--host=' . ($config['host'] ?? '127.0.0.1'),
-            '--port=' . ($config['port'] ?? '5432'),
-            '--username=' . $config['username'],
-            '--dbname=' . $config['database'],
-            '--file=' . $dumpPath,
+            '--host='.($config['host'] ?? '127.0.0.1'),
+            '--port='.($config['port'] ?? '5432'),
+            '--username='.$config['username'],
+            '--dbname='.$config['database'],
+            '--file='.$dumpPath,
             '--format=custom',
             '--no-password',
         ];
 
         if (! empty($config['schema'])) {
-            $command[] = '--schema=' . $config['schema'];
+            $command[] = '--schema='.$config['schema'];
         }
 
         foreach ($this->excludedTables() as $table) {
-            $command[] = '--exclude-table=' . $table;
+            $command[] = '--exclude-table='.$table;
         }
 
         // Execute with password in environment variable (secure). The env
@@ -62,7 +61,7 @@ class PostgresBackupDriver implements BackupDriverInterface
         $result = Process::env(['PGPASSWORD' => $config['password']])->run($command);
 
         if (! $result->successful()) {
-            throw new RuntimeException('PostgreSQL backup failed: ' . $result->errorOutput());
+            throw new RuntimeException('PostgreSQL backup failed: '.$result->errorOutput());
         }
 
         if ($gzip) {
@@ -79,10 +78,9 @@ class PostgresBackupDriver implements BackupDriverInterface
      * are restored with pg_restore; plain ".sql" text dumps are replayed with
      * psql. Gzipped files are decompressed to a temp file first.
      *
-     * @param array $config Database connection configuration
-     * @param string $path Absolute path to the dump
-     * @param string|null $connection Connection name (unused; kept for the contract)
-     *
+     * @param  array  $config  Database connection configuration
+     * @param  string  $path  Absolute path to the dump
+     * @param  string|null  $connection  Connection name (unused; kept for the contract)
      * @return bool True if restore successful
      *
      * @throws RuntimeException If restore fails
@@ -114,7 +112,7 @@ class PostgresBackupDriver implements BackupDriverInterface
             $result = Process::env(['PGPASSWORD' => $config['password']])->run($command);
 
             if (! $result->successful()) {
-                throw new RuntimeException('PostgreSQL restore failed: ' . $result->errorOutput());
+                throw new RuntimeException('PostgreSQL restore failed: '.$result->errorOutput());
             }
         } finally {
             if ($tempPath !== null && is_file($tempPath)) {
@@ -128,8 +126,7 @@ class PostgresBackupDriver implements BackupDriverInterface
     /**
      * Check if this driver supports the given database driver
      *
-     * @param string $driver Driver name
-     *
+     * @param  string  $driver  Driver name
      * @return bool True if driver is pgsql
      */
     public function supports(string $driver): bool
@@ -146,10 +143,10 @@ class PostgresBackupDriver implements BackupDriverInterface
     {
         $command = [
             $this->binary('pg_restore'),
-            '--host=' . ($config['host'] ?? '127.0.0.1'),
-            '--port=' . ($config['port'] ?? '5432'),
-            '--username=' . $config['username'],
-            '--dbname=' . $config['database'],
+            '--host='.($config['host'] ?? '127.0.0.1'),
+            '--port='.($config['port'] ?? '5432'),
+            '--username='.$config['username'],
+            '--dbname='.$config['database'],
             '--no-password',
             '--clean',
             '--if-exists',
@@ -169,12 +166,12 @@ class PostgresBackupDriver implements BackupDriverInterface
     {
         return [
             $this->binary('psql'),
-            '--host=' . ($config['host'] ?? '127.0.0.1'),
-            '--port=' . ($config['port'] ?? '5432'),
-            '--username=' . $config['username'],
-            '--dbname=' . $config['database'],
+            '--host='.($config['host'] ?? '127.0.0.1'),
+            '--port='.($config['port'] ?? '5432'),
+            '--username='.$config['username'],
+            '--dbname='.$config['database'],
             '--no-password',
-            '--file=' . $path,
+            '--file='.$path,
         ];
     }
 

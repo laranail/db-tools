@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Simtabi\Laranail\DbTools\Tests\Unit\Schema;
 
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Database\Eloquent\Model;
-use Simtabi\Laranail\DbTools\Tests\TestCase;
+use Illuminate\Support\Facades\Schema;
 use Simtabi\Laranail\DbTools\Schema\Concerns\HasSchemaInspection;
+use Simtabi\Laranail\DbTools\Tests\TestCase;
 
 final class SchemaInspectionFixture extends Model
 {
@@ -119,9 +119,9 @@ final class HasSchemaInspectionTest extends TestCase
     public function test_columns_are_read_from_the_models_own_connection(): void
     {
         config()->set('database.connections.other', [
-            'driver'   => 'sqlite',
+            'driver' => 'sqlite',
             'database' => ':memory:',
-            'prefix'   => '',
+            'prefix' => '',
         ]);
 
         // Same class, same table name, different connection — and on that

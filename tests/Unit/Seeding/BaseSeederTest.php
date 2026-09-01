@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Simtabi\Laranail\DbTools\Tests\Unit\Seeding;
 
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Schema\Blueprint;
-use Simtabi\Laranail\DbTools\Tests\TestCase;
+use Illuminate\Support\Facades\Schema;
 use Simtabi\Laranail\DbTools\Seeding\BaseSeeder;
 use Simtabi\Laranail\DbTools\Seeding\UpsertResult;
+use Simtabi\Laranail\DbTools\Tests\TestCase;
 
 /**
  * @property string $code
@@ -34,7 +34,7 @@ final class ExampleSeeder extends BaseSeeder
     public function run(): void
     {
         $this->result = $this->upsertAll(SeederRole::class, 'code', $this->rows);
-        $this->tell('info', 'seeded ' . $this->result->summary());
+        $this->tell('info', 'seeded '.$this->result->summary());
     }
 
     public function callConsole(): ?object

@@ -119,7 +119,7 @@ trait InteractsWithSeedFiles
             return $relative;
         }
 
-        return $this->seedFileBasePath() . '/' . ltrim($relative, '/\\');
+        return $this->seedFileBasePath().'/'.ltrim($relative, '/\\');
     }
 
     protected function seedFileExists(string $relative): bool

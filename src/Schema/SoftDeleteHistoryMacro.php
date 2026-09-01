@@ -48,8 +48,8 @@ final class SoftDeleteHistoryMacro
             // table lines up with the configured key type without depending on
             // another macro being registered first.
             match (ConfiguredMorphsMacro::idType()) {
-                'UUID'  => $this->uuidMorphs('record'),
-                'ULID'  => $this->ulidMorphs('record'),
+                'UUID' => $this->uuidMorphs('record'),
+                'ULID' => $this->ulidMorphs('record'),
                 default => $this->morphs('record'),
             };
 
@@ -57,8 +57,8 @@ final class SoftDeleteHistoryMacro
             // Id-type-aware actor reference (the acting user's key), matching the
             // configured key type like the `record_*` columns above.
             match (ConfiguredMorphsMacro::idType()) {
-                'UUID'  => $this->foreignUuid('actor_id')->nullable()->index(),
-                'ULID'  => $this->foreignUlid('actor_id')->nullable()->index(),
+                'UUID' => $this->foreignUuid('actor_id')->nullable()->index(),
+                'ULID' => $this->foreignUlid('actor_id')->nullable()->index(),
                 default => $this->foreignId('actor_id')->nullable()->index(),
             };
             $this->text('reason')->nullable();

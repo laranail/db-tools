@@ -27,14 +27,13 @@ final class BootWithoutDatabase
      */
     private const array DEFAULT_MAP = [
         'session.driver' => ['database' => 'file'],
-        'cache.default'  => ['database' => 'file'],
+        'cache.default' => ['database' => 'file'],
     ];
 
     /**
      * Swap database-backed drivers to their filesystem/sync equivalents.
      *
-     * @param array<string, array<string, string>>|null $map Override map: {config key: [from => to]}
-     *
+     * @param  array<string, array<string, string>>|null  $map  Override map: {config key: [from => to]}
      * @return array<string, string> The keys actually changed, mapped to their new value.
      */
     public static function degradeToFilesystem(?array $map = null): array

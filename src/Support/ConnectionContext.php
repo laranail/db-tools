@@ -5,13 +5,13 @@ declare(strict_types=1);
 namespace Simtabi\Laranail\DbTools\Support;
 
 use Closure;
-use Throwable;
-use Illuminate\Support\Arr;
 use Illuminate\Container\Container;
 use Illuminate\Database\Connection;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Schema\Builder;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Database\Schema\Builder;
+use Illuminate\Support\Arr;
+use Throwable;
 
 /**
  * The single place this package answers "which connection are we talking about?".
@@ -48,9 +48,9 @@ final class ConnectionContext
     private ?string $key = null;
 
     /**
-     * @param string|null $requested the caller's name, already normalised
-     * @param Connection|null $connection pre-bound, or memoised by connection()
-     * @param (Closure(): Connection)|null $resolver a model's own resolver
+     * @param  string|null  $requested  the caller's name, already normalised
+     * @param  Connection|null  $connection  pre-bound, or memoised by connection()
+     * @param  (Closure(): Connection)|null  $resolver  a model's own resolver
      */
     private function __construct(
         private readonly ?string $requested,
@@ -197,7 +197,7 @@ final class ConnectionContext
      */
     public function configPath(): string
     {
-        return 'database.connections.' . $this->key();
+        return 'database.connections.'.$this->key();
     }
 
     /**

@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Simtabi\Laranail\DbTools\Tests\Unit\Casts;
 
 use Illuminate\Database\Eloquent\Model;
-use Simtabi\Laranail\DbTools\Tests\TestCase;
 use Simtabi\Laranail\DbTools\Casts\CastDatetime;
+use Simtabi\Laranail\DbTools\Tests\TestCase;
 
 final class CastDatetimeTest extends TestCase
 {

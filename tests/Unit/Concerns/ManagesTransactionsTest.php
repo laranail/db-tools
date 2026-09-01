@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Simtabi\Laranail\DbTools\Tests\Unit\Concerns;
 
-use RuntimeException;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Database\Eloquent\Model;
-use Simtabi\Laranail\DbTools\Tests\TestCase;
+use Illuminate\Support\Facades\Schema;
+use RuntimeException;
 use Simtabi\Laranail\DbTools\Concerns\ManagesTransactions;
+use Simtabi\Laranail\DbTools\Tests\TestCase;
 
 final class ManagesTransactionsRow extends Model
 {

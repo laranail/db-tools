@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Simtabi\Laranail\DbTools\Pagination;
 
-use JsonSerializable;
-use Illuminate\Http\Request;
-use Illuminate\Http\JsonResponse;
-use Illuminate\Pagination\CursorPaginator;
 use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Contracts\Support\Responsable;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Pagination\CursorPaginator;
+use JsonSerializable;
 
 /**
  * Lightweight DTO over Laravel's native {@see CursorPaginator}.
@@ -34,7 +34,7 @@ use Illuminate\Contracts\Support\Responsable;
 final readonly class CursorPage implements Arrayable, JsonSerializable, Responsable
 {
     /**
-     * @param array<int, TItem> $data
+     * @param  array<int, TItem>  $data
      */
     public function __construct(
         public array $data,
@@ -50,8 +50,7 @@ final readonly class CursorPage implements Arrayable, JsonSerializable, Responsa
      * @template TModelKey of array-key
      * @template TModel
      *
-     * @param CursorPaginator<TModelKey, TModel> $paginator
-     *
+     * @param  CursorPaginator<TModelKey, TModel>  $paginator
      * @return self<TModel>
      */
     public static function fromPaginator(CursorPaginator $paginator): self
@@ -73,10 +72,10 @@ final readonly class CursorPage implements Arrayable, JsonSerializable, Responsa
         return [
             'data' => $this->data,
             'meta' => [
-                'per_page'    => $this->perPage,
+                'per_page' => $this->perPage,
                 'next_cursor' => $this->nextCursor,
                 'prev_cursor' => $this->prevCursor,
-                'has_more'    => $this->hasMore,
+                'has_more' => $this->hasMore,
             ],
         ];
     }
@@ -90,7 +89,7 @@ final readonly class CursorPage implements Arrayable, JsonSerializable, Responsa
     }
 
     /**
-     * @param Request $request
+     * @param  Request  $request
      */
     public function toResponse($request): JsonResponse
     {

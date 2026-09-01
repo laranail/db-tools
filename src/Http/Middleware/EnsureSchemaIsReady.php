@@ -5,11 +5,11 @@ declare(strict_types=1);
 namespace Simtabi\Laranail\DbTools\Http\Middleware;
 
 use Closure;
-use Throwable;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Simtabi\Laranail\DbTools\DbTools;
 use Symfony\Component\HttpFoundation\Response;
+use Throwable;
 
 /**
  * On an instance whose database is not fully migrated (a restored-but-unmigrated
@@ -87,6 +87,6 @@ final class EnsureSchemaIsReady
 
     private function config(string $key, mixed $default): mixed
     {
-        return config('laranail.db-tools.readiness.middleware.' . $key, $default);
+        return config('laranail.db-tools.readiness.middleware.'.$key, $default);
     }
 }

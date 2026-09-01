@@ -4,15 +4,15 @@ declare(strict_types=1);
 
 namespace Simtabi\Laranail\DbTools\Schema;
 
-use PDO;
 use Exception;
-use PDOException;
-use InvalidArgumentException;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Database\Connection;
 use Illuminate\Support\Facades\Config;
-use Simtabi\Laranail\DbTools\Support\ConnectionContext;
+use Illuminate\Support\Facades\DB;
+use InvalidArgumentException;
+use PDO;
+use PDOException;
 use Simtabi\Laranail\DbTools\Schema\Contracts\DatabaseConnectionTesterInterface;
+use Simtabi\Laranail\DbTools\Support\ConnectionContext;
 
 /**
  * Class DatabaseConnectionTester
@@ -25,8 +25,7 @@ class DatabaseConnectionTester implements DatabaseConnectionTesterInterface
     /**
      * Test if a database connection is working
      *
-     * @param string|null $connection Connection name (null for default)
-     *
+     * @param  string|null  $connection  Connection name (null for default)
      * @return bool True if connection successful
      */
     public function test(?string $connection = null): bool
@@ -93,8 +92,7 @@ class DatabaseConnectionTester implements DatabaseConnectionTesterInterface
     /**
      * Test connection and return detailed information
      *
-     * @param string|null $connection Connection name (null for default)
-     *
+     * @param  string|null  $connection  Connection name (null for default)
      * @return array Connection details
      */
     public function testDetailed(?string $connection = null): array
@@ -104,29 +102,29 @@ class DatabaseConnectionTester implements DatabaseConnectionTesterInterface
             $conn->getPdo();
 
             return [
-                'success'    => true,
-                'message'    => 'Connection successful',
+                'success' => true,
+                'message' => 'Connection successful',
                 'connection' => ConnectionContext::for($connection)->key(),
-                'driver'     => $conn->getDriverName(),
-                'version'    => $this->getVersion($connection),
-                'database'   => $conn->getDatabaseName(),
+                'driver' => $conn->getDriverName(),
+                'version' => $this->getVersion($connection),
+                'database' => $conn->getDatabaseName(),
             ];
         } catch (PDOException $e) {
             return [
-                'success'    => false,
-                'message'    => 'Database error: ' . $e->getMessage(),
+                'success' => false,
+                'message' => 'Database error: '.$e->getMessage(),
                 'connection' => ConnectionContext::for($connection)->key(),
             ];
         } catch (InvalidArgumentException $e) {
             return [
-                'success'    => false,
-                'message'    => 'Configuration error: ' . $e->getMessage(),
+                'success' => false,
+                'message' => 'Configuration error: '.$e->getMessage(),
                 'connection' => ConnectionContext::for($connection)->key(),
             ];
         } catch (Exception $e) {
             return [
-                'success'    => false,
-                'message'    => 'Connection failed: ' . $e->getMessage(),
+                'success' => false,
+                'message' => 'Connection failed: '.$e->getMessage(),
                 'connection' => ConnectionContext::for($connection)->key(),
             ];
         }
@@ -135,8 +133,7 @@ class DatabaseConnectionTester implements DatabaseConnectionTesterInterface
     /**
      * Get the database driver name
      *
-     * @param string|null $connection Connection name (null for default)
-     *
+     * @param  string|null  $connection  Connection name (null for default)
      * @return string Driver name
      */
     public function getDriver(?string $connection = null): string
@@ -151,8 +148,7 @@ class DatabaseConnectionTester implements DatabaseConnectionTesterInterface
     /**
      * Get the database server version
      *
-     * @param string|null $connection Connection name (null for default)
-     *
+     * @param  string|null  $connection  Connection name (null for default)
      * @return string|null Version string
      */
     public function getVersion(?string $connection = null): ?string
@@ -163,10 +159,10 @@ class DatabaseConnectionTester implements DatabaseConnectionTesterInterface
 
             $query = match ($driver) {
                 'mysql', 'mariadb' => 'SELECT VERSION() as version',
-                'pgsql'            => 'SELECT version() as version',
-                'sqlite'           => 'SELECT sqlite_version() as version',
-                'sqlsrv'           => 'SELECT @@VERSION as version',
-                default            => null,
+                'pgsql' => 'SELECT version() as version',
+                'sqlite' => 'SELECT sqlite_version() as version',
+                'sqlsrv' => 'SELECT @@VERSION as version',
+                default => null,
             };
 
             if (! $query) {
@@ -184,8 +180,7 @@ class DatabaseConnectionTester implements DatabaseConnectionTesterInterface
     /**
      * Get the database name
      *
-     * @param string|null $connection Connection name (null for default)
-     *
+     * @param  string|null  $connection  Connection name (null for default)
      * @return string|null Database name
      */
     public function getDatabaseName(?string $connection = null): ?string
@@ -200,7 +195,7 @@ class DatabaseConnectionTester implements DatabaseConnectionTesterInterface
     /**
      * Get a database connection instance
      *
-     * @param string|null $connection Connection name (null for default)
+     * @param  string|null  $connection  Connection name (null for default)
      */
     protected function getConnection(?string $connection = null): Connection
     {
@@ -238,8 +233,7 @@ class DatabaseConnectionTester implements DatabaseConnectionTesterInterface
      *                  correct connect-only knob.
      *   sqlite         local; never reached (short-circuited in probe()).
      *
-     * @param array<string, mixed> $config
-     *
+     * @param  array<string, mixed>  $config
      * @return array<string, mixed>
      */
     private function withConnectTimeout(array $config, int $timeout): array
@@ -280,9 +274,9 @@ class DatabaseConnectionTester implements DatabaseConnectionTesterInterface
         }
 
         $value = match (true) {
-            is_array($result)  => $result['version'] ?? $result[0] ?? reset($result),
+            is_array($result) => $result['version'] ?? $result[0] ?? reset($result),
             is_object($result) => $result->version ?? null,
-            default            => null,
+            default => null,
         };
 
         return is_scalar($value) ? (string) $value : null;

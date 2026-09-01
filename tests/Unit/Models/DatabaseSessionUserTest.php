@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Simtabi\Laranail\DbTools\Tests\Unit\Models;
 
-use LogicException;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Database\Eloquent\Model;
-use Simtabi\Laranail\DbTools\Tests\TestCase;
+use Illuminate\Support\Facades\Schema;
+use LogicException;
 use Simtabi\Laranail\DbTools\Models\DatabaseSession;
+use Simtabi\Laranail\DbTools\Tests\TestCase;
 
 final class SessionUserModel extends Model
 {
@@ -43,8 +43,8 @@ final class DatabaseSessionUserTest extends TestCase
         $user = SessionUserModel::create(['name' => 'ada']);
 
         DatabaseSession::query()->create([
-            'id'            => 'sess-1',
-            'user_id'       => $user->id,
+            'id' => 'sess-1',
+            'user_id' => $user->id,
             'last_activity' => time(),
         ]);
 
@@ -69,8 +69,8 @@ final class DatabaseSessionUserTest extends TestCase
         $user = SessionUserModel::create(['name' => 'grace']);
 
         DatabaseSession::query()->create([
-            'id'            => 'sess-2',
-            'user_id'       => $user->id,
+            'id' => 'sess-2',
+            'user_id' => $user->id,
             'last_activity' => time(),
         ]);
 

@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace Simtabi\Laranail\DbTools\Tests\Unit\Architecture;
 
-use SplFileInfo;
-use RecursiveIteratorIterator;
-use PHPUnit\Framework\TestCase;
-use RecursiveDirectoryIterator;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use PHPUnit\Framework\TestCase;
+use RecursiveDirectoryIterator;
+use RecursiveIteratorIterator;
 use Simtabi\Laranail\DbTools\Support\ConnectionContext;
+use SplFileInfo;
 
 /**
  * Guards the invariant that made a whole class of bug possible.
@@ -39,7 +39,7 @@ final class FacadeSeamTest extends TestCase
      * @var array<string, true>
      */
     private const array GUARDED_FACADES = [
-        DB::class     => true,
+        DB::class => true,
         Schema::class => true,
     ];
 
@@ -53,7 +53,7 @@ final class FacadeSeamTest extends TestCase
      * @var array<string, list<string>>
      */
     private const array ALLOWED_CALLS = [
-        self::SEAM                                => ['*'],
+        self::SEAM => ['*'],
         'src/Schema/DatabaseConnectionTester.php' => ['DB::getConnections'],
     ];
 
@@ -108,7 +108,7 @@ final class FacadeSeamTest extends TestCase
             self::KNOWN_VIOLATIONS,
             $found,
             "DB::/Schema:: bind to the DEFAULT connection. Route through ConnectionContext instead:\n"
-            . '  ' . implode("\n  ", $found) . "\n",
+            .'  '.implode("\n  ", $found)."\n",
         );
     }
 
@@ -132,8 +132,8 @@ final class FacadeSeamTest extends TestCase
             self::KNOWN_CONFIG_VIOLATIONS,
             $found,
             "Resolving the default connection outside ConnectionContext is how eight\n"
-            . "incompatible copies of that logic came to exist. Use ConnectionContext::for():\n"
-            . '  ' . implode("\n  ", $found) . "\n",
+            ."incompatible copies of that logic came to exist. Use ConnectionContext::for():\n"
+            .'  '.implode("\n  ", $found)."\n",
         );
     }
 
@@ -143,7 +143,7 @@ final class FacadeSeamTest extends TestCase
     private function sourceFiles(): array
     {
         $root = dirname(__DIR__, 3);
-        $src = $root . '/src';
+        $src = $root.'/src';
 
         /** @var RecursiveIteratorIterator<RecursiveDirectoryIterator> $files */
         $files = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($src));
@@ -159,7 +159,7 @@ final class FacadeSeamTest extends TestCase
                 continue;
             }
             $path = (string) $file->getRealPath();
-            $relative = str_replace($root . DIRECTORY_SEPARATOR, '', $path);
+            $relative = str_replace($root.DIRECTORY_SEPARATOR, '', $path);
             $relative = str_replace(DIRECTORY_SEPARATOR, '/', $relative);
 
             $sources[$relative] = (string) file_get_contents($path);
@@ -219,7 +219,7 @@ final class FacadeSeamTest extends TestCase
                 continue;
             }
 
-            $calls[] = [$token[2], $alias . '::' . $method[1]];
+            $calls[] = [$token[2], $alias.'::'.$method[1]];
         }
 
         return $calls;
@@ -228,8 +228,7 @@ final class FacadeSeamTest extends TestCase
     /**
      * Map local aliases to the guarded facades they import.
      *
-     * @param list<array{0: int, 1: string, 2: int}|string> $tokens
-     *
+     * @param  list<array{0: int, 1: string, 2: int}|string>  $tokens
      * @return array<string, true>
      */
     private function facadeAliases(array $tokens): array

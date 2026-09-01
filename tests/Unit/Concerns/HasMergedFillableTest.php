@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Simtabi\Laranail\DbTools\Tests\Unit\Concerns;
 
-use Override;
 use Illuminate\Database\Eloquent\Model;
-use Simtabi\Laranail\DbTools\Tests\TestCase;
+use Override;
 use Simtabi\Laranail\DbTools\Concerns\HasMergedFillable;
+use Simtabi\Laranail\DbTools\Tests\TestCase;
 
 class MergedFillableBase extends Model
 {

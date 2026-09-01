@@ -5,12 +5,12 @@ declare(strict_types=1);
 namespace Simtabi\Laranail\DbTools\Schema;
 
 use Closure;
-use Override;
-use Throwable;
 use Illuminate\Database\Connection;
-use Illuminate\Database\Schema\ColumnDefinition;
-use Simtabi\Laranail\DbTools\Providers\DbToolsServiceProvider;
 use Illuminate\Database\Schema\Blueprint as IlluminateBlueprint;
+use Illuminate\Database\Schema\ColumnDefinition;
+use Override;
+use Simtabi\Laranail\DbTools\Providers\DbToolsServiceProvider;
+use Throwable;
 
 /**
  * An `Illuminate\Database\Schema\Blueprint` whose `id()`, `foreignId()`,
@@ -103,8 +103,8 @@ class BlueprintMacros extends IlluminateBlueprint
             : 'BIGINT';
 
         return match ($idType) {
-            'UUID'  => $this->uuid($column)->primary(),
-            'ULID'  => $this->ulid($column)->primary(),
+            'UUID' => $this->uuid($column)->primary(),
+            'ULID' => $this->ulid($column)->primary(),
             default => parent::id($column),
         };
     }
@@ -117,8 +117,8 @@ class BlueprintMacros extends IlluminateBlueprint
             : 'BIGINT';
 
         return match ($idType) {
-            'UUID'  => $this->foreignUuid($column),
-            'ULID'  => $this->foreignUlid($column),
+            'UUID' => $this->foreignUuid($column),
+            'ULID' => $this->foreignUlid($column),
             default => parent::foreignId($column),
         };
     }
@@ -135,8 +135,8 @@ class BlueprintMacros extends IlluminateBlueprint
         // morph columns at a chosen position silently got them appended, on
         // exactly the id types this class exists to support.
         match ($idType) {
-            'UUID'  => $this->uuidMorphs($name, $indexName, $after),
-            'ULID'  => $this->ulidMorphs($name, $indexName, $after),
+            'UUID' => $this->uuidMorphs($name, $indexName, $after),
+            'ULID' => $this->ulidMorphs($name, $indexName, $after),
             default => parent::morphs($name, $indexName, $after),
         };
     }
@@ -149,8 +149,8 @@ class BlueprintMacros extends IlluminateBlueprint
             : 'BIGINT';
 
         match ($idType) {
-            'UUID'  => $this->nullableUuidMorphs($name, $indexName, $after),
-            'ULID'  => $this->nullableUlidMorphs($name, $indexName, $after),
+            'UUID' => $this->nullableUuidMorphs($name, $indexName, $after),
+            'ULID' => $this->nullableUlidMorphs($name, $indexName, $after),
             default => parent::nullableMorphs($name, $indexName, $after),
         };
     }
@@ -166,7 +166,7 @@ class BlueprintMacros extends IlluminateBlueprint
             return;
         }
 
-        $key = $driver . '@' . $connection->getName();
+        $key = $driver.'@'.$connection->getName();
 
         if (isset(self::$driverSetupRan[$key])) {
             return;

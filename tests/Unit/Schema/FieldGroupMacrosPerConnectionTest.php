@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Simtabi\Laranail\DbTools\Tests\Unit\Schema;
 
-use Override;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+use Override;
 use Simtabi\Laranail\DbTools\Tests\TestCase;
 
 /**
@@ -130,13 +130,13 @@ final class FieldGroupMacrosPerConnectionTest extends TestCase
     {
         parent::defineEnvironment($app);
 
-        $this->secondaryFile = tempnam(sys_get_temp_dir(), 'dbt-macros-') . '.sqlite';
+        $this->secondaryFile = tempnam(sys_get_temp_dir(), 'dbt-macros-').'.sqlite';
         touch($this->secondaryFile);
 
         $app['config']->set('database.connections.secondary', [
-            'driver'   => 'sqlite',
+            'driver' => 'sqlite',
             'database' => $this->secondaryFile,
-            'prefix'   => '',
+            'prefix' => '',
         ]);
     }
 }

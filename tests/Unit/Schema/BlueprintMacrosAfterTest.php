@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Simtabi\Laranail\DbTools\Tests\Unit\Schema;
 
-use Illuminate\Support\Facades\DB;
-use Simtabi\Laranail\DbTools\Tests\TestCase;
-use PHPUnit\Framework\Attributes\DataProvider;
 use Illuminate\Database\Schema\ColumnDefinition;
+use Illuminate\Support\Facades\DB;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Simtabi\Laranail\DbTools\Schema\BlueprintMacros;
+use Simtabi\Laranail\DbTools\Tests\TestCase;
 
 /**
  * morphs() and nullableMorphs() take a third $after argument and pass it to

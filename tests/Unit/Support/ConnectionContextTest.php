@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Simtabi\Laranail\DbTools\Tests\Unit\Support;
 
-use Override;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Schema\Blueprint;
-use Simtabi\Laranail\DbTools\Tests\TestCase;
+use Illuminate\Support\Facades\Schema;
+use Override;
 use Simtabi\Laranail\DbTools\Support\ConnectionContext;
+use Simtabi\Laranail\DbTools\Tests\TestCase;
 
 final class ConnectionContextTest extends TestCase
 {
@@ -51,9 +51,9 @@ final class ConnectionContextTest extends TestCase
         // Must work for a database that cannot be connected to at all — backup
         // and restore need the config of an unreachable host.
         config()->set('database.connections.unreachable', [
-            'driver'   => 'mysql',
-            'host'     => '127.0.0.1',
-            'port'     => 1,
+            'driver' => 'mysql',
+            'host' => '127.0.0.1',
+            'port' => 1,
             'database' => 'nope',
         ]);
 
@@ -129,9 +129,9 @@ final class ConnectionContextTest extends TestCase
         parent::defineEnvironment($app);
 
         $app['config']->set('database.connections.secondary', [
-            'driver'   => 'sqlite',
+            'driver' => 'sqlite',
             'database' => ':memory:',
-            'prefix'   => '',
+            'prefix' => '',
         ]);
     }
 }

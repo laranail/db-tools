@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Simtabi\Laranail\DbTools\Backup\Drivers;
 
-use RuntimeException;
 use Illuminate\Support\Facades\Process;
+use RuntimeException;
 use Simtabi\Laranail\DbTools\Backup\Concerns\ResolvesBackupOptions;
 use Simtabi\Laranail\DbTools\Backup\Contracts\BackupDriverInterface;
 
@@ -24,9 +24,8 @@ class MysqlBackupDriver implements BackupDriverInterface
     /**
      * Create a MySQL backup using mysqldump
      *
-     * @param array $config Database connection configuration
-     * @param string $path Absolute path where backup should be saved
-     *
+     * @param  array  $config  Database connection configuration
+     * @param  string  $path  Absolute path where backup should be saved
      * @return bool True if backup successful
      *
      * @throws RuntimeException If backup fails
@@ -42,20 +41,20 @@ class MysqlBackupDriver implements BackupDriverInterface
 
         $command = [
             $this->binary('mysqldump'),
-            '--host=' . ($config['host'] ?? '127.0.0.1'),
-            '--port=' . ($config['port'] ?? '3306'),
-            '--user=' . $config['username'],
+            '--host='.($config['host'] ?? '127.0.0.1'),
+            '--port='.($config['port'] ?? '3306'),
+            '--user='.$config['username'],
         ];
 
         foreach ($this->excludedTables() as $table) {
-            $command[] = '--ignore-table=' . $config['database'] . '.' . $table;
+            $command[] = '--ignore-table='.$config['database'].'.'.$table;
         }
 
         $command[] = $config['database'];
-        $command[] = '--result-file=' . $dumpPath;
+        $command[] = '--result-file='.$dumpPath;
 
         if (! empty($config['socket'])) {
-            $command[] = '--socket=' . $config['socket'];
+            $command[] = '--socket='.$config['socket'];
         }
 
         // Execute with password in environment variable (secure). The env
@@ -63,7 +62,7 @@ class MysqlBackupDriver implements BackupDriverInterface
         $result = Process::env(['MYSQL_PWD' => $config['password']])->run($command);
 
         if (! $result->successful()) {
-            throw new RuntimeException('MySQL backup failed: ' . $result->errorOutput());
+            throw new RuntimeException('MySQL backup failed: '.$result->errorOutput());
         }
 
         if ($gzip) {
@@ -76,10 +75,9 @@ class MysqlBackupDriver implements BackupDriverInterface
     /**
      * Restore a MySQL backup by replaying the dump through the mysql client.
      *
-     * @param array $config Database connection configuration
-     * @param string $path Absolute path to the dump (".sql" or ".sql.gz")
-     * @param string|null $connection Connection name (unused; kept for the contract)
-     *
+     * @param  array  $config  Database connection configuration
+     * @param  string  $path  Absolute path to the dump (".sql" or ".sql.gz")
+     * @param  string|null  $connection  Connection name (unused; kept for the contract)
      * @return bool True if restore successful
      *
      * @throws RuntimeException If restore fails
@@ -104,14 +102,14 @@ class MysqlBackupDriver implements BackupDriverInterface
 
         $command = [
             $this->binary('mysql'),
-            '--host=' . ($config['host'] ?? '127.0.0.1'),
-            '--port=' . ($config['port'] ?? '3306'),
-            '--user=' . $config['username'],
+            '--host='.($config['host'] ?? '127.0.0.1'),
+            '--port='.($config['port'] ?? '3306'),
+            '--user='.$config['username'],
             $config['database'],
         ];
 
         if (! empty($config['socket'])) {
-            $command[] = '--socket=' . $config['socket'];
+            $command[] = '--socket='.$config['socket'];
         }
 
         try {
@@ -126,7 +124,7 @@ class MysqlBackupDriver implements BackupDriverInterface
                 ->run($command);
 
             if (! $result->successful()) {
-                throw new RuntimeException('MySQL restore failed: ' . $result->errorOutput());
+                throw new RuntimeException('MySQL restore failed: '.$result->errorOutput());
             }
         } finally {
             if ($tempPath !== null && is_file($tempPath)) {
@@ -140,8 +138,7 @@ class MysqlBackupDriver implements BackupDriverInterface
     /**
      * Check if this driver supports the given database driver
      *
-     * @param string $driver Driver name
-     *
+     * @param  string  $driver  Driver name
      * @return bool True if driver is mysql or mariadb
      */
     public function supports(string $driver): bool
@@ -170,6 +167,6 @@ class MysqlBackupDriver implements BackupDriverInterface
      */
     private function stripGzSuffix(string $path): string
     {
-        return $this->isGzipPath($path) ? substr($path, 0, -3) : $path . '.sql';
+        return $this->isGzipPath($path) ? substr($path, 0, -3) : $path.'.sql';
     }
 }

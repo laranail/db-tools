@@ -43,8 +43,8 @@ trait InteractsWithDatabaseFile
     /**
      * Handle database file import
      *
-     * @param string $filePath Path to database file
-     * @param string|null $connection Target connection (null for the default)
+     * @param  string  $filePath  Path to database file
+     * @param  string|null  $connection  Target connection (null for the default)
      *
      * @throws RuntimeException If file is invalid or import fails
      */
@@ -56,8 +56,7 @@ trait InteractsWithDatabaseFile
     /**
      * Validate database file exists and is readable
      *
-     * @param string $filePath Path to database file
-     *
+     * @param  string  $filePath  Path to database file
      * @return string|bool Validated path or false if invalid
      */
     protected function validateDatabaseFile(string $filePath): string|bool
@@ -68,8 +67,7 @@ trait InteractsWithDatabaseFile
     /**
      * Check if file is a valid database file
      *
-     * @param string $filePath Path to check
-     *
+     * @param  string  $filePath  Path to check
      * @return bool True if valid database file
      */
     protected function isValidDatabaseFile(string $filePath): bool
@@ -80,9 +78,8 @@ trait InteractsWithDatabaseFile
     /**
      * Validate file size is within limits
      *
-     * @param string $filePath Path to file
-     * @param int $maxSize Maximum file size in bytes (default: 100MB)
-     *
+     * @param  string  $filePath  Path to file
+     * @param  int  $maxSize  Maximum file size in bytes (default: 100MB)
      * @return bool True if within limits
      */
     protected function validateFileSize(string $filePath, int $maxSize = 104857600): bool

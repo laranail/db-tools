@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Simtabi\Laranail\DbTools\Concerns;
 
-use Throwable;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Database\Query\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Query\Builder;
+use Illuminate\Support\Facades\Auth;
 use Simtabi\Laranail\DbTools\Support\ConnectionContext;
+use Throwable;
 
 /**
  * Runtime companion to the `Blueprint::softDeletesWithUndo()` schema macro.
@@ -126,7 +126,7 @@ trait HasSoftDeletesWithUndo
     /**
      * Record a soft-delete history row inside a transaction.
      *
-     * @param 'deleted'|'restored' $action
+     * @param  'deleted'|'restored'  $action
      */
     protected function recordSoftDeleteHistory(string $action, ?string $reason = null): void
     {
@@ -139,13 +139,13 @@ trait HasSoftDeletesWithUndo
 
         $row = [
             'record_type' => $this->getMorphClass(),
-            'record_id'   => $this->getKey(),
-            'action'      => $action,
-            'actor_id'    => $this->softDeleteHistoryActor(),
-            'reason'      => $reason,
+            'record_id' => $this->getKey(),
+            'action' => $action,
+            'actor_id' => $this->softDeleteHistoryActor(),
+            'reason' => $reason,
             'happened_at' => $now,
-            'created_at'  => $now,
-            'updated_at'  => $now,
+            'created_at' => $now,
+            'updated_at' => $now,
         ];
 
         try {

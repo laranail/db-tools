@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Simtabi\Laranail\DbTools\Tests\Unit\Schema;
 
-use Override;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Database\Schema\Blueprint;
-use Simtabi\Laranail\DbTools\Tests\TestCase;
+use Illuminate\Support\Facades\Schema;
+use Override;
 use Simtabi\Laranail\DbTools\Schema\Concerns\HasSchemaOperations;
+use Simtabi\Laranail\DbTools\Tests\TestCase;
 
 /**
  * Every operation in HasSchemaOperations went through the Schema facade, which
@@ -117,13 +117,13 @@ final class HasSchemaOperationsPerConnectionTest extends TestCase
         // A file, not :memory:. Two in-memory SQLite connections would each get
         // their own blank database, which is enough here, but a file makes the
         // "wrote to the wrong database" failure legible when it happens.
-        $this->secondaryFile = tempnam(sys_get_temp_dir(), 'dbt-ops-') . '.sqlite';
+        $this->secondaryFile = tempnam(sys_get_temp_dir(), 'dbt-ops-').'.sqlite';
         touch($this->secondaryFile);
 
         $app['config']->set('database.connections.secondary', [
-            'driver'   => 'sqlite',
+            'driver' => 'sqlite',
             'database' => $this->secondaryFile,
-            'prefix'   => '',
+            'prefix' => '',
         ]);
     }
 }

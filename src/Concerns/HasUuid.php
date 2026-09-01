@@ -5,12 +5,12 @@ declare(strict_types=1);
 namespace Simtabi\Laranail\DbTools\Concerns;
 
 use Exception;
-use Ramsey\Uuid\Uuid as RamseyUuid;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Builder;
-use Simtabi\Laranail\DbTools\Support\SchemaColumnCache;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Ramsey\Uuid\Uuid as RamseyUuid;
 use Simtabi\Laranail\DbTools\Exceptions\MissingUuidColumnException;
+use Simtabi\Laranail\DbTools\Support\SchemaColumnCache;
 
 trait HasUuid
 {
@@ -76,9 +76,8 @@ trait HasUuid
     /**
      * Scope query by UUID.
      *
-     * @param string $uuid
-     * @param bool $firstOrFail
-     *
+     * @param  string  $uuid
+     * @param  bool  $firstOrFail
      * @return Model|Builder
      *
      * @throws ModelNotFoundException
@@ -116,7 +115,7 @@ trait HasUuid
     /**
      * Check if uuid value is valid.
      *
-     * @param string $uuid
+     * @param  string  $uuid
      *
      * @throws ModelNotFoundException
      */

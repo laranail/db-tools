@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Simtabi\Laranail\DbTools\Tests\Unit\Concerns;
 
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Database\Eloquent\Model;
-use Simtabi\Laranail\DbTools\Tests\TestCase;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Schema;
 use Simtabi\Laranail\DbTools\Concerns\LoadsAggregatesIfMissing;
+use Simtabi\Laranail\DbTools\Tests\TestCase;
 
 final class AggregateParent extends Model
 {
