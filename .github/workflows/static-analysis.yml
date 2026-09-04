@@ -79,6 +79,15 @@ jobs:
           key: composer-static-${{ hashFiles('composer.json') }}
           restore-keys: composer-static-
 
+      - name: Drop cached laranail archives
+        # laranail/* resolve through a single MOVING v0.1.0 tag, so composer's
+        # dist cache is keyed on a name whose contents change underneath it. A
+        # restored archive is then silently stale: `composer install` reports
+        # success and unpacks whatever was cached the first time. That is how
+        # `vendor/bin/laranail-pint` went missing here while the tag carried it.
+        # Everything else is immutable per version and stays cached.
+        run: rm -rf "$(composer config cache-files-dir)/laranail"
+
       - name: Install dependencies
         run: composer update --prefer-stable --no-interaction --no-progress
 
