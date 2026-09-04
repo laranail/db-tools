@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Simtabi\Laranail\DbTools\Tests\Integration;
 
-use Illuminate\Database\Schema\Blueprint as IlluminateBlueprint;
 use Illuminate\Support\Facades\Schema;
 use Simtabi\Laranail\DbTools\Tests\TestCase;
+use Illuminate\Database\Schema\Blueprint as IlluminateBlueprint;
 
 /**
  * The binding changes the column type every `id()` in the application produces,

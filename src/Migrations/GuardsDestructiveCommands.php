@@ -44,7 +44,7 @@ final class GuardsDestructiveCommands
      */
     private const array UNGUARDED = [
         'migrate:fresh' => 'drop every table and re-migrate',
-        'db:wipe' => 'drop every table',
+        'db:wipe'       => 'drop every table',
     ];
 
     public function handle(CommandStarting $event): void

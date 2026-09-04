@@ -4,14 +4,14 @@ declare(strict_types=1);
 
 namespace Simtabi\Laranail\DbTools\Tests\Unit\Http;
 
-use Illuminate\Contracts\Http\Kernel as HttpKernelContract;
-use Illuminate\Support\Facades\Route;
 use Override;
+use Illuminate\Support\Facades\Route;
+use Simtabi\Laranail\DbTools\Tests\TestCase;
+use Simtabi\Laranail\DbTools\Schema\SchemaStatus;
+use Simtabi\Laranail\DbTools\Schema\SchemaReadinessReport;
+use Illuminate\Contracts\Http\Kernel as HttpKernelContract;
 use Simtabi\Laranail\DbTools\Http\Middleware\EnsureSchemaIsReady;
 use Simtabi\Laranail\DbTools\Schema\Contracts\SchemaReadinessInterface;
-use Simtabi\Laranail\DbTools\Schema\SchemaReadinessReport;
-use Simtabi\Laranail\DbTools\Schema\SchemaStatus;
-use Simtabi\Laranail\DbTools\Tests\TestCase;
 
 final class EnsureSchemaIsReadyTest extends TestCase
 {

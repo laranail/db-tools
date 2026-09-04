@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Simtabi\Laranail\DbTools\Tests\Unit\Migrations;
 
-use Illuminate\Console\Events\CommandStarting;
 use RuntimeException;
-use Simtabi\Laranail\DbTools\Migrations\GuardsDestructiveCommands;
 use Simtabi\Laranail\DbTools\Tests\TestCase;
+use Illuminate\Console\Events\CommandStarting;
 use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Output\NullOutput;
+use Simtabi\Laranail\DbTools\Migrations\GuardsDestructiveCommands;
 
 /**
  * The gap a `BaseMigration::down()` guard cannot close.

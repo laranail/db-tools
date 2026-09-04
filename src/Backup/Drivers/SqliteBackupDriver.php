@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Simtabi\Laranail\DbTools\Backup\Drivers;
 
-use Illuminate\Support\Facades\File;
 use RuntimeException;
+use Illuminate\Support\Facades\File;
+use Simtabi\Laranail\DbTools\Backup\SqlFileRestorer;
 use Simtabi\Laranail\DbTools\Backup\Concerns\ResolvesBackupOptions;
 use Simtabi\Laranail\DbTools\Backup\Contracts\BackupDriverInterface;
-use Simtabi\Laranail\DbTools\Backup\SqlFileRestorer;
 
 /**
  * Class SqliteBackupDriver
@@ -28,8 +28,9 @@ class SqliteBackupDriver implements BackupDriverInterface
     /**
      * Create a SQLite backup by copying the database file
      *
-     * @param  array  $config  Database connection configuration
-     * @param  string  $path  Absolute path where backup should be saved
+     * @param array $config Database connection configuration
+     * @param string $path Absolute path where backup should be saved
+     *
      * @return bool True if backup successful
      *
      * @throws RuntimeException If backup fails
@@ -76,9 +77,10 @@ class SqliteBackupDriver implements BackupDriverInterface
      * file-copy backup (optionally gzipped) is copied back over the configured
      * database file.
      *
-     * @param  array  $config  Database connection configuration
-     * @param  string  $path  Absolute path to the backup file
-     * @param  string|null  $connection  Connection name (null for default)
+     * @param array $config Database connection configuration
+     * @param string $path Absolute path to the backup file
+     * @param string|null $connection Connection name (null for default)
+     *
      * @return bool True if restore successful
      *
      * @throws RuntimeException If restore fails
@@ -140,7 +142,8 @@ class SqliteBackupDriver implements BackupDriverInterface
     /**
      * Check if this driver supports the given database driver
      *
-     * @param  string  $driver  Driver name
+     * @param string $driver Driver name
+     *
      * @return bool True if driver is sqlite
      */
     public function supports(string $driver): bool
@@ -205,8 +208,8 @@ class SqliteBackupDriver implements BackupDriverInterface
     /**
      * Copy WAL (Write-Ahead Logging) and SHM (Shared Memory) files if they exist
      *
-     * @param  string  $sourcePath  Original database path
-     * @param  string  $targetPath  Backup database path
+     * @param string $sourcePath Original database path
+     * @param string $targetPath Backup database path
      */
     /**
      * Remove a database's WAL/SHM sidecars.
@@ -214,8 +217,8 @@ class SqliteBackupDriver implements BackupDriverInterface
     private function removeWalFiles(string $databasePath): void
     {
         foreach (self::WAL_EXTENSIONS as $ext) {
-            if (File::exists($databasePath.$ext)) {
-                File::delete($databasePath.$ext);
+            if (File::exists($databasePath . $ext)) {
+                File::delete($databasePath . $ext);
             }
         }
     }
@@ -226,8 +229,8 @@ class SqliteBackupDriver implements BackupDriverInterface
     private function restoreWalFiles(string $sourcePath, string $databasePath): void
     {
         foreach (self::WAL_EXTENSIONS as $ext) {
-            if (File::exists($sourcePath.$ext)) {
-                File::copy($sourcePath.$ext, $databasePath.$ext);
+            if (File::exists($sourcePath . $ext)) {
+                File::copy($sourcePath . $ext, $databasePath . $ext);
             }
         }
     }
@@ -235,8 +238,8 @@ class SqliteBackupDriver implements BackupDriverInterface
     private function copyWalFiles(string $sourcePath, string $targetPath): void
     {
         foreach (self::WAL_EXTENSIONS as $ext) {
-            $sourceFile = $sourcePath.$ext;
-            $targetFile = $targetPath.$ext;
+            $sourceFile = $sourcePath . $ext;
+            $targetFile = $targetPath . $ext;
 
             if (File::exists($sourceFile)) {
                 File::copy($sourceFile, $targetFile);

@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Simtabi\Laranail\DbTools\Schema\Scopes;
 
-use Illuminate\Database\Eloquent\Builder;
+use Override;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Scope;
-use Override;
+use Illuminate\Database\Eloquent\Builder;
 
 /**
  * Global scope that hides archived records and registers the archive/restore
@@ -50,7 +50,7 @@ final class ArchiveScope implements Scope
     public function extend(Builder $builder): void
     {
         foreach ($this->extensions as $extension) {
-            $this->{'add'.$extension}($builder);
+            $this->{'add' . $extension}($builder);
         }
     }
 

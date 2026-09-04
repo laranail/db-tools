@@ -15,7 +15,7 @@ namespace Simtabi\Laranail\DbTools\Schema;
 final readonly class SchemaReadinessReport
 {
     /**
-     * @param  list<string>  $missingTables  Required tables that are absent.
+     * @param list<string> $missingTables Required tables that are absent.
      */
     public function __construct(
         public SchemaStatus $status,
@@ -41,12 +41,12 @@ final readonly class SchemaReadinessReport
     public function toArray(): array
     {
         return [
-            'status' => $this->status->value,
-            'reachable' => $this->reachable,
+            'status'               => $this->status->value,
+            'reachable'            => $this->reachable,
             'has_migrations_table' => $this->hasMigrationsTable,
-            'missing_tables' => $this->missingTables,
-            'connection' => $this->connection,
-            'message' => $this->message(),
+            'missing_tables'       => $this->missingTables,
+            'connection'           => $this->connection,
+            'message'              => $this->message(),
         ];
     }
 }

@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Simtabi\Laranail\DbTools\Listeners;
 
 use Illuminate\Support\Facades\Log;
-use Simtabi\Laranail\DbTools\Events\DatabaseUnavailable;
 use Simtabi\Laranail\DbTools\Events\SchemaNotReady;
+use Simtabi\Laranail\DbTools\Events\DatabaseUnavailable;
 
 /**
  * Default, opt-out listener that records database availability/readiness
@@ -25,6 +25,6 @@ final class LogDatabaseIssues
 
     public function handleSchemaNotReady(SchemaNotReady $event): void
     {
-        Log::warning('[db-tools] Schema not ready: '.$event->report->message(), $event->report->toArray());
+        Log::warning('[db-tools] Schema not ready: ' . $event->report->message(), $event->report->toArray());
     }
 }

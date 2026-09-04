@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Simtabi\Laranail\DbTools\Tests\Integration;
 
-use Illuminate\Database\Schema\Blueprint as IlluminateBlueprint;
-use Illuminate\Support\Facades\Schema;
 use RuntimeException;
+use Illuminate\Support\Facades\Schema;
+use Simtabi\Laranail\DbTools\Tests\TestCase;
 use Simtabi\Laranail\DbTools\Schema\BlueprintMacros;
 use Simtabi\Laranail\DbTools\Support\ConnectionContext;
-use Simtabi\Laranail\DbTools\Tests\TestCase;
+use Illuminate\Database\Schema\Blueprint as IlluminateBlueprint;
 
 /**
  * `BlueprintMacros` shipped inert: nothing installed it, so its id()/foreignId()
@@ -37,7 +37,7 @@ final class BlueprintMacrosBindingTest extends TestCase
 
         $blueprint = $this->app->make(IlluminateBlueprint::class, [
             'connection' => $context->connection(),
-            'table' => 'probe',
+            'table'      => 'probe',
         ]);
 
         self::assertInstanceOf(BlueprintMacros::class, $blueprint);

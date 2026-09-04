@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Simtabi\Laranail\DbTools\Seeding\Concerns;
 
+use ReflectionProperty;
 use Illuminate\Console\Command;
 use Illuminate\Database\Seeder;
-use ReflectionProperty;
 
 /**
  * Progress output from a seeder that may or may not have a console.

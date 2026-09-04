@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Simtabi\Laranail\DbTools\Concerns;
 
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
 use InvalidArgumentException;
+use Illuminate\Database\Eloquent\Builder;
 
 /**
  * Reusable Eloquent query scopes.
@@ -17,7 +17,8 @@ trait HasScopes
     /**
      * Constrain a relation and eager-load it with the same constraint.
      *
-     * @param  Builder<static>  $query
+     * @param Builder<static> $query
+     *
      * @return Builder<static>
      */
     public function scopeWithWhereHas(Builder $query, string $relation, callable $constraint): Builder
@@ -33,8 +34,9 @@ trait HasScopes
      * stays portable. Columns come from the `$searchable` argument, falling
      * back to a `$searchable` property on the model.
      *
-     * @param  Builder<static>  $query
-     * @param  array<int, string>  $searchable
+     * @param Builder<static> $query
+     * @param array<int, string> $searchable
+     *
      * @return Builder<static>
      */
     public function scopeSearch(Builder $query, string $term, array $searchable = []): Builder
@@ -58,12 +60,12 @@ trait HasScopes
             );
 
             return $query->whereRaw(
-                'MATCH ('.implode(',', $wrapped).') AGAINST (? IN BOOLEAN MODE)',
+                'MATCH (' . implode(',', $wrapped) . ') AGAINST (? IN BOOLEAN MODE)',
                 [$this->buildFulltextWildcards($term)],
             );
         }
 
-        $pattern = '%'.$this->escapeLikeWildcards($term).'%';
+        $pattern = '%' . $this->escapeLikeWildcards($term) . '%';
 
         return $query->where(function (Builder $builder) use ($columns, $pattern): void {
             foreach ($columns as $column) {
@@ -90,7 +92,8 @@ trait HasScopes
      * than try to sanitise arbitrary input into an identifier, only names the
      * model itself declares are allowed through.
      *
-     * @param  array<int, string>  $requested
+     * @param array<int, string> $requested
+     *
      * @return array<int, string>
      *
      * @throws InvalidArgumentException when a requested column is not declared
@@ -135,7 +138,7 @@ trait HasScopes
 
         $words = Str::of($term)->explode(' ')
             ->filter(fn (string $word): bool => $word !== '')
-            ->map(fn (string $word): string => '+'.$word.'*');
+            ->map(fn (string $word): string => '+' . $word . '*');
 
         return Arr::join($words->all(), ' ');
     }

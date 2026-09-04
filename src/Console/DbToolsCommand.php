@@ -5,11 +5,11 @@ declare(strict_types=1);
 namespace Simtabi\Laranail\DbTools\Console;
 
 use Illuminate\Console\Command;
-use Simtabi\Laranail\DbTools\Backup\Contracts\BackupManagerInterface;
 use Simtabi\Laranail\DbTools\Backup\SqlFileRestorer;
 use Simtabi\Laranail\DbTools\Console\Concerns\ReadsOptions;
-use Simtabi\Laranail\DbTools\Console\Concerns\SupportsNamespacedNames;
 use Simtabi\Laranail\DbTools\Exceptions\CleanDatabaseException;
+use Simtabi\Laranail\DbTools\Backup\Contracts\BackupManagerInterface;
+use Simtabi\Laranail\DbTools\Console\Concerns\SupportsNamespacedNames;
 use Simtabi\Laranail\DbTools\Schema\Contracts\DatabaseTableVerifierInterface;
 use Simtabi\Laranail\DbTools\Services\Contracts\CleanDatabaseServiceInterface;
 
@@ -56,11 +56,11 @@ final class DbToolsCommand extends Command
         $connection = $this->strOption('connection');
 
         return match ($action) {
-            'export' => $this->doExport($backup, $connection),
+            'export'  => $this->doExport($backup, $connection),
             'restore' => $this->doRestore($backup, $connection),
-            'import' => $this->doImport($restorer, $connection),
-            'clean' => $this->doClean($cleaner, $verifier, $connection),
-            default => $this->failOut("Unknown action [{$action}]. Use import|export|restore|clean."),
+            'import'  => $this->doImport($restorer, $connection),
+            'clean'   => $this->doClean($cleaner, $verifier, $connection),
+            default   => $this->failOut("Unknown action [{$action}]. Use import|export|restore|clean."),
         };
     }
 
@@ -142,7 +142,7 @@ final class DbToolsCommand extends Command
 
         $missing = $verifier->getMissingTables($tables, $connection);
         if ($missing !== []) {
-            return $this->failOut('Unknown table(s): '.implode(', ', $missing).'.');
+            return $this->failOut('Unknown table(s): ' . implode(', ', $missing) . '.');
         }
 
         // Refuse a protected table before the prompt, not after: the operator
@@ -151,18 +151,18 @@ final class DbToolsCommand extends Command
             if ($cleaner->isProtected($table)) {
                 return $this->failOut(
                     "The [{$table}] table is protected. Remove it from "
-                    .'laranail.db-tools.clean.protected_tables if you really mean to.',
+                    . 'laranail.db-tools.clean.protected_tables if you really mean to.',
                 );
             }
         }
 
         if ($this->option('dry-run')) {
-            $this->line('[dry-run] would truncate '.implode(', ', $tables));
+            $this->line('[dry-run] would truncate ' . implode(', ', $tables));
 
             return self::SUCCESS;
         }
 
-        if (! $this->confirmDestructive('TRUNCATE '.implode(', ', $tables))) {
+        if (! $this->confirmDestructive('TRUNCATE ' . implode(', ', $tables))) {
             return $this->declinedExitCode();
         }
 
@@ -176,7 +176,7 @@ final class DbToolsCommand extends Command
             $this->line("  truncated {$table}");
         }
 
-        return $this->ok('Cleaned '.$result->count().' table(s).');
+        return $this->ok('Cleaned ' . $result->count() . ' table(s).');
     }
 
     private function requirePath(): ?string

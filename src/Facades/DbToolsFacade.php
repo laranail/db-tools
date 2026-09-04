@@ -5,11 +5,11 @@ declare(strict_types=1);
 namespace Simtabi\Laranail\DbTools\Facades;
 
 use Closure;
-use Illuminate\Support\Facades\Facade;
 use Simtabi\Laranail\DbTools\DbTools;
-use Simtabi\Laranail\DbTools\Guard\Contracts\DatabaseAvailabilityInterface;
-use Simtabi\Laranail\DbTools\Schema\Contracts\SchemaReadinessInterface;
+use Illuminate\Support\Facades\Facade;
 use Simtabi\Laranail\DbTools\Schema\SchemaReadinessReport;
+use Simtabi\Laranail\DbTools\Schema\Contracts\SchemaReadinessInterface;
+use Simtabi\Laranail\DbTools\Guard\Contracts\DatabaseAvailabilityInterface;
 
 /**
  * @method static DatabaseAvailabilityInterface guard()

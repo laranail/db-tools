@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Simtabi\Laranail\DbTools\Support;
 
-use Illuminate\Database\Eloquent\Model;
 use Throwable;
+use Illuminate\Database\Eloquent\Model;
 
 /**
  * Process-wide memo of "does this table have this column".
@@ -44,7 +44,7 @@ final class SchemaColumnCache
     public static function has(Model $model, string $column): bool
     {
         $context = ConnectionContext::forModel($model);
-        $key = $context->key().'|'.$model->getTable().'|'.$column;
+        $key = $context->key() . '|' . $model->getTable() . '|' . $column;
 
         if (array_key_exists($key, self::$entries)) {
             return self::$entries[$key];
@@ -66,7 +66,7 @@ final class SchemaColumnCache
     public static function columns(Model $model): array
     {
         $context = ConnectionContext::forModel($model);
-        $key = $model::class.'|'.$context->key().'|'.$model->getTable();
+        $key = $model::class . '|' . $context->key() . '|' . $model->getTable();
 
         if (array_key_exists($key, self::$listings)) {
             return self::$listings[$key];
@@ -98,7 +98,7 @@ final class SchemaColumnCache
      */
     public static function forget(string $class): void
     {
-        $prefix = $class.'|';
+        $prefix = $class . '|';
 
         foreach (array_keys(self::$listings) as $key) {
             if (str_starts_with($key, $prefix)) {

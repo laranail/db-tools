@@ -4,16 +4,16 @@ declare(strict_types=1);
 
 namespace Simtabi\Laranail\DbTools\Tests\Unit\Schema;
 
+use PDO;
+use Override;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Schema;
-use Override;
-use PDO;
-use Simtabi\Laranail\DbTools\Events\SchemaNotReady;
-use Simtabi\Laranail\DbTools\Guard\Contracts\DatabaseAvailabilityInterface;
-use Simtabi\Laranail\DbTools\Guard\DatabaseGuard;
-use Simtabi\Laranail\DbTools\Schema\Contracts\SchemaReadinessInterface;
-use Simtabi\Laranail\DbTools\Schema\SchemaStatus;
 use Simtabi\Laranail\DbTools\Tests\TestCase;
+use Simtabi\Laranail\DbTools\Guard\DatabaseGuard;
+use Simtabi\Laranail\DbTools\Schema\SchemaStatus;
+use Simtabi\Laranail\DbTools\Events\SchemaNotReady;
+use Simtabi\Laranail\DbTools\Schema\Contracts\SchemaReadinessInterface;
+use Simtabi\Laranail\DbTools\Guard\Contracts\DatabaseAvailabilityInterface;
 
 final class SchemaReadinessTest extends TestCase
 {
@@ -130,13 +130,13 @@ final class SchemaReadinessTest extends TestCase
         parent::defineEnvironment($app);
 
         $app['config']->set('database.connections.down', [
-            'driver' => 'mysql',
-            'host' => '127.0.0.1',
-            'port' => 1,
+            'driver'   => 'mysql',
+            'host'     => '127.0.0.1',
+            'port'     => 1,
             'database' => 'nope',
             'username' => 'nope',
             'password' => 'nope',
-            'options' => [PDO::ATTR_TIMEOUT => 1],
+            'options'  => [PDO::ATTR_TIMEOUT => 1],
         ]);
     }
 

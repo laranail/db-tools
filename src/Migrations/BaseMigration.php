@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Simtabi\Laranail\DbTools\Migrations;
 
-use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Builder;
+use Illuminate\Database\Migrations\Migration;
 use Simtabi\Laranail\DbTools\Support\ConnectionContext;
 
 /**
