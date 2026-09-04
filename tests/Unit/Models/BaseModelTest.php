@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Simtabi\Laranail\DbTools\Tests\Unit\Models;
 
-use Illuminate\Database\Eloquent\ModelNotFoundException;
-use Illuminate\Support\Facades\Schema;
 use Override;
-use Simtabi\Laranail\DbTools\Models\BaseModel;
+use Illuminate\Support\Facades\Schema;
 use Simtabi\Laranail\DbTools\Tests\TestCase;
+use Simtabi\Laranail\DbTools\Models\BaseModel;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 
 final class WidgetModel extends BaseModel
 {

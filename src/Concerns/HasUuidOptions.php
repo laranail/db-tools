@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Simtabi\Laranail\DbTools\Concerns;
 
 use Closure;
+use Ramsey\Uuid\Uuid;
 use Illuminate\Support\Str;
 use InvalidArgumentException;
-use Ramsey\Uuid\Uuid;
 use Simtabi\Laranail\DbTools\Exceptions\UuidException;
 
 trait HasUuidOptions
@@ -160,7 +160,8 @@ trait HasUuidOptions
     /**
      * Set the uuid value.
      *
-     * @param  string  $value
+     * @param string $value
+     *
      * @return static
      */
     public function setUuid($value)
@@ -215,7 +216,7 @@ trait HasUuidOptions
                 ? (string) Str::orderedUuid()
                 : (string) Str::uuid(),
             default => throw new InvalidArgumentException(
-                "Unsupported \$uuidVersion [{$version}] on ".static::class.'. Supported versions are 1, 3, 4 and 5.',
+                "Unsupported \$uuidVersion [{$version}] on " . static::class . '. Supported versions are 1, 3, 4 and 5.',
             ),
         };
     }
@@ -255,7 +256,7 @@ trait HasUuidOptions
 
         if (trim($name) === '') {
             throw new InvalidArgumentException(
-                'UUID version '.$version.' is name-based and needs a $uuidString on '.static::class.'.',
+                'UUID version ' . $version . ' is name-based and needs a $uuidString on ' . static::class . '.',
             );
         }
 

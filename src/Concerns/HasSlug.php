@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Simtabi\Laranail\DbTools\Concerns;
 
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Str;
-use Spatie\Sluggable\HasSlug as SpatieHasSlug;
 use Spatie\Sluggable\SlugOptions;
+use Illuminate\Database\Eloquent\Builder;
+use Spatie\Sluggable\HasSlug as SpatieHasSlug;
 
 /**
  * Opinionated wrapper around spatie/laravel-sluggable with configurable
@@ -35,7 +35,7 @@ trait HasSlug
      */
     public static function checkModelSlug(string $slug): string
     {
-        return static::slugExists($slug) ? $slug.'-'.Str::lower((string) Str::ulid()) : $slug;
+        return static::slugExists($slug) ? $slug . '-' . Str::lower((string) Str::ulid()) : $slug;
     }
 
     /**
@@ -105,7 +105,8 @@ trait HasSlug
      *
      * Passing null uses the model's configured destination column.
      *
-     * @param  Builder<static>  $query
+     * @param Builder<static> $query
+     *
      * @return Builder<static>
      */
     public function scopeBySlug(Builder $query, string $slug, ?string $columnName = null): Builder

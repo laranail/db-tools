@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Simtabi\Laranail\DbTools\Concerns;
 
 use Illuminate\Database\Eloquent\Collection;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
  * Adjacency-list parent/child threading for self-referential models.

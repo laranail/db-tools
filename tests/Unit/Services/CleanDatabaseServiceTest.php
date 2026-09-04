@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Simtabi\Laranail\DbTools\Tests\Unit\Services;
 
-use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Database\QueryException;
+use Simtabi\Laranail\DbTools\Tests\TestCase;
 use Simtabi\Laranail\DbTools\Concerns\ManagesForeignKeyChecks;
 use Simtabi\Laranail\DbTools\Exceptions\CleanDatabaseException;
 use Simtabi\Laranail\DbTools\Services\Contracts\CleanDatabaseServiceInterface;
-use Simtabi\Laranail\DbTools\Tests\TestCase;
 
 final class CleanDatabaseServiceTest extends TestCase
 {

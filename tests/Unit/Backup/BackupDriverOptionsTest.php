@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Simtabi\Laranail\DbTools\Tests\Unit\Backup;
 
 use RuntimeException;
-use Simtabi\Laranail\DbTools\Backup\Concerns\ResolvesBackupOptions;
 use Simtabi\Laranail\DbTools\Tests\TestCase;
+use Simtabi\Laranail\DbTools\Backup\Concerns\ResolvesBackupOptions;
 
 final class BackupDriverOptionsTest extends TestCase
 {
@@ -72,25 +72,25 @@ final class BackupDriverOptionsTest extends TestCase
 
     public function test_gzip_round_trip_preserves_the_dump_byte_for_byte(): void
     {
-        $dir = sys_get_temp_dir().'/dbt-gz-'.uniqid();
+        $dir = sys_get_temp_dir() . '/dbt-gz-' . uniqid();
         mkdir($dir, 0755, true);
 
         // Larger than the 256 KiB read chunk so the streaming loop runs more
         // than once — a truncation bug is invisible on a single-chunk file.
         $payload = str_repeat("INSERT INTO t VALUES ('row');\n", 20000);
-        file_put_contents($dir.'/dump.sql', $payload);
+        file_put_contents($dir . '/dump.sql', $payload);
 
         try {
-            $this->probe()->callGzipCompress($dir.'/dump.sql', $dir.'/dump.sql.gz');
+            $this->probe()->callGzipCompress($dir . '/dump.sql', $dir . '/dump.sql.gz');
 
-            self::assertFileExists($dir.'/dump.sql.gz');
-            self::assertFileDoesNotExist($dir.'/dump.sql', 'The source is removed only after a verified compress.');
+            self::assertFileExists($dir . '/dump.sql.gz');
+            self::assertFileDoesNotExist($dir . '/dump.sql', 'The source is removed only after a verified compress.');
 
-            $this->probe()->callGzipDecompress($dir.'/dump.sql.gz', $dir.'/restored.sql');
+            $this->probe()->callGzipDecompress($dir . '/dump.sql.gz', $dir . '/restored.sql');
 
-            self::assertSame($payload, (string) file_get_contents($dir.'/restored.sql'));
+            self::assertSame($payload, (string) file_get_contents($dir . '/restored.sql'));
         } finally {
-            array_map(unlink(...), glob($dir.'/*') ?: []);
+            array_map(unlink(...), glob($dir . '/*') ?: []);
             rmdir($dir);
         }
     }
@@ -100,20 +100,20 @@ final class BackupDriverOptionsTest extends TestCase
         // gzwrite/gzclose returns were ignored and the source was unlinked
         // unconditionally, so a failed compression destroyed the only good copy
         // and reported success. Whatever the trigger, the source must survive.
-        $dir = sys_get_temp_dir().'/dbt-gz-fail-'.uniqid();
+        $dir = sys_get_temp_dir() . '/dbt-gz-fail-' . uniqid();
         mkdir($dir, 0755, true);
-        file_put_contents($dir.'/dump.sql', 'precious');
+        file_put_contents($dir . '/dump.sql', 'precious');
 
         try {
             $this->expectException(RuntimeException::class);
 
             // A directory is not a writable destination.
-            mkdir($dir.'/blocked.gz', 0755, true);
-            $this->probe()->callGzipCompress($dir.'/dump.sql', $dir.'/blocked.gz');
+            mkdir($dir . '/blocked.gz', 0755, true);
+            $this->probe()->callGzipCompress($dir . '/dump.sql', $dir . '/blocked.gz');
         } finally {
-            self::assertFileExists($dir.'/dump.sql', 'A failed compression must not delete the source.');
-            @rmdir($dir.'/blocked.gz');
-            @unlink($dir.'/dump.sql');
+            self::assertFileExists($dir . '/dump.sql', 'A failed compression must not delete the source.');
+            @rmdir($dir . '/blocked.gz');
+            @unlink($dir . '/dump.sql');
             @rmdir($dir);
         }
     }
@@ -124,24 +124,24 @@ final class BackupDriverOptionsTest extends TestCase
         // report an error on a truncated stream — it simply stops — so the loop
         // exited via gzeof and the caller was handed a SHORT dump and a success,
         // which then gets replayed into the database.
-        $dir = sys_get_temp_dir().'/dbt-gz-trunc-'.uniqid();
+        $dir = sys_get_temp_dir() . '/dbt-gz-trunc-' . uniqid();
         mkdir($dir, 0755, true);
 
         $payload = str_repeat("INSERT INTO t VALUES ('row');\n", 20000);
-        file_put_contents($dir.'/dump.sql', $payload);
+        file_put_contents($dir . '/dump.sql', $payload);
 
-        $this->probe()->callGzipCompress($dir.'/dump.sql', $dir.'/dump.sql.gz');
+        $this->probe()->callGzipCompress($dir . '/dump.sql', $dir . '/dump.sql.gz');
 
-        $whole = (string) file_get_contents($dir.'/dump.sql.gz');
-        file_put_contents($dir.'/truncated.gz', substr($whole, 0, (int) (strlen($whole) * 0.6)));
+        $whole = (string) file_get_contents($dir . '/dump.sql.gz');
+        file_put_contents($dir . '/truncated.gz', substr($whole, 0, (int) (strlen($whole) * 0.6)));
 
         try {
             $this->expectException(RuntimeException::class);
             $this->expectExceptionMessage('truncated');
 
-            $this->probe()->callGzipDecompress($dir.'/truncated.gz', $dir.'/restored.sql');
+            $this->probe()->callGzipDecompress($dir . '/truncated.gz', $dir . '/restored.sql');
         } finally {
-            array_map(unlink(...), glob($dir.'/*') ?: []);
+            array_map(unlink(...), glob($dir . '/*') ?: []);
             rmdir($dir);
         }
     }

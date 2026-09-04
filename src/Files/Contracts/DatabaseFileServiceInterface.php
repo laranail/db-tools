@@ -17,7 +17,8 @@ interface DatabaseFileServiceInterface
     /**
      * Validate database file exists and is readable
      *
-     * @param  string  $filePath  Path to database file
+     * @param string $filePath Path to database file
+     *
      * @return string|false Validated path or false if invalid
      */
     public function validateDatabaseFile(string $filePath): string|false;
@@ -25,8 +26,8 @@ interface DatabaseFileServiceInterface
     /**
      * Handle database file import
      *
-     * @param  string  $filePath  Path to database file
-     * @param  string|null  $connection  Connection name (null for default)
+     * @param string $filePath Path to database file
+     * @param string|null $connection Connection name (null for default)
      *
      * @throws RuntimeException If file is invalid or import fails
      */
@@ -35,7 +36,8 @@ interface DatabaseFileServiceInterface
     /**
      * Check if file is a valid database file
      *
-     * @param  string  $filePath  Path to check
+     * @param string $filePath Path to check
+     *
      * @return bool True if valid database file
      */
     public function isValidDatabaseFile(string $filePath): bool;
@@ -50,8 +52,9 @@ interface DatabaseFileServiceInterface
     /**
      * Validate file size is within limits
      *
-     * @param  string  $filePath  Path to file
-     * @param  int  $maxSize  Maximum file size in bytes
+     * @param string $filePath Path to file
+     * @param int $maxSize Maximum file size in bytes
+     *
      * @return bool True if within limits
      */
     public function validateFileSize(string $filePath, int $maxSize = 104857600): bool;

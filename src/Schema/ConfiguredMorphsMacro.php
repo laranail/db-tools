@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Simtabi\Laranail\DbTools\Schema;
 
-use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Str;
+use Illuminate\Database\Schema\Blueprint;
 
 /**
  * Schema macros: $table->configuredMorphs() / $table->configuredNullableMorphs().
@@ -32,8 +32,8 @@ final class ConfiguredMorphsMacro
             Blueprint::macro('configuredMorphs', function (string $name, ?string $indexName = null): void {
                 /** @var Blueprint $this */
                 match (ConfiguredMorphsMacro::idType()) {
-                    'UUID' => $this->uuidMorphs($name, $indexName),
-                    'ULID' => $this->ulidMorphs($name, $indexName),
+                    'UUID'  => $this->uuidMorphs($name, $indexName),
+                    'ULID'  => $this->ulidMorphs($name, $indexName),
                     default => $this->morphs($name, $indexName),
                 };
             });
@@ -43,8 +43,8 @@ final class ConfiguredMorphsMacro
             Blueprint::macro('configuredNullableMorphs', function (string $name, ?string $indexName = null): void {
                 /** @var Blueprint $this */
                 match (ConfiguredMorphsMacro::idType()) {
-                    'UUID' => $this->nullableUuidMorphs($name, $indexName),
-                    'ULID' => $this->nullableUlidMorphs($name, $indexName),
+                    'UUID'  => $this->nullableUuidMorphs($name, $indexName),
+                    'ULID'  => $this->nullableUlidMorphs($name, $indexName),
                     default => $this->nullableMorphs($name, $indexName),
                 };
             });

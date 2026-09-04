@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Simtabi\Laranail\DbTools\Tests;
 
 use Orchestra\Testbench\TestCase as Orchestra;
-use Simtabi\Laranail\DbTools\Providers\DbToolsServiceProvider;
 use Spatie\Sluggable\SluggableServiceProvider;
+use Simtabi\Laranail\DbTools\Providers\DbToolsServiceProvider;
 
 abstract class TestCase extends Orchestra
 {
@@ -23,12 +23,12 @@ abstract class TestCase extends Orchestra
 
     protected function defineEnvironment($app): void
     {
-        $app['config']->set('app.key', 'base64:'.base64_encode(random_bytes(32)));
+        $app['config']->set('app.key', 'base64:' . base64_encode(random_bytes(32)));
         $app['config']->set('database.default', 'testing');
         $app['config']->set('database.connections.testing', [
-            'driver' => 'sqlite',
+            'driver'   => 'sqlite',
             'database' => ':memory:',
-            'prefix' => '',
+            'prefix'   => '',
         ]);
     }
 }

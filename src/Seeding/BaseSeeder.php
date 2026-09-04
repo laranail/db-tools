@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Simtabi\Laranail\DbTools\Seeding;
 
-use Illuminate\Console\Command;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Seeder;
 use InvalidArgumentException;
+use Illuminate\Console\Command;
+use Illuminate\Database\Seeder;
+use Illuminate\Database\Eloquent\Model;
 use Simtabi\Laranail\DbTools\Seeding\Concerns\InteractsWithSeederOutput;
 
 /**
@@ -40,9 +40,9 @@ abstract class BaseSeeder extends Seeder
     /**
      * Create or converge one row, identified by `$identity`.
      *
-     * @param  class-string<Model>  $model
-     * @param  array<string, mixed>  $identity  the columns that decide "the same row"
-     * @param  array<string, mixed>  $attributes  everything else
+     * @param class-string<Model> $model
+     * @param array<string, mixed> $identity the columns that decide "the same row"
+     * @param array<string, mixed> $attributes everything else
      */
     protected function upsert(string $model, array $identity, array $attributes = []): Model
     {
@@ -57,9 +57,9 @@ abstract class BaseSeeder extends Seeder
      * — the same number on every run, whether it wrote anything or not, so a
      * seeder reported "40 roles" on its fortieth idempotent re-run.
      *
-     * @param  class-string<Model>  $model
-     * @param  string  $key  the attribute identifying a row
-     * @param  list<array<string, mixed>>  $rows
+     * @param class-string<Model> $model
+     * @param string $key the attribute identifying a row
+     * @param list<array<string, mixed>> $rows
      */
     protected function upsertAll(string $model, string $key, array $rows): UpsertResult
     {
@@ -85,8 +85,8 @@ abstract class BaseSeeder extends Seeder
             // what the write did, which is why this counts rather than guesses.
             match (true) {
                 $record->wasRecentlyCreated => $created++,
-                $record->wasChanged() => $updated++,
-                default => $unchanged++,
+                $record->wasChanged()       => $updated++,
+                default                     => $unchanged++,
             };
         }
 
@@ -122,7 +122,7 @@ abstract class BaseSeeder extends Seeder
 
         $this->tell('warn', sprintf(
             '%s writes fixtures that must not exist on a production installation, so it was skipped. '
-            .'Pass --force if this is genuinely what you want.',
+            . 'Pass --force if this is genuinely what you want.',
             $what,
         ));
 

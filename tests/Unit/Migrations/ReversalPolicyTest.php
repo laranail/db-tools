@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Simtabi\Laranail\DbTools\Tests\Unit\Migrations;
 
-use PHPUnit\Framework\Attributes\DataProvider;
 use RuntimeException;
-use Simtabi\Laranail\DbTools\Migrations\ReversalPolicy;
 use Simtabi\Laranail\DbTools\Tests\TestCase;
+use PHPUnit\Framework\Attributes\DataProvider;
+use Simtabi\Laranail\DbTools\Migrations\ReversalPolicy;
 
 /**
  * `down()` drops tables, and `migrate:rollback` asks for no confirmation. On a

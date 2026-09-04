@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Simtabi\Laranail\DbTools\Files;
 
-use Illuminate\Support\Facades\File;
-use Illuminate\Support\Str;
 use RuntimeException;
-use Simtabi\Laranail\DbTools\Backup\Contracts\BackupManagerInterface;
+use Illuminate\Support\Str;
+use Illuminate\Support\Facades\File;
 use Simtabi\Laranail\DbTools\Concerns\ValidatesFilePaths;
+use Simtabi\Laranail\DbTools\Backup\Contracts\BackupManagerInterface;
 use Simtabi\Laranail\DbTools\Files\Contracts\DatabaseFileServiceInterface;
 
 /**
@@ -65,7 +65,8 @@ class DatabaseFileService implements DatabaseFileServiceInterface
     /**
      * Validate database file exists and is readable
      *
-     * @param  string  $filePath  Path to database file
+     * @param string $filePath Path to database file
+     *
      * @return string|false Validated path or false if invalid
      */
     public function validateDatabaseFile(string $filePath): string|false
@@ -97,8 +98,8 @@ class DatabaseFileService implements DatabaseFileServiceInterface
      * SQL text, PostgreSQL custom-format dumps and SQLite files to the correct
      * tool. No shell calls happen here; the backup drivers shell out safely.
      *
-     * @param  string  $filePath  Path to database file (`.sql` or `.dump`)
-     * @param  string|null  $connection  Connection name (null for default)
+     * @param string $filePath Path to database file (`.sql` or `.dump`)
+     * @param string|null $connection Connection name (null for default)
      *
      * @throws RuntimeException If the file is invalid or the format cannot be imported
      */
@@ -126,14 +127,14 @@ class DatabaseFileService implements DatabaseFileServiceInterface
         if (! in_array($extension, self::IMPORTABLE_EXTENSIONS, true)) {
             throw new RuntimeException(
                 "Importing a '{$extension}' file is not supported: '{$filePath}'. "
-                .'Provide a ".sql" or ".dump" backup file, or use the backup/restore APIs directly.',
+                . 'Provide a ".sql" or ".dump" backup file, or use the backup/restore APIs directly.',
             );
         }
 
         if (! $this->isWithinImportBase($validatedPath)) {
             throw new RuntimeException(
                 "Refusing to import '{$filePath}': it resolves outside the permitted import directory "
-                .'(laranail.db-tools.files.import_base).',
+                . '(laranail.db-tools.files.import_base).',
             );
         }
 
@@ -143,7 +144,8 @@ class DatabaseFileService implements DatabaseFileServiceInterface
     /**
      * Check if file is a valid database file
      *
-     * @param  string  $filePath  Path to check
+     * @param string $filePath Path to check
+     *
      * @return bool True if valid database file
      */
     public function isValidDatabaseFile(string $filePath): bool
@@ -166,8 +168,9 @@ class DatabaseFileService implements DatabaseFileServiceInterface
     /**
      * Validate file size is within limits
      *
-     * @param  string  $filePath  Path to file
-     * @param  int  $maxSize  Maximum file size in bytes
+     * @param string $filePath Path to file
+     * @param int $maxSize Maximum file size in bytes
+     *
      * @return bool True if within limits
      */
     public function validateFileSize(string $filePath, int $maxSize = self::DEFAULT_MAX_SIZE): bool
@@ -182,7 +185,8 @@ class DatabaseFileService implements DatabaseFileServiceInterface
     /**
      * Get file information
      *
-     * @param  string  $filePath  Path to file
+     * @param string $filePath Path to file
+     *
      * @return array File information
      */
     public function getFileInfo(string $filePath): array
@@ -194,12 +198,12 @@ class DatabaseFileService implements DatabaseFileServiceInterface
         }
 
         return [
-            'path' => $validatedPath,
-            'size' => File::size($validatedPath),
-            'extension' => File::extension($validatedPath),
-            'name' => File::name($validatedPath),
-            'basename' => File::basename($validatedPath),
-            'is_valid' => $this->isValidDatabaseFile($validatedPath),
+            'path'        => $validatedPath,
+            'size'        => File::size($validatedPath),
+            'extension'   => File::extension($validatedPath),
+            'name'        => File::name($validatedPath),
+            'basename'    => File::basename($validatedPath),
+            'is_valid'    => $this->isValidDatabaseFile($validatedPath),
             'is_readable' => File::isReadable($validatedPath),
             'is_writable' => File::isWritable($validatedPath),
         ];

@@ -61,9 +61,9 @@ trait HasUuidsOrIntegerIds
     public function newUniqueId(): ?string
     {
         return match (static::getTypeOfId()) {
-            'ULID' => (string) Str::ulid(),
+            'ULID'   => (string) Str::ulid(),
             'BIGINT' => null,
-            default => (string) Str::orderedUuid(),
+            default  => (string) Str::orderedUuid(),
         };
     }
 

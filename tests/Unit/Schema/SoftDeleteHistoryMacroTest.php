@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Simtabi\Laranail\DbTools\Tests\Unit\Schema;
 
-use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Database\Schema\Blueprint;
 use Simtabi\Laranail\DbTools\Tests\TestCase;
 
 final class SoftDeleteHistoryMacroTest extends TestCase
