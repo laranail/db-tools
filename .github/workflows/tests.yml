@@ -50,6 +50,10 @@ jobs:
         # success and unpacks whatever was cached the first time. That is how
         # `vendor/bin/laranail-pint` went missing here while the tag carried it.
         # Everything else is immutable per version and stays cached.
+        # POSIX command: Windows runners default to PowerShell, where this
+        # is a Remove-Item parse error rather than a no-op. Git Bash ships on
+        # the Windows images, so one line makes the step portable.
+        shell: bash
         run: rm -rf "$(composer config cache-files-dir)/laranail"
 
       - name: Install dependencies
