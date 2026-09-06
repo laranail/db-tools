@@ -53,8 +53,8 @@ final class AuditColumnsMacro
             // Default to the configured key type so the no-arg call works on
             // UUID/ULID apps; an explicit $foreignKey still overrides.
             $foreignKey ??= match (ConfiguredMorphsMacro::idType()) {
-                'UUID' => 'foreignUuid',
-                'ULID' => 'foreignUlid',
+                'UUID'  => 'foreignUuid',
+                'ULID'  => 'foreignUlid',
                 default => 'foreignId',
             };
 

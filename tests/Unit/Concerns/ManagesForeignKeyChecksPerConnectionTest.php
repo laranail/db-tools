@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Simtabi\Laranail\DbTools\Tests\Unit\Concerns;
 
 use Override;
-use Simtabi\Laranail\DbTools\Concerns\ManagesForeignKeyChecks;
 use Simtabi\Laranail\DbTools\Tests\TestCase;
+use Simtabi\Laranail\DbTools\Concerns\ManagesForeignKeyChecks;
 
 final class ManagesForeignKeyChecksPerConnectionTest extends TestCase
 {
@@ -80,9 +80,9 @@ final class ManagesForeignKeyChecksPerConnectionTest extends TestCase
         // A second, independent SQLite connection so the per-connection
         // nesting counter can be exercised in isolation.
         $app['config']->set('database.connections.secondary', [
-            'driver' => 'sqlite',
+            'driver'   => 'sqlite',
             'database' => ':memory:',
-            'prefix' => '',
+            'prefix'   => '',
         ]);
     }
 }

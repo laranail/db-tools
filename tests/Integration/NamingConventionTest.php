@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Simtabi\Laranail\DbTools\Tests\Integration;
 
-use Illuminate\Contracts\Console\Kernel;
 use Illuminate\Support\ServiceProvider;
-use Simtabi\Laranail\DbTools\Providers\DbToolsServiceProvider;
+use Illuminate\Contracts\Console\Kernel;
 use Simtabi\Laranail\DbTools\Tests\TestCase;
+use Simtabi\Laranail\DbTools\Providers\DbToolsServiceProvider;
 
 /**
  * Every public name is asserted against the LIVE registries on a booted application, never by

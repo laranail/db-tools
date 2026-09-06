@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Simtabi\Laranail\DbTools\Concerns;
 
 use Closure;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Builder;
 use Simtabi\Laranail\DbTools\Schema\Scopes\ArchiveScope;
 
 /**

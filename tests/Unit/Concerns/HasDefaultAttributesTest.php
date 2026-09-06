@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Simtabi\Laranail\DbTools\Tests\Unit\Concerns;
 
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\Schema;
 use Override;
-use Simtabi\Laranail\DbTools\Concerns\HasDefaultAttributes;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Database\Eloquent\Model;
 use Simtabi\Laranail\DbTools\Tests\TestCase;
+use Simtabi\Laranail\DbTools\Concerns\HasDefaultAttributes;
 
 class DefaultAttributesBase extends Model
 {

@@ -33,10 +33,10 @@ enum SchemaStatus: string
     public function message(): string
     {
         return match ($this) {
-            self::Down => 'Database is unreachable. Check the connection settings and that the server is running.',
-            self::Empty => 'Database is reachable but nothing has been migrated. Run `php artisan migrate`.',
+            self::Down    => 'Database is unreachable. Check the connection settings and that the server is running.',
+            self::Empty   => 'Database is reachable but nothing has been migrated. Run `php artisan migrate`.',
             self::Pending => 'Database is migrated but some required tables are missing. Run `php artisan migrate` (and `db:seed` if needed).',
-            self::Ready => 'Database is ready.',
+            self::Ready   => 'Database is ready.',
         };
     }
 }

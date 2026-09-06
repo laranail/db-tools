@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Simtabi\Laranail\DbTools\Models;
 
+use Override;
+use LogicException;
+use Illuminate\Support\Carbon;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Support\Carbon;
-use LogicException;
-use Override;
 
 /**
  * Read model over Laravel's database session table (`SESSION_DRIVER=database`).
@@ -65,7 +65,7 @@ class DatabaseSession extends Model
     /**
      * Set the related user model class for {@see user()}.
      *
-     * @param  class-string<Model>  $userModelClass
+     * @param class-string<Model> $userModelClass
      */
     public function usingUserModel(string $userModelClass): static
     {
@@ -128,7 +128,7 @@ class DatabaseSession extends Model
      * model the query was started from never reached the rows it returned —
      * every hydrated session fell back to the default.
      *
-     * @param  array<string, mixed>  $attributes
+     * @param array<string, mixed> $attributes
      */
     #[Override]
     public function newInstance($attributes = [], $exists = false): static
@@ -158,7 +158,7 @@ class DatabaseSession extends Model
 
         throw new LogicException(
             'DatabaseSession has no user model to relate to. Call usingUserModel(YourUser::class), '
-            .'or configure auth.providers.users.model.',
+            . 'or configure auth.providers.users.model.',
         );
     }
 }

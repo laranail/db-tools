@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace Simtabi\Laranail\DbTools\Tests\Unit\Schema;
 
 use Illuminate\Support\Facades\Schema;
-use Simtabi\Laranail\DbTools\Schema\DatabaseConnectionTester;
-use Simtabi\Laranail\DbTools\Schema\DatabaseSchemaInspector;
-use Simtabi\Laranail\DbTools\Schema\DatabaseTableVerifier;
 use Simtabi\Laranail\DbTools\Tests\TestCase;
+use Simtabi\Laranail\DbTools\Schema\DatabaseTableVerifier;
+use Simtabi\Laranail\DbTools\Schema\DatabaseSchemaInspector;
+use Simtabi\Laranail\DbTools\Schema\DatabaseConnectionTester;
 
 final class DatabaseTableVerifierTest extends TestCase
 {

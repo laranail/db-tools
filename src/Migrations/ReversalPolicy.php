@@ -57,8 +57,8 @@ final class ReversalPolicy
 
         throw new RuntimeException(sprintf(
             'Refusing to %s in the "%s" environment: this drops tables, which would delete every '
-            .'row in this database. Do it in %s, or set %s=true if it is genuinely intended — '
-            .'take a backup first.',
+            . 'row in this database. Do it in %s, or set %s=true if it is genuinely intended — '
+            . 'take a backup first.',
             $operation,
             app()->environment(),
             implode('/', self::environments()),

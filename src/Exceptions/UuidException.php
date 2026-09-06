@@ -14,7 +14,7 @@ class UuidException extends DbToolsException
     /**
      * Create exception for missing UUID value
      *
-     * @param  string  $columnName  The UUID column name
+     * @param string $columnName The UUID column name
      */
     public static function missingValue(string $columnName): self
     {
@@ -28,7 +28,7 @@ class UuidException extends DbToolsException
     /**
      * Create exception for invalid UUID format
      *
-     * @param  string  $value  The invalid UUID value
+     * @param string $value The invalid UUID value
      */
     public static function invalidFormat(string $value): self
     {
@@ -42,7 +42,7 @@ class UuidException extends DbToolsException
     /**
      * Create exception for UUID generation failure
      *
-     * @param  string  $reason  The failure reason
+     * @param string $reason The failure reason
      */
     public static function generationFailed(string $reason = 'Unknown error'): self
     {

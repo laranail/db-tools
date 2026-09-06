@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Simtabi\Laranail\DbTools\Tests\Unit\Concerns;
 
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Schema;
-use Simtabi\Laranail\DbTools\Concerns\HasNanoid;
+use Illuminate\Database\Eloquent\Model;
 use Simtabi\Laranail\DbTools\Tests\TestCase;
+use Simtabi\Laranail\DbTools\Concerns\HasNanoid;
 
 final class HasNanoidModel extends Model
 {

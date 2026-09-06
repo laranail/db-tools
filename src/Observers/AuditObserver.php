@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Simtabi\Laranail\DbTools\Observers;
 
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\Auth;
-use Simtabi\Laranail\DbTools\Support\ConnectionContext;
 use Throwable;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Database\Eloquent\Model;
+use Simtabi\Laranail\DbTools\Support\ConnectionContext;
 
 /**
  * Stamps `created_by` / `updated_by` / `deleted_by` from the authenticated
@@ -156,7 +156,7 @@ class AuditObserver
     protected function modelHasColumn(Model $model, string $column): bool
     {
         $context = ConnectionContext::forModel($model);
-        $key = $context->key().'|'.$model->getTable().'|'.$column;
+        $key = $context->key() . '|' . $model->getTable() . '|' . $column;
 
         if (array_key_exists($key, self::$columnCache)) {
             return self::$columnCache[$key];

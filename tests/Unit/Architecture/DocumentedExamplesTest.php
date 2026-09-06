@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Simtabi\Laranail\DbTools\Tests\Unit\Architecture;
 
-use PHPUnit\Framework\Attributes\DataProvider;
+use RecursiveIteratorIterator;
 use PHPUnit\Framework\TestCase;
 use RecursiveDirectoryIterator;
-use RecursiveIteratorIterator;
+use PHPUnit\Framework\Attributes\DataProvider;
 
 /**
  * Every model class in a documented PHP example must actually compose.
@@ -31,7 +31,7 @@ use RecursiveIteratorIterator;
  */
 final class DocumentedExamplesTest extends TestCase
 {
-    private const string PACKAGE_ROOT = __DIR__.'/../../..';
+    private const string PACKAGE_ROOT = __DIR__ . '/../../..';
 
     /**
      * Documented examples, as [label => php source].
@@ -44,7 +44,7 @@ final class DocumentedExamplesTest extends TestCase
 
         foreach (self::markdownFiles() as $file) {
             $markdown = (string) file_get_contents($file);
-            $relative = str_replace(realpath(self::PACKAGE_ROOT).'/', '', (string) realpath($file));
+            $relative = str_replace(realpath(self::PACKAGE_ROOT) . '/', '', (string) realpath($file));
 
             preg_match_all('/```php\n(.*?)```/s', $markdown, $blocks);
 
@@ -67,18 +67,18 @@ final class DocumentedExamplesTest extends TestCase
     #[DataProvider('documentedModels')]
     public function test_a_documented_model_example_composes(string $file, string $source): void
     {
-        $path = tempnam(sys_get_temp_dir(), 'dbt-doc-').'.php';
+        $path = tempnam(sys_get_temp_dir(), 'dbt-doc-') . '.php';
         file_put_contents($path, $source);
 
         try {
             $output = [];
             $status = 0;
-            exec(escapeshellarg(PHP_BINARY).' -d error_reporting=E_ALL '.escapeshellarg($path).' 2>&1', $output, $status);
+            exec(escapeshellarg(PHP_BINARY) . ' -d error_reporting=E_ALL ' . escapeshellarg($path) . ' 2>&1', $output, $status);
 
             self::assertSame(
                 0,
                 $status,
-                "A documented model example in {$file} does not compose:\n".implode("\n", $output),
+                "A documented model example in {$file} does not compose:\n" . implode("\n", $output),
             );
         } finally {
             @unlink($path);
@@ -91,7 +91,7 @@ final class DocumentedExamplesTest extends TestCase
     private static function markdownFiles(): array
     {
         $found = [];
-        $docs = self::PACKAGE_ROOT.'/docs';
+        $docs = self::PACKAGE_ROOT . '/docs';
 
         if (! is_dir($docs)) {
             return $found;
@@ -124,7 +124,7 @@ final class DocumentedExamplesTest extends TestCase
                 || str_starts_with($line, 'use Spatie\\'),
         );
 
-        $autoload = realpath(self::PACKAGE_ROOT.'/vendor/autoload.php');
+        $autoload = realpath(self::PACKAGE_ROOT . '/vendor/autoload.php');
 
         return implode("\n", [
             '<?php',
@@ -132,8 +132,8 @@ final class DocumentedExamplesTest extends TestCase
             "namespace DocExample{$index} {",
             '  use Illuminate\Database\Eloquent\Model;',
             '  use Illuminate\Database\Eloquent\SoftDeletes;',
-            ...array_map(static fn (string $line): string => '  '.$line, $imports),
-            '  '.str_replace("\n", "\n  ", $class[1] ?? ''),
+            ...array_map(static fn (string $line): string => '  ' . $line, $imports),
+            '  ' . str_replace("\n", "\n  ", $class[1] ?? ''),
             '}',
         ]);
     }

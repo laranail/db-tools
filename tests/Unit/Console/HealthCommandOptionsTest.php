@@ -14,7 +14,7 @@ final class HealthCommandOptionsTest extends TestCase
         // it reached the readiness and guard memos as a distinct key, forking the
         // cache for the very connection it was meant to name.
         $this->artisan('laranail::db-tools.health', ['--connection' => ''])
-            ->expectsOutputToContain('Connection: '.config('database.default'))
+            ->expectsOutputToContain('Connection: ' . config('database.default'))
             ->assertSuccessful();
     }
 

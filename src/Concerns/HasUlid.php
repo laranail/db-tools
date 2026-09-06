@@ -29,6 +29,6 @@ trait HasUlid
 
     public function ulidColumn(): string
     {
-        return defined(static::class.'::ULID_COLUMN') ? static::ULID_COLUMN : 'ulid';
+        return defined(static::class . '::ULID_COLUMN') ? static::ULID_COLUMN : 'ulid';
     }
 }

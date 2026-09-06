@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Simtabi\Laranail\DbTools\Tests\Unit\Services;
 
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\Relation;
-use Illuminate\Support\Facades\Schema;
 use Psr\Log\NullLogger;
-use Simtabi\Laranail\DbTools\Services\DatabaseService;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Database\Eloquent\Model;
 use Simtabi\Laranail\DbTools\Tests\TestCase;
+use Illuminate\Database\Eloquent\Relations\Relation;
+use Simtabi\Laranail\DbTools\Services\DatabaseService;
 
 final class DbServiceFixture extends Model
 {
@@ -211,10 +211,10 @@ final class DatabaseServiceTest extends TestCase
         // columns legitimately set to 0, false or '' vanished from the sync
         // payload and silently fell back to the column default.
         $data = $this->service->generateRelationshipSyncData(['7'], [
-            'active' => 0,
+            'active'  => 0,
             'flagged' => false,
-            'note' => '',
-            'absent' => null,
+            'note'    => '',
+            'absent'  => null,
         ]);
 
         self::assertSame(0, $data[7]['active']);

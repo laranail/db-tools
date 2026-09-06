@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Simtabi\Laranail\DbTools\Tests\Unit\Pagination;
 
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Schema;
-use Simtabi\Laranail\DbTools\Pagination\Pagination;
+use Illuminate\Database\Eloquent\Model;
 use Simtabi\Laranail\DbTools\Tests\TestCase;
+use Illuminate\Pagination\LengthAwarePaginator;
+use Simtabi\Laranail\DbTools\Pagination\Pagination;
 
 final class PaginationWidget extends Model
 {

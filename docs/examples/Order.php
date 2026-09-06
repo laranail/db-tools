@@ -21,10 +21,10 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Simtabi\Laranail\DbTools\Concerns\HasJsonColumnAccessors;
 use Simtabi\Laranail\DbTools\Concerns\HasUlid;
 use Simtabi\Laranail\DbTools\Concerns\HasUuid;
 use Simtabi\Laranail\DbTools\Observers\AuditObserver;
+use Simtabi\Laranail\DbTools\Concerns\HasJsonColumnAccessors;
 
 class Order extends Model
 {

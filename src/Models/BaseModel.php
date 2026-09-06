@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Simtabi\Laranail\DbTools\Models;
 
-use Carbon\CarbonInterface;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Override;
+use Carbon\CarbonInterface;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Simtabi\Laranail\DbTools\Concerns\HasUuidsOrIntegerIds;
 
 /**
@@ -43,7 +43,8 @@ abstract class BaseModel extends Model
     /**
      * Scope to records created today.
      *
-     * @param  Builder<static>  $query
+     * @param Builder<static> $query
+     *
      * @return Builder<static>
      */
     public function scopeToday(Builder $query): Builder
@@ -54,7 +55,8 @@ abstract class BaseModel extends Model
     /**
      * Scope to records created this week.
      *
-     * @param  Builder<static>  $query
+     * @param Builder<static> $query
+     *
      * @return Builder<static>
      */
     public function scopeThisWeek(Builder $query): Builder
@@ -65,7 +67,8 @@ abstract class BaseModel extends Model
     /**
      * Scope to records created this month.
      *
-     * @param  Builder<static>  $query
+     * @param Builder<static> $query
+     *
      * @return Builder<static>
      */
     public function scopeThisMonth(Builder $query): Builder
@@ -77,7 +80,8 @@ abstract class BaseModel extends Model
     /**
      * Scope to records created this year.
      *
-     * @param  Builder<static>  $query
+     * @param Builder<static> $query
+     *
      * @return Builder<static>
      */
     public function scopeThisYear(Builder $query): Builder
@@ -88,7 +92,8 @@ abstract class BaseModel extends Model
     /**
      * Scope to records created within the last N days.
      *
-     * @param  Builder<static>  $query
+     * @param Builder<static> $query
+     *
      * @return Builder<static>
      */
     public function scopeRecent(Builder $query, int $days = 7): Builder
@@ -162,10 +167,10 @@ abstract class BaseModel extends Model
         $array = $this->toArray();
 
         $array['_metadata'] = [
-            'model_name' => $this->getModelName(),
-            'table_name' => $this->getTableName(),
-            'is_new' => $this->isNew(),
-            'is_modified' => $this->isModified(),
+            'model_name'       => $this->getModelName(),
+            'table_name'       => $this->getTableName(),
+            'is_new'           => $this->isNew(),
+            'is_modified'      => $this->isModified(),
             'created_at_human' => $this->getCreatedAtForHumans(),
             'updated_at_human' => $this->getUpdatedAtForHumans(),
         ];

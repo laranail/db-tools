@@ -5,14 +5,14 @@ declare(strict_types=1);
 namespace Simtabi\Laranail\DbTools;
 
 use Closure;
-use Simtabi\Laranail\DbTools\Backup\Contracts\BackupManagerInterface;
-use Simtabi\Laranail\DbTools\Guard\Contracts\DatabaseAvailabilityInterface;
-use Simtabi\Laranail\DbTools\Schema\Contracts\DatabaseConnectionTesterInterface;
-use Simtabi\Laranail\DbTools\Schema\Contracts\DatabaseSchemaInspectorInterface;
-use Simtabi\Laranail\DbTools\Schema\Contracts\DatabaseTableVerifierInterface;
-use Simtabi\Laranail\DbTools\Schema\Contracts\SchemaReadinessInterface;
-use Simtabi\Laranail\DbTools\Schema\SchemaReadinessReport;
 use Simtabi\Laranail\DbTools\Support\ConnectionContext;
+use Simtabi\Laranail\DbTools\Schema\SchemaReadinessReport;
+use Simtabi\Laranail\DbTools\Backup\Contracts\BackupManagerInterface;
+use Simtabi\Laranail\DbTools\Schema\Contracts\SchemaReadinessInterface;
+use Simtabi\Laranail\DbTools\Guard\Contracts\DatabaseAvailabilityInterface;
+use Simtabi\Laranail\DbTools\Schema\Contracts\DatabaseTableVerifierInterface;
+use Simtabi\Laranail\DbTools\Schema\Contracts\DatabaseSchemaInspectorInterface;
+use Simtabi\Laranail\DbTools\Schema\Contracts\DatabaseConnectionTesterInterface;
 
 /**
  * Database Facade
@@ -47,7 +47,7 @@ class DbTools
     /**
      * Test if database connection is working
      *
-     * @param  string|null  $connection  Connection name (null for default)
+     * @param string|null $connection Connection name (null for default)
      */
     public static function testConnection(?string $connection = null): bool
     {
@@ -57,7 +57,7 @@ class DbTools
     /**
      * Get detailed connection information
      *
-     * @param  string|null  $connection  Connection name (null for default)
+     * @param string|null $connection Connection name (null for default)
      */
     public static function getConnectionInfo(?string $connection = null): array
     {
@@ -67,7 +67,7 @@ class DbTools
     /**
      * Get the database driver name
      *
-     * @param  string|null  $connection  Connection name (null for default)
+     * @param string|null $connection Connection name (null for default)
      */
     public static function getDriver(?string $connection = null): string
     {
@@ -77,7 +77,7 @@ class DbTools
     /**
      * Get the database server version
      *
-     * @param  string|null  $connection  Connection name (null for default)
+     * @param string|null $connection Connection name (null for default)
      */
     public static function getVersion(?string $connection = null): ?string
     {
@@ -87,7 +87,7 @@ class DbTools
     /**
      * Get the database name
      *
-     * @param  string|null  $connection  Connection name (null for default)
+     * @param string|null $connection Connection name (null for default)
      */
     public static function getDatabaseName(?string $connection = null): ?string
     {
@@ -101,7 +101,7 @@ class DbTools
     /**
      * Get all table names
      *
-     * @param  string|null  $connection  Connection name (null for default)
+     * @param string|null $connection Connection name (null for default)
      */
     public static function tables(?string $connection = null): array
     {
@@ -111,8 +111,8 @@ class DbTools
     /**
      * Check if a table exists
      *
-     * @param  string  $table  Table name
-     * @param  string|null  $connection  Connection name (null for default)
+     * @param string $table Table name
+     * @param string|null $connection Connection name (null for default)
      */
     public static function hasTable(string $table, ?string $connection = null): bool
     {
@@ -122,7 +122,7 @@ class DbTools
     /**
      * Get the table count
      *
-     * @param  string|null  $connection  Connection name (null for default)
+     * @param string|null $connection Connection name (null for default)
      */
     public static function tableCount(?string $connection = null): int
     {
@@ -132,8 +132,8 @@ class DbTools
     /**
      * Get column names for a table
      *
-     * @param  string  $table  Table name
-     * @param  string|null  $connection  Connection name (null for default)
+     * @param string $table Table name
+     * @param string|null $connection Connection name (null for default)
      */
     public static function columns(string $table, ?string $connection = null): array
     {
@@ -143,9 +143,9 @@ class DbTools
     /**
      * Check if a table has a column
      *
-     * @param  string  $table  Table name
-     * @param  string  $column  Column name
-     * @param  string|null  $connection  Connection name (null for default)
+     * @param string $table Table name
+     * @param string $column Column name
+     * @param string|null $connection Connection name (null for default)
      */
     public static function hasColumn(string $table, string $column, ?string $connection = null): bool
     {
@@ -159,9 +159,9 @@ class DbTools
     /**
      * Verify tables exist
      *
-     * @param  array  $tables  Table names to check
-     * @param  bool  $requireAll  Whether all tables must exist
-     * @param  string|null  $connection  Connection name (null for default)
+     * @param array $tables Table names to check
+     * @param bool $requireAll Whether all tables must exist
+     * @param string|null $connection Connection name (null for default)
      */
     public static function verifyTables(array $tables, bool $requireAll = false, ?string $connection = null): bool
     {
@@ -171,9 +171,9 @@ class DbTools
     /**
      * Verify tables with detailed results
      *
-     * @param  array  $tables  Table names to check
-     * @param  bool  $requireAll  Whether all tables must exist
-     * @param  string|null  $connection  Connection name (null for default)
+     * @param array $tables Table names to check
+     * @param bool $requireAll Whether all tables must exist
+     * @param string|null $connection Connection name (null for default)
      */
     public static function verifyTablesDetailed(array $tables, bool $requireAll = false, ?string $connection = null): array
     {
@@ -183,8 +183,8 @@ class DbTools
     /**
      * Check if Laravel default tables exist
      *
-     * @param  bool  $strict  Whether all tables must exist
-     * @param  string|null  $connection  Connection name (null for default)
+     * @param bool $strict Whether all tables must exist
+     * @param string|null $connection Connection name (null for default)
      */
     public static function hasLaravelTables(bool $strict = false, ?string $connection = null): bool
     {
@@ -194,8 +194,8 @@ class DbTools
     /**
      * Get missing tables from a list
      *
-     * @param  array  $tables  Table names to check
-     * @param  string|null  $connection  Connection name (null for default)
+     * @param array $tables Table names to check
+     * @param string|null $connection Connection name (null for default)
      */
     public static function getMissingTables(array $tables, ?string $connection = null): array
     {
@@ -209,8 +209,8 @@ class DbTools
     /**
      * Create a database backup
      *
-     * @param  string  $path  Path to save backup
-     * @param  string|null  $connection  Connection name (null for default)
+     * @param string $path Path to save backup
+     * @param string|null $connection Connection name (null for default)
      */
     public static function backup(string $path, ?string $connection = null): bool
     {
@@ -220,8 +220,8 @@ class DbTools
     /**
      * Restore database from backup
      *
-     * @param  string  $path  Path to backup file
-     * @param  string|null  $connection  Connection name (null for default)
+     * @param string $path Path to backup file
+     * @param string|null $connection Connection name (null for default)
      */
     public static function restore(string $path, ?string $connection = null): bool
     {
@@ -231,7 +231,7 @@ class DbTools
     /**
      * Check if backup driver is supported
      *
-     * @param  string  $driver  Driver name
+     * @param string $driver Driver name
      */
     public static function supportsBackupDriver(string $driver): bool
     {
@@ -247,7 +247,8 @@ class DbTools
      *
      * @template TReturn
      *
-     * @param  Closure(): TReturn  $callback
+     * @param Closure(): TReturn $callback
+     *
      * @return TReturn
      */
     public static function withoutForeignKeyChecks(Closure $callback, ?string $connection = null): mixed
@@ -288,8 +289,9 @@ class DbTools
      *
      * @template TValue
      *
-     * @param  callable():TValue  $callback
-     * @param  TValue  $default
+     * @param callable():TValue $callback
+     * @param TValue $default
+     *
      * @return TValue
      */
     public static function whenAvailable(callable $callback, mixed $default = null, ?string $connection = null): mixed
@@ -302,8 +304,9 @@ class DbTools
      *
      * @template TValue
      *
-     * @param  callable():TValue  $callback
-     * @param  TValue  $default
+     * @param callable():TValue $callback
+     * @param TValue $default
+     *
      * @return TValue
      */
     public static function whenTable(string $table, callable $callback, mixed $default = null, ?string $connection = null): mixed
@@ -339,7 +342,7 @@ class DbTools
     /**
      * Convenience: the readiness report for the given required tables.
      *
-     * @param  list<string>  $requiredTables
+     * @param list<string> $requiredTables
      */
     public static function schemaReport(array $requiredTables = [], ?string $connection = null): SchemaReadinessReport
     {

@@ -15,7 +15,7 @@ trait HasQuietSaving
     /**
      * Save the model without firing any model events.
      *
-     * @param  array<string, mixed>  $options
+     * @param array<string, mixed> $options
      */
     public function saveQuietly(array $options = []): bool
     {

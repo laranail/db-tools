@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Simtabi\Laranail\DbTools\Tests\Unit\Schema;
 
-use Simtabi\Laranail\DbTools\Schema\DatabaseConnectionTester;
 use Simtabi\Laranail\DbTools\Tests\TestCase;
+use Simtabi\Laranail\DbTools\Schema\DatabaseConnectionTester;
 
 final class DatabaseConnectionTesterTest extends TestCase
 {

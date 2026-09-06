@@ -4,15 +4,15 @@ declare(strict_types=1);
 
 namespace Simtabi\Laranail\DbTools\Tests\Unit\Concerns;
 
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Foundation\Auth\User as Authenticatable;
+use Override;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Schema;
-use Override;
-use Simtabi\Laranail\DbTools\Concerns\HasAuditObserver;
-use Simtabi\Laranail\DbTools\Observers\AuditObserver;
+use Illuminate\Database\Eloquent\Model;
 use Simtabi\Laranail\DbTools\Tests\TestCase;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Simtabi\Laranail\DbTools\Observers\AuditObserver;
+use Illuminate\Foundation\Auth\User as Authenticatable;
+use Simtabi\Laranail\DbTools\Concerns\HasAuditObserver;
 
 /**
  * Uses the trait under test. The trait defers observe() via whenBooted(), so
@@ -150,8 +150,8 @@ final class HasAuditObserverTest extends TestCase
 
         $dispatcher = TraitAuditedFixture::getEventDispatcher();
 
-        self::assertTrue($dispatcher->hasListeners('eloquent.creating: '.TraitAuditedFixture::class));
-        self::assertTrue($dispatcher->hasListeners('eloquent.updating: '.TraitAuditedFixture::class));
+        self::assertTrue($dispatcher->hasListeners('eloquent.creating: ' . TraitAuditedFixture::class));
+        self::assertTrue($dispatcher->hasListeners('eloquent.updating: ' . TraitAuditedFixture::class));
     }
 
     public function test_trait_stamps_audit_columns_under_auth(): void
@@ -169,8 +169,8 @@ final class HasAuditObserverTest extends TestCase
     {
         $dispatcher = ExplicitAuditedFixture::getEventDispatcher();
 
-        self::assertTrue($dispatcher->hasListeners('eloquent.creating: '.ExplicitAuditedFixture::class));
-        self::assertTrue($dispatcher->hasListeners('eloquent.updating: '.ExplicitAuditedFixture::class));
+        self::assertTrue($dispatcher->hasListeners('eloquent.creating: ' . ExplicitAuditedFixture::class));
+        self::assertTrue($dispatcher->hasListeners('eloquent.updating: ' . ExplicitAuditedFixture::class));
     }
 
     public function test_stamps_created_by_and_updated_by_under_auth(): void

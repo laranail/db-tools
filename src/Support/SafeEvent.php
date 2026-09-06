@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Simtabi\Laranail\DbTools\Support;
 
-use Illuminate\Container\Container;
 use Throwable;
+use Illuminate\Container\Container;
 
 /**
  * Fire an event only if an event dispatcher is actually bound, swallowing any

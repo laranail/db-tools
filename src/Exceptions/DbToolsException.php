@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Simtabi\Laranail\DbTools\Exceptions;
 
-use RuntimeException;
 use Throwable;
+use RuntimeException;
 
 /**
  * Base exception for laranail/db-tools.
@@ -16,7 +16,7 @@ use Throwable;
 class DbToolsException extends RuntimeException
 {
     /**
-     * @param  array<string, mixed>  $context
+     * @param array<string, mixed> $context
      */
     public function __construct(
         string $message = '',
@@ -43,12 +43,12 @@ class DbToolsException extends RuntimeException
     public function toLogContext(): array
     {
         return [
-            'exception' => static::class,
-            'code' => $this->getCode(),
-            'context' => $this->context,
+            'exception'    => static::class,
+            'code'         => $this->getCode(),
+            'context'      => $this->context,
             'user_message' => $this->userMessage,
-            'file' => $this->getFile(),
-            'line' => $this->getLine(),
+            'file'         => $this->getFile(),
+            'line'         => $this->getLine(),
         ];
     }
 }
