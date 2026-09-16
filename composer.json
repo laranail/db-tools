@@ -38,7 +38,7 @@
     },
     "require": {
         "php": "^8.4.1 || ^8.5",
-        "brick/money": "^0.13 || ^0.14",
+        "brick/money": "^0.13 || ^0.14 || ^0.15",
         "illuminate/database": "^13.0",
         "illuminate/support": "^13.0",
         "ramsey/uuid": "^4.7",
