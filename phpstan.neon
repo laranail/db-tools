@@ -8,6 +8,13 @@ parameters:
     excludePaths:
         - vendor
     ignoreErrors:
+        # larastan validates a view-string literal against a skeleton app that never
+        # boots this package's provider, so a namespace registered at RUNTIME is
+        # invisible to it and every `view()` / `View::make()` call reads as an error.
+        # The views exist; the suite renders them. Broad on purpose -- the narrow
+        # forms missed `static method`, `Contracts\View\Factory` and the helper,
+        # each of which had to be discovered from a red run.
+        - '#expects view-string, string given#'
         # Generic array value types in docblocks are not enforced (the public
         # API uses plain `array` throughout); not a correctness concern.
         -
@@ -33,3 +40,8 @@ parameters:
             identifier: method.notFound
             path: src/Schema/FieldGroupMacros.php
     treatPhpDocTypesAsCertain: false
+
+    # Required BECAUSE of the ignore above: only larastan 3.x emits that error, so
+    # where an older one is installed the pattern would itself become an
+    # unmatched-ignore ERROR -- moving the failure rather than fixing it.
+    reportUnmatchedIgnoredErrors: false
