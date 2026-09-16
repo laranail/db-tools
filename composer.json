@@ -55,8 +55,7 @@
         "phpstan/phpstan": "^2.0",
         "phpunit/phpunit": "^12.5",
         "rector/rector": "^2.5.8",
-        "roave/security-advisories": "dev-latest",
-        "laranail/package-tools": "^0.1"
+        "roave/security-advisories": "dev-latest"
     },
     "autoload": {
         "psr-4": {
