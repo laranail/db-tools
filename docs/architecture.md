@@ -39,33 +39,67 @@ Notably, `DatabaseTableVerifier` is constructed with the connection tester and
 schema inspector contracts injected, so it composes the other two services
 rather than re-querying the database directly.
 
-## Independence invariant
+## Dependency posture
 
-`db-tools` is genuinely **independent**: it depends only on `illuminate/*`
-plus a few small utility libraries (`ramsey/uuid`, `symfony/uid`,
-`spatie/laravel-sluggable`). It **never** depends on `laranail/package-tools`
-or any other Laranail package, and nothing in this package reaches into one.
-That separation is deliberate and load-bearing — it is what lets you pull these
-database utilities into any Laravel app without dragging in the package-author
-toolchain.
+`db-tools` is deliberately **light**, but it is no longer dependency-free. It
+depends on `illuminate/*`, a few small utility libraries (`ramsey/uuid`,
+`symfony/uid`, `spatie/laravel-sluggable`), and exactly one Laranail package:
 
-The division of labour across the suite reflects this: **seeding** lives in
-`laranail/package-tools`, and the **seed console formatter** lives in
-`laranail/console` — neither belongs here. Every PR that touches
-`composer.json` is reviewed against this invariant, and the `require` block must
-stay free of any `laranail/*` entry.
+| Dependency | What it is here for |
+|---|---|
+| `laranail/package-tools` | the provider base (`PackageServiceProvider` + `Package`), which mints the vendor-scoped config key and publish tags; the Artisan command base, which carries `SupportsNamespacedNames`; and `Commands\Concerns\ReadsOptions` |
 
-The invariant has been tested against a real case. In 0.9.0 this package's publish tags were bare
-(`db-tools-config`), which is exactly the flat-global-map collision the family's naming convention
-exists to prevent, and the obvious fix was to extend `laranail/package-tools`, which mints namespaced
-tags automatically. It was costed and rejected: extending removed about sixteen lines of registration
-plumbing, and the naming guard that now enforces the tags needs no dependency at all — it reads
-Laravel's own `ServiceProvider::publishableGroups()` and `pathsToPublish()`. Sixteen lines is not
-worth handing every consumer a package-author toolchain they have no use for.
+That it is exactly one is deliberate. `ReadsOptions` was moved out of this
+package into `laranail/package-tools` rather than `laranail/console`, even
+though console is where command concerns otherwise live, because this package
+already required package-tools and so the move cost consumers nothing. Routing
+it through console would have meant a second Laranail dependency -- and
+console's `require` is not a subset of package-tools', so it would have been new
+weight reaching every consumer of this package for three accessors.
 
-The measurement is the part worth keeping: before taking a `laranail/*` dependency here, write down
-what it actually removes, and check whether the thing you want can be asserted against the framework
-instead.
+### What this section used to say, and why it changed
+
+Until 0.9.0 this section asserted a hard **independence invariant**: that
+`db-tools` never depended on `laranail/package-tools` or any other Laranail
+package, and that the `require` block must stay free of every `laranail/*`
+entry. That invariant was real, and it was argued for here on a specific case —
+0.9.0's bare publish tags (`db-tools-config`) were the flat-global-map collision
+the family's naming convention exists to prevent, and extending
+`laranail/package-tools` (which mints namespaced tags automatically) was costed
+and rejected because it removed about sixteen lines of registration plumbing and
+the naming guard needed no dependency at all.
+
+**That decision was then reversed, and this page was not updated.** 0.9.0 itself
+shipped `laranail/package-tools` in `require` and made
+`DbToolsServiceProvider` extend `PackageServiceProvider` — the exact change the
+paragraph above had rejected. The prose kept asserting the invariant for three
+weeks while the manifest contradicted it, and a local copy of
+`SupportsNamespacedNames` kept citing the invariant as its reason to exist.
+
+The lesson is narrower than "invariants are bad": **an invariant that lives only
+in prose is not enforced, and a reversal will not update it.** If this posture
+is to become a rule again, it needs a test that reads `composer.json`, not a
+paragraph.
+
+### What still holds
+
+The reasoning that produced the original invariant has not gone away, and it is
+still the right question to ask before adding a dependency here:
+
+> Before taking a `laranail/*` dependency, write down what it actually removes,
+> and check whether the thing you want can be asserted against the framework
+> instead.
+
+Concretely, for this package:
+
+- **Consumers pull this package for database utilities**, often without wanting
+  a package-author toolchain. Keep the dependency list short and justify each
+  entry by what it deletes, not by what it tidies.
+- **The naming guard stays framework-level.** `NamingConventionTest` reads
+  Laravel's own `ServiceProvider::publishableGroups()` and `pathsToPublish()`, so
+  it needs no Laranail dependency and would survive dropping one.
+- **Seeding is not moving here.** It lives in `laranail/package-tools`, and the
+  seed console formatter lives in `laranail/console`.
 
 ## Contracts
 

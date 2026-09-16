@@ -4,12 +4,10 @@ declare(strict_types=1);
 
 namespace Simtabi\Laranail\DbTools\Console;
 
-use Illuminate\Console\Command;
 use Simtabi\Laranail\DbTools\Backup\SqlFileRestorer;
-use Simtabi\Laranail\DbTools\Console\Concerns\ReadsOptions;
+use Simtabi\Laranail\Package\Tools\Commands\Command;
 use Simtabi\Laranail\DbTools\Exceptions\CleanDatabaseException;
 use Simtabi\Laranail\DbTools\Backup\Contracts\BackupManagerInterface;
-use Simtabi\Laranail\DbTools\Console\Concerns\SupportsNamespacedNames;
 use Simtabi\Laranail\DbTools\Schema\Contracts\DatabaseTableVerifierInterface;
 use Simtabi\Laranail\DbTools\Services\Contracts\CleanDatabaseServiceInterface;
 
@@ -25,9 +23,6 @@ use Simtabi\Laranail\DbTools\Services\Contracts\CleanDatabaseServiceInterface;
  */
 final class DbToolsCommand extends Command
 {
-    use ReadsOptions;
-    use SupportsNamespacedNames;
-
     /** @var string */
     protected $signature = 'laranail::db-tools.db
         {action : One of import|export|restore|clean}

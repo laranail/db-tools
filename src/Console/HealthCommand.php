@@ -4,11 +4,9 @@ declare(strict_types=1);
 
 namespace Simtabi\Laranail\DbTools\Console;
 
-use Illuminate\Console\Command;
 use Simtabi\Laranail\DbTools\Schema\SchemaStatus;
+use Simtabi\Laranail\Package\Tools\Commands\Command;
 use Simtabi\Laranail\DbTools\Support\ConnectionContext;
-use Simtabi\Laranail\DbTools\Console\Concerns\ReadsOptions;
-use Simtabi\Laranail\DbTools\Console\Concerns\SupportsNamespacedNames;
 use Simtabi\Laranail\DbTools\Schema\Contracts\SchemaReadinessInterface;
 use Simtabi\Laranail\DbTools\Guard\Contracts\DatabaseAvailabilityInterface;
 
@@ -20,9 +18,6 @@ use Simtabi\Laranail\DbTools\Guard\Contracts\DatabaseAvailabilityInterface;
  */
 final class HealthCommand extends Command
 {
-    use ReadsOptions;
-    use SupportsNamespacedNames;
-
     /** @var string */
     protected $signature = 'laranail::db-tools.health
         {--connection= : Database connection name (defaults to the app default)}
