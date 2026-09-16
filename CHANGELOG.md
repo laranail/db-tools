@@ -5,6 +5,52 @@ All notable changes to `laranail/db-tools` are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+
+- **`Console\Concerns\ReadsOptions` moved to `laranail/package-tools`**, as
+  `Commands\Concerns\ReadsOptions`. It was the only copy of it in the family and
+  nothing else could reach it; it is not database-specific, so it moved out.
+
+  It went to `package-tools` rather than to `laranail/console`, where command
+  concerns otherwise live, because this package already required package-tools
+  — so **the manifest is unchanged by this release**. Console would have been a
+  second Laranail dependency, and its `require` is not a subset of
+  package-tools', so it would have added real weight for every consumer of this
+  package in exchange for three accessors.
+
+- **The two Artisan commands extend `laranail/package-tools`' command base**
+  rather than Laravel's directly. That base carries both concerns —
+  `SupportsNamespacedNames` and `ReadsOptions` — so the commands declare
+  neither: the local `Console\Concerns\SupportsNamespacedNames` is gone, and
+  the option accessors arrive through the base rather than through a `use`.
+
+### Removed
+
+- **`Simtabi\Laranail\DbTools\Console\Concerns\ReadsOptions`** — moved to
+  `Simtabi\Laranail\Package\Tools\Commands\Concerns\ReadsOptions`.
+- **`Simtabi\Laranail\DbTools\Console\Concerns\SupportsNamespacedNames`** — use
+  `Simtabi\Laranail\Package\Tools\Commands\Concerns\SupportsNamespacedNames`,
+  or extend that package's command base, which applies it.
+
+  Both were `protected`/internal concerns on `final` commands, so nothing outside
+  this package could have been using them; they are listed for completeness.
+
+### Fixed
+
+- **The independence invariant in `docs/architecture.md` and `CONTRIBUTING.md` was
+  describing a package that no longer existed.** Both asserted that `require` held
+  no `laranail/*` entry; 0.9.0 put `laranail/package-tools` there and made the
+  provider extend `PackageServiceProvider`, and neither document was updated. The
+  local `SupportsNamespacedNames` cited that invariant as its reason to exist, and
+  the shared naming-conformance docblock — copied verbatim into four packages —
+  repeated the claim family-wide. Replaced with the dependency posture as it
+  actually is, and with the reasoning that is still worth applying.
+
+- `CONTRIBUTING.md` stated a PHP `^8.3` floor; the manifest has required
+  `^8.4.1 || ^8.5` since the package-tools dependency landed.
+
 ## [0.9.0] - 2026-08-26
 
 Built on `laranail/package-tools` rather than beside it.

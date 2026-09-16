@@ -27,18 +27,27 @@ composer test
 
 ## Coding standards
 
-- PHP `^8.3`, Laravel `^13.0`.
+- PHP `^8.4.1 || ^8.5`, Laravel `^13.0`.
 - `declare(strict_types=1);` on every file.
 - `#[\Override]` on every overriding method.
 - PHPStan level 8 must be clean.
 
-## Independence invariant
+## Dependency posture
 
-This package has **no dependency** on `laranail/package-tools` or any
-other Laranail package. Anything you add must keep it that way —
-optional integration with sister packages happens via thin glue traits
-*in those packages*, never the reverse. If a feature requires
-`package-tools`, it belongs in `package-tools`, not here.
+This package depends on exactly one Laranail package,
+`laranail/package-tools` (the provider base, the command base, and
+`ReadsOptions`). It did not always: an **independence invariant**
+forbade every `laranail/*` entry
+in `require` until 0.9.0 reversed it, and the prose here went on
+asserting the invariant after the manifest stopped honouring it. Do
+not restore that wording without a test that enforces it.
+
+What survives is the question, not the rule: **before adding a
+`laranail/*` dependency, write down what it actually removes.** This
+package is pulled in for database utilities, frequently by consumers
+who have no use for a package-author toolchain, so each entry needs to
+earn its place by deleting code rather than by tidying it. A feature
+that belongs to `package-tools` still belongs there, not here.
 
 ## Code of conduct
 
