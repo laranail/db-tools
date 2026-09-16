@@ -3,15 +3,19 @@
 declare(strict_types=1);
 
 use Symfony\Component\Console\Command\Command as SymfonyCommand;
-use Simtabi\Laranail\DbTools\Console\Concerns\SupportsNamespacedNames as NamespacedNames;
+use Simtabi\Laranail\Package\Tools\Commands\Concerns\SupportsNamespacedNames as NamespacedNames;
 
 /**
  * Conformance for the `laranail::<slug>.<command>` naming trait.
  *
- * The family carries several copies of this trait, because three packages cannot take a dependency
- * on `laranail/console` for stated reasons -- `laranail/package-tools` must stay free of any
- * `laranail/*` requirement, `laranail/db-tools` documents an independence invariant, and
- * `laranail/enumerator` targets PHP ^8.3 while console targets ^8.4.1.
+ * The family carries several copies of this trait, because two packages cannot take a dependency on
+ * `laranail/console` for stated reasons -- `laranail/package-tools` must stay free of any
+ * `laranail/*` requirement, and `laranail/enumerator` targets PHP ^8.3 while console targets ^8.4.1.
+ *
+ * This package no longer carries one. Its copy was justified by an independence invariant that
+ * stopped holding when `laranail/package-tools` entered `require`; it now imports package-tools'.
+ * The conformance still runs here, against the imported trait, because what it guards is the
+ * behaviour this package's commands depend on, not the file.
  *
  * Copies are tolerable. Copies that quietly stop agreeing are not: one of them once read an
  * undeclared `$commandAliases` and fataled at boot for any command that used it without declaring
