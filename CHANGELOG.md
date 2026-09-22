@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **`tests.yml` no longer skips a markdown-only pull request.** The `pest`
+  contexts it produces are required by branch protection, and
+  `paths-ignore: ['**.md']` meant a docs-only change never produced them.
+
+  A required check that never reports does not fail a pull request -- it blocks
+  it indefinitely while every check that *did* run shows green, which is why
+  this presented as "mergeable but blocked" rather than as a failure. The filter
+  is gone and the reason it must not come back is now a comment in the workflow.
+
 ### Changed
 
 - **`Console\Concerns\ReadsOptions` moved to `laranail/package-tools`**, as

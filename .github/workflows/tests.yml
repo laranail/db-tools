@@ -3,8 +3,19 @@ name: Tests
 on:
   pull_request:
     branches: [main]
-    paths-ignore:
-      - '**.md'
+    # No `paths-ignore` here, deliberately -- do not add one back.
+    #
+    # The `pest / PHP ...` contexts this workflow produces are REQUIRED by this
+    # repository's branch protection. A filter that skips the job does not make
+    # the check pass; it means the context never arrives, and a required context
+    # that never reports blocks a pull request FOREVER rather than failing it.
+    #
+    # That is how three markdown-only pull requests in this family ended up
+    # reading "green but blocked": every check that ran was green, and the ones
+    # that mattered had never run at all.
+    #
+    # If a filter is wanted here, unrequire the contexts in branch protection
+    # first, or publish them from a stub job on the inverse filter.
   workflow_dispatch:
 
 concurrency:
