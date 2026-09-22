@@ -4,7 +4,7 @@
 [![Static analysis](https://github.com/laranail/db-tools/actions/workflows/static-analysis.yml/badge.svg)](https://github.com/laranail/db-tools/actions/workflows/static-analysis.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-`laranail/db-tools` is not published to Packagist, so there is no registry-version badge to show — see [Install](#install).
+`laranail/db-tools` is not published to Packagist, so there is no registry-version badge to show: see [Install](#install).
 
 > Independent, framework-agnostic database utilities for Laravel — model traits (UUID/NanoID/ULID keys, JSON accessors, slugs, soft-archiving, inheritance-friendly fillable/hidden/casts/defaults), money & datetime casts, schema macros, an audit observer, backup/restore, a database CLI, cursor/offset pagination, and inspection services.
 
