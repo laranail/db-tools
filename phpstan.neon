@@ -21,6 +21,13 @@ parameters:
         -
             identifier: argument.type
             path: src/Backup/SqlFileRestorer.php
+        # PortableQuery builds its LIKE clauses from a column name passed through
+        # the grammar's wrap() and fixed fragments; the user's value is always a
+        # bound parameter, never part of the SQL. The column is dynamic by design,
+        # so the SQL cannot be a literal-string. Scoped to that one message.
+        -
+            message: '#Illuminate\\Database\\Query\\Expression constructor expects TValue of float\|int\|literal-string#'
+            path: src/Query/PortableQuery.php
         # The archive scope dispatches builder/model methods supplied by the
         # HasArchiver trait at runtime (the same pattern as Laravel's own
         # SoftDeletingScope) — not statically resolvable.

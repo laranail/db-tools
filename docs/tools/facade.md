@@ -178,6 +178,23 @@ DbTools::withoutForeignKeyChecks(function (): void {
 > For nesting-aware control on a single instance, see the
 > [`ManagesForeignKeyChecks`](traits.md#managesforeignkeychecks) trait.
 
+## Table statistics and triggers
+
+### `tableSizes(array $tables, ?string $connection = null): array`
+
+Returns the storage size in bytes of each table on every driver, or `null` when a table is missing.
+See [portable-sql.md](portable-sql.md#table-sizes-and-planner-statistics-tablestatistics).
+
+### `analyzeTables(array $tables, ?string $connection = null): void`
+
+Refreshes the query planner's statistics after a bulk load.
+
+### `withoutTriggers(string $table, array $triggers, Closure $callback, ?string $connection = null): mixed`
+
+Runs a bulk write with the table's row triggers suspended (PostgreSQL only). The callback receives
+whether suspension actually happened. See
+[portable-sql.md](portable-sql.md#suspending-triggers-during-a-bulk-load-triggersuspender).
+
 ## Service accessors
 
 These return the underlying service instances from the container, for when you

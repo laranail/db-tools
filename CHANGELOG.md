@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **`Query\PortableQuery`** registers the query-builder macros `whereLiteralLike()` and
+  `whereJsonArrayLiteralLike()`, with `or` variants. User input matches literally through a `!`
+  escape character that works on every driver. On PostgreSQL, JSON array elements are matched with
+  `json_array_elements_text(col::json)`, because `json` columns cannot reach `jsonb` functions.
+- **`Query\ChunkedWriter`** runs `insertOrIgnore()` and `upsert()` in chunks, so a bulk write stays
+  under each driver's bind-parameter cap.
+- **`DbTools::tableSizes()` and `DbTools::analyzeTables()`** (in `Schema\TableStatistics`) report
+  per-table storage and refresh planner statistics on PostgreSQL, MySQL, MariaDB and SQLite.
+  `tableSizes()` returns `null` for a missing table and never throws.
+- **`DbTools::withoutTriggers()`** (in `Schema\TriggerSuspender`) suspends a table's PostgreSQL row
+  triggers around a bulk write. The callback is told whether suspension happened, and the triggers
+  are always restored.
+- **A `drivers` CI job** runs the `drivers` test group against PostgreSQL 17, MySQL 8.4 and
+  MariaDB 11.4, and `tests/TestCase.php` honours `DB_CONNECTION`. Until now the suite ran on SQLite
+  only, which cannot prove a dialect right.
+
 ### Fixed
 
 - **`tests.yml` no longer skips a markdown-only pull request.** The `pest`

@@ -12,6 +12,7 @@ use Illuminate\Foundation\AliasLoader;
 use Simtabi\Laranail\Package\Tools\Package;
 use Illuminate\Console\Events\CommandStarting;
 use Simtabi\Laranail\DbTools\Guard\DatabaseGuard;
+use Simtabi\Laranail\DbTools\Query\PortableQuery;
 use Simtabi\Laranail\DbTools\Backup\BackupManager;
 use Simtabi\Laranail\DbTools\Console\HealthCommand;
 use Simtabi\Laranail\DbTools\Events\SchemaNotReady;
@@ -172,6 +173,7 @@ final class DbToolsServiceProvider extends PackageServiceProvider
         ConfiguredMorphsMacro::register();
         SoftDeleteHistoryMacro::register();
         FieldGroupMacros::register();
+        PortableQuery::register();
     }
 
     /**

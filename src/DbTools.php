@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Simtabi\Laranail\DbTools;
 
 use Closure;
+use Simtabi\Laranail\DbTools\Schema\TableStatistics;
+use Simtabi\Laranail\DbTools\Schema\TriggerSuspender;
 use Simtabi\Laranail\DbTools\Support\ConnectionContext;
 use Simtabi\Laranail\DbTools\Schema\SchemaReadinessReport;
 use Simtabi\Laranail\DbTools\Backup\Contracts\BackupManagerInterface;
@@ -254,6 +256,49 @@ class DbTools
     public static function withoutForeignKeyChecks(Closure $callback, ?string $connection = null): mixed
     {
         return ConnectionContext::for($connection)->schema()->withoutForeignKeyConstraints($callback);
+    }
+
+    // =========================================================================
+    // Table statistics and triggers
+    // =========================================================================
+
+    /**
+     * Storage size in bytes per table, on every supported driver; null when the
+     * table is missing or the driver cannot say.
+     *
+     * @param list<string> $tables
+     *
+     * @return array<string, int|null>
+     */
+    public static function tableSizes(array $tables, ?string $connection = null): array
+    {
+        return TableStatistics::sizes($tables, $connection);
+    }
+
+    /**
+     * Refresh planner statistics for the given tables (after a bulk load).
+     *
+     * @param list<string> $tables
+     */
+    public static function analyzeTables(array $tables, ?string $connection = null): void
+    {
+        TableStatistics::analyze($tables, $connection);
+    }
+
+    /**
+     * Run a bulk write with the table's row triggers suspended (PostgreSQL). The
+     * callback receives whether suspension actually happened.
+     *
+     * @template TReturn
+     *
+     * @param list<string> $triggers
+     * @param Closure(bool): TReturn $callback
+     *
+     * @return TReturn
+     */
+    public static function withoutTriggers(string $table, array $triggers, Closure $callback, ?string $connection = null): mixed
+    {
+        return TriggerSuspender::run($table, $triggers, $callback, $connection);
     }
 
     // =========================================================================
