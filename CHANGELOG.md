@@ -5,6 +5,22 @@ All notable changes to `laranail/db-tools` are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- **`laranail.db-tools.foreign_keys.postgres_mode`** (`defer` | `replica`, env
+  `DB_TOOLS_POSTGRES_FOREIGN_KEYS`).
+  - `withoutForeignKeyChecks()` on PostgreSQL was Laravel's `SET CONSTRAINTS ALL DEFERRED`, which
+    relaxes only DEFERRABLE constraints. An ordinary foreign key stayed enforced inside the block,
+    unlike on every other driver, and nothing said so.
+  - `defer` remains the default and is now documented as exactly that.
+  - `replica` really switches foreign keys off, using `session_replication_role`. It also suspends
+    ordinary triggers, and needs a superuser or a PostgreSQL 15+ grant; without one it throws rather
+    than degrading to `defer`.
+  - `Schema\ForeignKeySwitch` is the one implementation behind both
+    `DbTools::withoutForeignKeyChecks()` and `ManagesForeignKeyChecks`.
+
 ## [0.1.1] - 2026-09-26
 
 ### Added

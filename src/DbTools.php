@@ -6,8 +6,8 @@ namespace Simtabi\Laranail\DbTools;
 
 use Closure;
 use Simtabi\Laranail\DbTools\Schema\TableStatistics;
+use Simtabi\Laranail\DbTools\Schema\ForeignKeySwitch;
 use Simtabi\Laranail\DbTools\Schema\TriggerSuspender;
-use Simtabi\Laranail\DbTools\Support\ConnectionContext;
 use Simtabi\Laranail\DbTools\Schema\SchemaReadinessReport;
 use Simtabi\Laranail\DbTools\Backup\Contracts\BackupManagerInterface;
 use Simtabi\Laranail\DbTools\Schema\Contracts\SchemaReadinessInterface;
@@ -245,7 +245,10 @@ class DbTools
     // =========================================================================
 
     /**
-     * Run a callback with foreign key constraints disabled (driver-aware).
+     * Run a callback with foreign key constraints disabled (driver-aware). On
+     * PostgreSQL this defers DEFERRABLE constraints unless
+     * `laranail.db-tools.foreign_keys.postgres_mode` is 'replica' -- see
+     * {@see ForeignKeySwitch}.
      *
      * @template TReturn
      *
@@ -255,7 +258,13 @@ class DbTools
      */
     public static function withoutForeignKeyChecks(Closure $callback, ?string $connection = null): mixed
     {
-        return ConnectionContext::for($connection)->schema()->withoutForeignKeyConstraints($callback);
+        ForeignKeySwitch::disable($connection);
+
+        try {
+            return $callback();
+        } finally {
+            ForeignKeySwitch::enable($connection);
+        }
     }
 
     // =========================================================================
