@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Simtabi\Laranail\DbTools\Concerns;
 
 use Closure;
-use Illuminate\Database\Schema\Builder;
+use Simtabi\Laranail\DbTools\Schema\ForeignKeySwitch;
 use Simtabi\Laranail\DbTools\Support\ConnectionContext;
 
 /**
@@ -67,7 +67,7 @@ trait ManagesForeignKeyChecks
         $key = $this->foreignKeyConnectionKey($connection);
 
         if ((self::$foreignKeyNestingLevels[$key] ?? 0) === 0) {
-            $this->schemaFor($connection)->disableForeignKeyConstraints();
+            ForeignKeySwitch::disable($connection);
         }
 
         self::$foreignKeyNestingLevels[$key] = (self::$foreignKeyNestingLevels[$key] ?? 0) + 1;
@@ -83,7 +83,7 @@ trait ManagesForeignKeyChecks
         $level = max(0, (self::$foreignKeyNestingLevels[$key] ?? 0) - 1);
 
         if ($level === 0) {
-            $this->schemaFor($connection)->enableForeignKeyConstraints();
+            ForeignKeySwitch::enable($connection);
             unset(self::$foreignKeyNestingLevels[$key]);
 
             return;
@@ -98,13 +98,5 @@ trait ManagesForeignKeyChecks
     private function foreignKeyConnectionKey(?string $connection): string
     {
         return ConnectionContext::for($connection)->key();
-    }
-
-    /**
-     * Resolve the schema builder for the given connection.
-     */
-    private function schemaFor(?string $connection): Builder
-    {
-        return ConnectionContext::for($connection)->schema();
     }
 }

@@ -164,9 +164,16 @@ See [backup-restore.md](backup-restore.md) for per-driver detail.
 
 ### `withoutForeignKeyChecks(Closure $callback): mixed`
 
-Runs the callback with foreign key constraints disabled (driver-aware, via
-Laravel's `Schema::withoutForeignKeyConstraints()`). Returns the callback's
-return value.
+Runs the callback with foreign key constraints disabled, and returns the callback's
+return value. MySQL, MariaDB and SQLite switch foreign keys off outright.
+
+**PostgreSQL cannot switch off only foreign keys**, so it has two modes, set with
+`laranail.db-tools.foreign_keys.postgres_mode` (env `DB_TOOLS_POSTGRES_FOREIGN_KEYS`):
+
+| Mode | Statement | Effect |
+|---|---|---|
+| `defer` (default) | `SET CONSTRAINTS ALL DEFERRED` | Only `DEFERRABLE` constraints are relaxed, until the end of the transaction. **An ordinary foreign key is still enforced immediately.** Triggers keep firing. |
+| `replica` | `SET session_replication_role = replica` | Foreign keys really are off. So is every ordinary trigger on every table while the callback runs, so data a trigger maintains is not maintained. Needs a superuser or, on PostgreSQL 15+, a role granted `SET` on the parameter. A role without it throws `DbToolsException`, and never silently falls back to `defer`. |
 
 ```php
 DbTools::withoutForeignKeyChecks(function (): void {

@@ -100,6 +100,29 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Foreign keys on PostgreSQL
+    |--------------------------------------------------------------------------
+    |
+    | How withoutForeignKeyChecks() treats PostgreSQL, which cannot switch off
+    | only foreign keys:
+    |
+    | defer    -- SET CONSTRAINTS ALL DEFERRED. Only DEFERRABLE constraints are
+    |             relaxed, until the end of the transaction. Triggers keep firing.
+    | replica  -- SET session_replication_role = replica. Foreign keys really are
+    |             off -- and so is every ordinary trigger, on every table, while
+    |             the block runs. Needs a superuser or, on PostgreSQL 15+, a role
+    |             granted SET on the parameter; without it the call throws.
+    |
+    | MySQL, MariaDB and SQLite ignore this and switch foreign keys off outright.
+    |
+    */
+
+    'foreign_keys' => [
+        'postgres_mode' => env('DB_TOOLS_POSTGRES_FOREIGN_KEYS', 'defer'),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Backup & restore
     |--------------------------------------------------------------------------
     |
