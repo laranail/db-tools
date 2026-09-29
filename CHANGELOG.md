@@ -144,8 +144,8 @@ Built on `laranail/package-tools` rather than beside it.
 ## [0.8.0] - 2026-08-14
 
 The database scaffolding every consumer was re-inventing, taken into the package
-that should have held it. Nothing here is a rewrite: it is
-`adelsaiq.ai`'s hand-rolled migration and seeder bases, generalised, plus the
+that should have held it. Nothing here is a rewrite: it is a consuming
+application's hand-rolled migration and seeder bases, generalised, plus the
 coverage gap they all shared.
 
 ### Added
