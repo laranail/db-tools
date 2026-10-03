@@ -18,6 +18,19 @@ composer require laranail/db-tools
 
 `DbToolsServiceProvider` is auto-discovered and registers the schema macros at boot.
 
+## Quick start
+
+```php
+use Simtabi\Laranail\DbTools\DbTools;
+
+DbTools::testConnection();                                   // true
+DbTools::getDriver();                                        // 'pgsql'
+DbTools::getMissingTables(['users', 'orders', 'invoices']);  // ['invoices']
+DbTools::backup(storage_path('backups/nightly.sql'));        // true
+```
+
+The full API is in [The DbTools facade](docs/tools/facade.md); everything else is in the [documentation index](#documentation).
+
 ## <a name="documentation"></a>Documentation
 
 Full documentation is at **[opensource.simtabi.com/documentation/laranail/db-tools](https://opensource.simtabi.com/documentation/laranail/db-tools/)** — installation, getting started, the model traits, casts, schema macros, the audit observer, the migration and seeder bases, backup/restore, the database CLI, configuration, and the release process.
