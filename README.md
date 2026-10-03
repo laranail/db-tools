@@ -18,7 +18,26 @@ composer require laranail/db-tools
 
 `DbToolsServiceProvider` is auto-discovered and registers the schema macros at boot.
 
-## Quick start
+## Quick start guide and usage
+
+### Getting started
+
+Nothing is required: the defaults work as installed. Two optional steps:
+
+1. Publish the config to tune the key type, audit columns, money currency and backup behaviour:
+
+   ```bash
+   php artisan vendor:publish --tag=laranail::db-tools-config
+   ```
+
+2. If you use the soft-delete restore history, publish its migration and run it:
+
+   ```bash
+   php artisan vendor:publish --tag=laranail::db-tools-migrations
+   php artisan migrate
+   ```
+
+### Usage
 
 ```php
 use Simtabi\Laranail\DbTools\DbTools;
@@ -27,6 +46,17 @@ DbTools::testConnection();                                   // true
 DbTools::getDriver();                                        // 'pgsql'
 DbTools::getMissingTables(['users', 'orders', 'invoices']);  // ['invoices']
 DbTools::backup(storage_path('backups/nightly.sql'));        // true
+```
+
+The schema macros are available in any migration:
+
+```php
+Schema::create('orders', function (Blueprint $t): void {
+    $t->id();
+    $t->auditColumns();        // created_by, updated_by, deleted_by
+    $t->softDeletesWithUndo(); // deleted_at + restored_at
+    $t->timestamps();
+});
 ```
 
 The full API is in [The DbTools facade](docs/tools/facade.md); everything else is in the [documentation index](#documentation).
