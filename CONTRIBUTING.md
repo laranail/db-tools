@@ -1,5 +1,7 @@
 # Contributing
 
+Where this file is silent, the [laranail contributing guide](https://github.com/laranail/.github/blob/HEAD/CONTRIBUTING.md) applies.
+
 Thank you for your interest in `laranail/db-tools`.
 
 ## Quick start
