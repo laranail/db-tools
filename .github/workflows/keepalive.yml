@@ -1,0 +1,19 @@
+name: Keepalive
+
+# GitHub disables a public repository's scheduled workflows after 60 days with
+# no push, without telling anyone. This re-enables them weekly, which resets
+# that clock. The logic, and what it deliberately leaves alone, is in
+# laranail/.github's reusable keepalive.yml.
+
+on:
+  schedule:
+    - cron: '17 5 * * 1'
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  keepalive:
+    permissions:
+      actions: write
+    uses: laranail/.github/.github/workflows/keepalive.yml@main
