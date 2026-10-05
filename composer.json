@@ -115,10 +115,6 @@
             "url": "https://github.com/laranail/package-tools"
         },
         {
-            "type": "vcs",
-            "url": "https://github.com/laranail/console"
-        },
-        {
             "type": "composer",
             "url": "https://repo.packagist.org",
             "exclude": [
