@@ -11,6 +11,10 @@ when it is `null`.
 use Simtabi\Laranail\DbTools\DbTools;
 ```
 
+Import the class as above. The global `DbTools` alias that package discovery registers for
+`Facades\DbToolsFacade` is deprecated, because a bare global alias can collide with the
+application's own or another package's. It still resolves until the next minor after 0.1.
+
 ## Connection testing
 
 ### `testConnection(?string $connection = null): bool`

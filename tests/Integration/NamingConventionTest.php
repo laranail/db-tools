@@ -7,6 +7,7 @@ namespace Simtabi\Laranail\DbTools\Tests\Integration;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Contracts\Console\Kernel;
 use Simtabi\Laranail\DbTools\Tests\TestCase;
+use Simtabi\Laranail\DbTools\Facades\DbToolsFacade;
 use Simtabi\Laranail\DbTools\Providers\DbToolsServiceProvider;
 
 /**
@@ -64,5 +65,17 @@ final class NamingConventionTest extends TestCase
         foreach ($mine as $name) {
             $this->assertStringStartsWith('laranail::db-tools.', $name);
         }
+    }
+
+    public function test_it_still_auto_registers_the_deprecated_global_facade_alias(): void
+    {
+        // Deprecated, not removed: hosts calling the bare `DbTools` keep working until the next minor
+        // after 0.1. Package discovery reads this manifest entry, so it is the registry to guard.
+        $composer = json_decode((string) file_get_contents(dirname(__DIR__, 2) . '/composer.json'), true);
+
+        $this->assertSame(
+            DbToolsFacade::class,
+            $composer['extra']['laravel']['aliases']['DbTools'] ?? null,
+        );
     }
 }

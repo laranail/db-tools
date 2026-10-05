@@ -10,8 +10,13 @@ schema query and backup through the `DbTools` class. For the full reference see 
 composer require laranail/db-tools
 ```
 
-The service provider and the `DbTools` facade alias are auto-discovered, so nothing needs registering
-by hand. Requirements and what the provider binds are in [Installation](installation.md).
+The service provider is auto-discovered, so nothing needs registering by hand. Import the class you
+call, `use Simtabi\Laranail\DbTools\DbTools;`, rather than relying on a global alias. Requirements
+and what the provider binds are in [Installation](installation.md).
+
+> The global `DbTools` alias (to `Facades\DbToolsFacade`) is still auto-registered, and deprecated.
+> Global class aliases share one flat registry with the application and every other package, so a
+> bare `DbTools` can be taken by someone else. It keeps working until the next minor after 0.1.
 
 ## 2. Configure (optional)
 

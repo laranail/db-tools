@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **`MaintenanceService` dispatches vendor-scoped string events**: `laranail-db-tools.cache.clearing`,
+  `laranail-db-tools.cache.cleared`, `laranail-db-tools.logs.clearing` and
+  `laranail-db-tools.logs.cleared`, named by constants on the new `Events\MaintenanceEventNames`.
+  Event names share one flat registry with the host, so a bare `logs:cleared` can be someone else's.
+
+### Deprecated
+
+- The bare `cache:clearing`, `cache:cleared`, `logs:clearing` and `logs:cleared` events. Each is still
+  dispatched right after its scoped event, until the next minor after 0.1. A listener on a bare
+  `logs:*` name gets one `E_USER_DEPRECATED` notice per process; the `cache:*` names never warn,
+  because Laravel's own `cache:clear` command dispatches them too.
+- The global `DbTools` class alias that package discovery registers for `Facades\DbToolsFacade`.
+  It is still registered and still works; import `Simtabi\Laranail\DbTools\DbTools` (or the facade
+  class) instead. A bare global alias can be claimed by the application or another package.
+
 ## [0.1.2] - 2026-09-26
 
 ### Added
@@ -54,6 +71,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   this presented as "mergeable but blocked" rather than as a failure. The filter
   is gone and the reason it must not come back is now a comment in the workflow.
 
+- **The independence invariant in `docs/architecture.md` and `CONTRIBUTING.md` was
+  describing a package that no longer existed.** Both asserted that `require` held
+  no `laranail/*` entry; 0.9.0 put `laranail/package-tools` there and made the
+  provider extend `PackageServiceProvider`, and neither document was updated. The
+  local `SupportsNamespacedNames` cited that invariant as its reason to exist, and
+  the shared naming-conformance docblock — copied verbatim into four packages —
+  repeated the claim family-wide. Replaced with the dependency posture as it
+  actually is, and with the reasoning that is still worth applying.
+
+- `CONTRIBUTING.md` stated a PHP `^8.3` floor; the manifest has required
+  `^8.4.1 || ^8.5` since the package-tools dependency landed.
+
 ### Changed
 
 - **`Console\Concerns\ReadsOptions` moved to `laranail/package-tools`**, as
@@ -83,20 +112,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
   Both were `protected`/internal concerns on `final` commands, so nothing outside
   this package could have been using them; they are listed for completeness.
-
-### Fixed
-
-- **The independence invariant in `docs/architecture.md` and `CONTRIBUTING.md` was
-  describing a package that no longer existed.** Both asserted that `require` held
-  no `laranail/*` entry; 0.9.0 put `laranail/package-tools` there and made the
-  provider extend `PackageServiceProvider`, and neither document was updated. The
-  local `SupportsNamespacedNames` cited that invariant as its reason to exist, and
-  the shared naming-conformance docblock — copied verbatim into four packages —
-  repeated the claim family-wide. Replaced with the dependency posture as it
-  actually is, and with the reasoning that is still worth applying.
-
-- `CONTRIBUTING.md` stated a PHP `^8.3` floor; the manifest has required
-  `^8.4.1 || ^8.5` since the package-tools dependency landed.
 
 ## [0.9.0] - 2026-08-26
 
@@ -325,6 +340,27 @@ was silently not happening.
     the next save, and invents values for columns a partial `select()` never
     loaded.
 
+- **`Support\ConnectionContext`** — the single place that answers "which
+  connection is this, and how is it configured". It replaces eight duplicated
+  null-connection normalisations in four spellings with three different
+  sentinels, plus ten redundant resolution ternaries. Both recent
+  wrong-connection bugs were instances of that duplication.
+- **`Support\SchemaColumnCache`** — one process-wide memo for column lookups,
+  deliberately a class rather than a trait static, because a static declared in
+  a trait is copied into every using class and a "clear everything" on the
+  trait would only clear one copy.
+- `Console\Concerns\ReadsOptions` — normalises `--flag=` (empty string) to
+  `null`, so a bare `--connection=` no longer forks caches keyed on the
+  resolved connection.
+- `HasSchemaInspection::schemaColumns()` / `hasSchemaColumn()` instance
+  accessors, for when the connection is set per instance (tenancy, a read
+  replica, `setConnection()`), and `clearAllSchemaCaches()`.
+- `HasArchiver::usesArchiving()`, `HasSoftDeletesWithUndo::getRestoredAtColumn()`.
+- `db-tools.files.import_base` config key.
+- `?string $connection` on `DbTools::withoutForeignKeyChecks()` and
+  `InteractsWithDatabaseFile` (restoring into the wrong database is
+  destructive).
+
 ### Changed — breaking
 
 - **`Schema\Concerns\HasSchemaOperations`: all five methods gain a trailing
@@ -461,29 +497,6 @@ was silently not happening.
   values while reporting success. It also never called `syncOriginal()`, so
   `isModified()` reported unsaved changes on a model just read from the
   database.
-
-### Added
-
-- **`Support\ConnectionContext`** — the single place that answers "which
-  connection is this, and how is it configured". It replaces eight duplicated
-  null-connection normalisations in four spellings with three different
-  sentinels, plus ten redundant resolution ternaries. Both recent
-  wrong-connection bugs were instances of that duplication.
-- **`Support\SchemaColumnCache`** — one process-wide memo for column lookups,
-  deliberately a class rather than a trait static, because a static declared in
-  a trait is copied into every using class and a "clear everything" on the
-  trait would only clear one copy.
-- `Console\Concerns\ReadsOptions` — normalises `--flag=` (empty string) to
-  `null`, so a bare `--connection=` no longer forks caches keyed on the
-  resolved connection.
-- `HasSchemaInspection::schemaColumns()` / `hasSchemaColumn()` instance
-  accessors, for when the connection is set per instance (tenancy, a read
-  replica, `setConnection()`), and `clearAllSchemaCaches()`.
-- `HasArchiver::usesArchiving()`, `HasSoftDeletesWithUndo::getRestoredAtColumn()`.
-- `db-tools.files.import_base` config key.
-- `?string $connection` on `DbTools::withoutForeignKeyChecks()` and
-  `InteractsWithDatabaseFile` (restoring into the wrong database is
-  destructive).
 
 ### Performance
 

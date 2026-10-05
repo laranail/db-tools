@@ -74,9 +74,17 @@ $maintenance = app(MaintenanceServiceInterface::class);
 
 - **`clearCache(): bool`** — flush the cache store and remove compiled framework
   caches (`storage/framework/cache/facade-*.php`, `bootstrap/cache/*.php`), firing
-  `cache:clearing` / `cache:cleared` events.
+  `laranail-db-tools.cache.clearing` / `laranail-db-tools.cache.cleared`.
 - **`clearLogFiles(): bool`** — delete files under `storage/{clockwork,debugbar,logs}`
-  (preserving `.gitignore`), firing `logs:clearing` / `logs:cleared`.
+  (preserving `.gitignore`), firing `laranail-db-tools.logs.clearing` /
+  `laranail-db-tools.logs.cleared`.
+
+The names are constants on `Simtabi\Laranail\DbTools\Events\MaintenanceEventNames`. The bare
+`cache:clearing`, `cache:cleared`, `logs:clearing` and `logs:cleared` are deprecated and still
+dispatched, right after the scoped event, until the next minor after 0.1. A listener on a bare
+`logs:*` name gets one `E_USER_DEPRECATED` notice per process. The bare `cache:*` names never warn,
+because Laravel's own `cache:clear` command dispatches the same names and a listener on them is
+probably there for that.
 - **`deleteStorageSymlink(): bool`** — remove the `public/storage` symlink; `false`
   if it doesn't exist.
 
