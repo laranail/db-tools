@@ -13,6 +13,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `laranail-db-tools.cache.cleared`, `laranail-db-tools.logs.clearing` and
   `laranail-db-tools.logs.cleared`, named by constants on the new `Events\MaintenanceEventNames`.
   Event names share one flat registry with the host, so a bare `logs:cleared` can be someone else's.
+- `composer.json` no longer declares a `vcs` repository for `laranail/console`. db-tools does not
+  require console, and `laranail/package-tools` only suggests it, so nothing resolved through that
+  entry (`composer why laranail/console` finds nothing after a fresh update). This matches the
+  documented invariant that db-tools needs no `laranail/console`.
 
 ### Deprecated
 
