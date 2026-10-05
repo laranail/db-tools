@@ -5,6 +5,12 @@ All notable changes to `laranail/db-tools` are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+
+- `laravel/framework ^13.0` is now declared in `require`. `src/` uses `AliasLoader`, `Dispatchable` from `Illuminate\Foundation`, which no `illuminate/*` component ships, so the dependency only arrived through the host application.
+
 ## [0.1.3] - 2026-10-05
 
 ### Changed
