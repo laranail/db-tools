@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Event;
 use Simtabi\Laranail\DbTools\Tests\TestCase;
 use Simtabi\Laranail\DbTools\Services\MaintenanceService;
+use Simtabi\Laranail\DbTools\Events\MaintenanceEventNames;
 
 final class MaintenanceServiceTest extends TestCase
 {
@@ -50,8 +51,68 @@ final class MaintenanceServiceTest extends TestCase
         self::assertTrue(File::exists($this->base . '/storage/framework/cache/keep.txt'));
         self::assertFalse(File::exists($this->base . '/bootstrap/cache/services.php'));
 
+        Event::assertDispatched('laranail-db-tools.cache.clearing');
+        Event::assertDispatched('laranail-db-tools.cache.cleared');
+
+        // Deprecated bare names, still dispatched until the next minor after 0.1.
         Event::assertDispatched('cache:clearing');
         Event::assertDispatched('cache:cleared');
+    }
+
+    public function test_clear_log_files_dispatches_the_scoped_and_the_deprecated_events(): void
+    {
+        Event::fake();
+
+        self::assertTrue($this->service->clearLogFiles());
+
+        Event::assertDispatched('laranail-db-tools.logs.clearing');
+        Event::assertDispatched('laranail-db-tools.logs.cleared');
+        Event::assertDispatched('logs:clearing');
+        Event::assertDispatched('logs:cleared');
+    }
+
+    public function test_a_listener_on_a_deprecated_logs_event_is_warned_once(): void
+    {
+        MaintenanceEventNames::forgetWarnings();
+        Event::listen('logs:cleared', static fn (): null => null);
+
+        $notices = [];
+        set_error_handler(static function (int $level, string $message) use (&$notices): bool {
+            $notices[] = $message;
+
+            return true;
+        }, E_USER_DEPRECATED);
+
+        try {
+            $this->service->clearLogFiles();
+            $this->service->clearLogFiles();
+        } finally {
+            restore_error_handler();
+        }
+
+        self::assertCount(1, $notices);
+        self::assertStringContainsString('[logs:cleared]', $notices[0]);
+        self::assertStringContainsString('laranail-db-tools.logs.cleared', $notices[0]);
+    }
+
+    public function test_no_warning_without_a_listener_on_a_deprecated_name(): void
+    {
+        MaintenanceEventNames::forgetWarnings();
+
+        $notices = 0;
+        set_error_handler(static function () use (&$notices): bool {
+            $notices++;
+
+            return true;
+        }, E_USER_DEPRECATED);
+
+        try {
+            $this->service->clearLogFiles();
+        } finally {
+            restore_error_handler();
+        }
+
+        self::assertSame(0, $notices);
     }
 
     public function test_clear_log_files_deletes_logs_but_preserves_gitignore(): void

@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Event;
 use Symfony\Component\Finder\SplFileInfo;
 use Simtabi\Laranail\DbTools\Concerns\ValidatesFilePaths;
+use Simtabi\Laranail\DbTools\Events\MaintenanceEventNames;
 use Simtabi\Laranail\DbTools\Services\Contracts\MaintenanceServiceInterface;
 
 /**
@@ -35,7 +36,7 @@ final readonly class MaintenanceService implements MaintenanceServiceInterface
     public function clearCache(): bool
     {
         try {
-            Event::dispatch('cache:clearing');
+            MaintenanceEventNames::dispatch(Event::getFacadeRoot(), MaintenanceEventNames::CACHE_CLEARING);
             Cache::flush();
 
             $path = $this->basePath . '/storage/framework/cache';
@@ -58,7 +59,7 @@ final readonly class MaintenanceService implements MaintenanceServiceInterface
                 }
             }
 
-            Event::dispatch('cache:cleared');
+            MaintenanceEventNames::dispatch(Event::getFacadeRoot(), MaintenanceEventNames::CACHE_CLEARED);
 
             $this->logger->info('Cache cleared successfully');
 
@@ -78,7 +79,7 @@ final readonly class MaintenanceService implements MaintenanceServiceInterface
     public function clearLogFiles(): bool
     {
         try {
-            Event::dispatch('logs:clearing');
+            MaintenanceEventNames::dispatch(Event::getFacadeRoot(), MaintenanceEventNames::LOGS_CLEARING);
 
             $directories = ['clockwork', 'debugbar', 'logs'];
 
@@ -95,7 +96,7 @@ final readonly class MaintenanceService implements MaintenanceServiceInterface
                 }
             }
 
-            Event::dispatch('logs:cleared');
+            MaintenanceEventNames::dispatch(Event::getFacadeRoot(), MaintenanceEventNames::LOGS_CLEARED);
 
             $this->logger->info('Log files cleared successfully');
 
