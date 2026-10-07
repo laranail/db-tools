@@ -17,6 +17,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `guard.log_cache_store` (default `null`, the default store) and `guard.log_unreachable_schema`
   (default `true`).
 
+### Fixed
+
+- **`Console\Concerns\SupportsNamespacedNames` and `Console\Concerns\ReadsOptions` are back, as
+  deprecated forwarders** to `Simtabi\Laranail\Package\Tools\Commands\Concerns\SupportsNamespacedNames`
+  and `…\ReadsOptions`. 0.1.1 removed them, saying nothing outside this package could be using them.
+  That was wrong: consuming applications `use` the db-tools trait in their own commands to register
+  `vendor::pkg.command` names, and every such command fatals on load against 0.1.1 to 0.1.4.
+
+### Deprecated
+
+- `Console\Concerns\SupportsNamespacedNames` and `Console\Concerns\ReadsOptions`. Import the
+  `laranail/package-tools` traits instead. Removable no earlier than 0.2.0.
+
 ### Changed
 
 - **`Listeners\LogDatabaseIssues` logs a change of state, not every check.** It writes one warning
