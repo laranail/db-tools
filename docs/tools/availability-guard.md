@@ -76,8 +76,11 @@ Tune with `config('laranail.db-tools.guard.probe_timeout')` (seconds, default `2
 
 When a probe finds a connection unreachable, the guard fires
 `Simtabi\Laranail\DbTools\Events\DatabaseUnavailable` (once per connection per request, never while
-suspended). A default listener logs it; opt out with `config('laranail.db-tools.guard.log_events')` and
-listen yourself. Disable emission entirely with `config('laranail.db-tools.guard.emit_events')`.
+suspended), and `Simtabi\Laranail\DbTools\Events\DatabaseAvailable` when it finds one reachable for
+the first time in a process or again after an outage. A default listener logs the change of state,
+with a reminder per interval while it lasts (see [Events](events.md#logging-a-change-of-state)); opt
+out with `config('laranail.db-tools.guard.log_events')` and listen yourself. Disable emission entirely
+with `config('laranail.db-tools.guard.emit_events')`.
 
 ## How it works
 

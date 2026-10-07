@@ -6,6 +6,7 @@ namespace Simtabi\Laranail\DbTools\Schema;
 
 use Illuminate\Support\Facades\Config;
 use Simtabi\Laranail\DbTools\Support\SafeEvent;
+use Simtabi\Laranail\DbTools\Events\SchemaReady;
 use Simtabi\Laranail\DbTools\Events\SchemaNotReady;
 use Simtabi\Laranail\DbTools\Support\ConnectionContext;
 use Simtabi\Laranail\DbTools\Schema\Contracts\SchemaReadinessInterface;
@@ -133,8 +134,8 @@ final class SchemaReadiness implements SchemaReadinessInterface
 
     private function finish(SchemaReadinessReport $report): SchemaReadinessReport
     {
-        if ($this->emitEvents && ! $report->isReady()) {
-            SafeEvent::dispatch(new SchemaNotReady($report));
+        if ($this->emitEvents) {
+            SafeEvent::dispatch($report->isReady() ? new SchemaReady($report) : new SchemaNotReady($report));
         }
 
         return $report;

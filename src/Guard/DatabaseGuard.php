@@ -9,6 +9,7 @@ use Throwable;
 use Illuminate\Container\Container;
 use Illuminate\Support\Traits\Macroable;
 use Simtabi\Laranail\DbTools\Support\SafeEvent;
+use Simtabi\Laranail\DbTools\Events\DatabaseAvailable;
 use Simtabi\Laranail\DbTools\Support\ConnectionContext;
 use Simtabi\Laranail\DbTools\Events\DatabaseUnavailable;
 use Simtabi\Laranail\DbTools\Schema\DatabaseSchemaInspector;
@@ -147,6 +148,11 @@ final class DatabaseGuard implements DatabaseAvailabilityInterface
         // storm precisely when the system is already unhealthy.
         if (! $result && $this->emitEvents && ($this->announced[$key] ?? true)) {
             SafeEvent::dispatch(new DatabaseUnavailable($connection));
+        }
+
+        // The same rule for the way back, so a listener can record recovery.
+        if ($result && $this->emitEvents && ($this->announced[$key] ?? false) === false) {
+            SafeEvent::dispatch(new DatabaseAvailable($connection));
         }
 
         $this->announced[$key] = $result;
