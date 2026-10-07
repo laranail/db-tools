@@ -188,7 +188,23 @@ return [
     | probe_timeout bounds the built-in availability probe (in seconds) so an
     | unreachable or blackholed host fails fast instead of blocking for the
     | driver's default connect timeout (~30s). emit_events toggles the
-    | DatabaseUnavailable / SchemaNotReady events.
+    | DatabaseUnavailable / SchemaNotReady events and their DatabaseAvailable /
+    | SchemaReady counterparts.
+    |
+    | log_events registers the default listener that logs them. It logs a change
+    | of state rather than every check: one warning when a connection becomes
+    | unavailable or not ready, one reminder per log_reminder_interval seconds
+    | while it stays that way, and one info line on recovery. 0 logs every check.
+    |
+    | log_cache_store is the cache store that remembers what was logged (null =
+    | the default store). When it throws -- because it is the database that is
+    | down -- the listener falls back to an in-process guard, which in PHP-FPM
+    | lasts one request. Name a store that does not depend on the database to
+    | keep the throttle across requests during an outage.
+    |
+    | log_unreachable_schema: an unreachable database also produces a "Schema not
+    | ready" report, which repeats the "unavailable" line. Set false to log only
+    | the latter.
     |
     */
 
@@ -197,6 +213,10 @@ return [
         'probe_timeout' => (int) env('DB_TOOLS_GUARD_PROBE_TIMEOUT', 2),
         'emit_events'   => env('DB_TOOLS_GUARD_EMIT_EVENTS', true),
         'log_events'    => env('DB_TOOLS_GUARD_LOG_EVENTS', true),
+
+        'log_reminder_interval'  => (int) env('DB_TOOLS_GUARD_LOG_REMINDER_INTERVAL', 300),
+        'log_cache_store'        => env('DB_TOOLS_GUARD_LOG_CACHE_STORE'),
+        'log_unreachable_schema' => env('DB_TOOLS_GUARD_LOG_UNREACHABLE_SCHEMA', true),
     ],
 
     /*

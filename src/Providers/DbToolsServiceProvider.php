@@ -11,6 +11,7 @@ use Illuminate\Routing\Router;
 use Illuminate\Foundation\AliasLoader;
 use Simtabi\Laranail\Package\Tools\Package;
 use Illuminate\Console\Events\CommandStarting;
+use Simtabi\Laranail\DbTools\Events\SchemaReady;
 use Simtabi\Laranail\DbTools\Guard\DatabaseGuard;
 use Simtabi\Laranail\DbTools\Query\PortableQuery;
 use Simtabi\Laranail\DbTools\Backup\BackupManager;
@@ -21,6 +22,7 @@ use Simtabi\Laranail\DbTools\Console\DbToolsCommand;
 use Simtabi\Laranail\DbTools\Schema\BlueprintMacros;
 use Simtabi\Laranail\DbTools\Schema\SchemaReadiness;
 use Simtabi\Laranail\DbTools\Schema\FieldGroupMacros;
+use Simtabi\Laranail\DbTools\Events\DatabaseAvailable;
 use Simtabi\Laranail\DbTools\Schema\AuditColumnsMacro;
 use Simtabi\Laranail\DbTools\Services\DatabaseService;
 use Simtabi\Laranail\DbTools\Files\DatabaseFileService;
@@ -249,5 +251,7 @@ final class DbToolsServiceProvider extends PackageServiceProvider
         $events = $this->app->make('events');
         $events->listen(DatabaseUnavailable::class, [LogDatabaseIssues::class, 'handleDatabaseUnavailable']);
         $events->listen(SchemaNotReady::class, [LogDatabaseIssues::class, 'handleSchemaNotReady']);
+        $events->listen(DatabaseAvailable::class, [LogDatabaseIssues::class, 'handleDatabaseAvailable']);
+        $events->listen(SchemaReady::class, [LogDatabaseIssues::class, 'handleSchemaReady']);
     }
 }
