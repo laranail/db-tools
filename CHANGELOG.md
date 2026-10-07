@@ -5,7 +5,7 @@ All notable changes to `laranail/db-tools` are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.1.5] - 2026-10-07
 
 ### Added
 
@@ -774,4 +774,5 @@ was silently not happening.
 
 Initial public release.
 
-[Unreleased]: https://github.com/laranail/db-tools/compare/v0.1.2...HEAD
+[Unreleased]: https://github.com/laranail/db-tools/compare/v0.1.5...HEAD
+[0.1.5]: https://github.com/laranail/db-tools/compare/v0.1.4...v0.1.5
