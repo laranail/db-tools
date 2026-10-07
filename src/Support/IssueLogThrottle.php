@@ -22,8 +22,8 @@ use Illuminate\Contracts\Config\Repository as ConfigRepository;
  * one in this window logs"), keyed by connection, kind and state. The cache may
  * itself be the database that is down, so every operation that throws is retried
  * against an in-process static store. In a short-lived process (PHP-FPM) that
- * fallback lasts one request; point `guard.log_cache_store` at a store that does
- * not depend on the database to throttle across requests.
+ * fallback lasts one request, which is why `guard.log_cache_store` defaults to
+ * `file` rather than the application's default store.
  */
 final class IssueLogThrottle
 {
@@ -200,7 +200,7 @@ final class IssueLogThrottle
 
     private function store(): Repository
     {
-        $name = $this->config->get('laranail.db-tools.guard.log_cache_store');
+        $name = $this->config->get('laranail.db-tools.guard.log_cache_store', 'file');
 
         return $this->cache->store(is_string($name) && $name !== '' ? $name : null);
     }

@@ -51,6 +51,24 @@ final class LogDatabaseIssuesTest extends TestCase
         self::assertTrue(config('laranail.db-tools.guard.log_unreachable_schema'));
     }
 
+    public function test_the_throttle_defaults_to_a_store_that_does_not_use_the_database(): void
+    {
+        // The default store is often `database`: the one most likely to be down,
+        // and one query per healthy request for the recovery check.
+        $defaults = require dirname(__DIR__, 3) . '/config/db-tools.php';
+
+        self::assertSame('file', $defaults['guard']['log_cache_store']);
+    }
+
+    public function test_a_null_store_means_the_application_default(): void
+    {
+        config()->set('laranail.db-tools.guard.log_cache_store');
+
+        event(new DatabaseUnavailable('mysql'));
+
+        self::assertNotNull(cache()->store('array')->get('laranail.db-tools.log.mysql.availability'));
+    }
+
     public function test_a_sustained_outage_logs_once_then_reminds_once_per_interval(): void
     {
         // Four minutes of a 15-second health check: one warning, not sixteen.
@@ -214,6 +232,9 @@ final class LogDatabaseIssuesTest extends TestCase
 
         $app['config']->set('logging.default', 'null');
         $app['config']->set('cache.default', 'array');
+        // Keep the throttle in memory: the file default would carry state
+        // from one test into the next.
+        $app['config']->set('laranail.db-tools.guard.log_cache_store', 'array');
 
         $app['config']->set('database.connections.down', [
             'driver'   => 'mysql',

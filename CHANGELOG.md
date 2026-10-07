@@ -14,7 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   connection reachable and on every transition back; `SchemaReadiness` fires `SchemaReady` for a
   `ready` report. Both respect `guard.emit_events`.
 - `laranail.db-tools.guard.log_reminder_interval` (default `300` seconds, `0` logs every check),
-  `guard.log_cache_store` (default `null`, the default store) and `guard.log_unreachable_schema`
+  `guard.log_cache_store` (default `file`; `null` means the application's default store) and `guard.log_unreachable_schema`
   (default `true`).
 
 ### Fixed

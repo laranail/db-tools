@@ -153,7 +153,7 @@ canonicalises a path rather than rejecting it.
     'log_events'    => env('DB_TOOLS_GUARD_LOG_EVENTS', true),
 
     'log_reminder_interval'  => (int) env('DB_TOOLS_GUARD_LOG_REMINDER_INTERVAL', 300),
-    'log_cache_store'        => env('DB_TOOLS_GUARD_LOG_CACHE_STORE'),
+    'log_cache_store'        => env('DB_TOOLS_GUARD_LOG_CACHE_STORE', 'file'),
     'log_unreachable_schema' => env('DB_TOOLS_GUARD_LOG_UNREACHABLE_SCHEMA', true),
 ],
 ```
@@ -165,7 +165,7 @@ four are covered there; the `log_*` keys tune the default listener described in
 | Key | Default | Effect |
 |-----|---------|--------|
 | `log_reminder_interval` | `300` | Seconds between reminder warnings while a connection stays unavailable or not ready. `0` logs every check. |
-| `log_cache_store` | `null` | Cache store that remembers what was logged; `null` is the default store. Name one that does not depend on the database. |
+| `log_cache_store` | `file` | Cache store that remembers what was logged. Keep it off the database: that store is down during the outage. `null` is the application's default store. |
 | `log_unreachable_schema` | `true` | Whether an unreachable database also logs a "Schema not ready" line. `false` leaves it to the "unavailable" line. |
 
 ### `migrations`
