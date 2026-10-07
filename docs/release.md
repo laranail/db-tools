@@ -9,7 +9,10 @@ distribution mechanism. Consumers pick it up on their next `composer update`.
 ## Versioning & stability
 
 [Semantic Versioning](https://semver.org). Unlike most of the family this package carries real version
-history rather than a single moving tag — it is currently at `v0.7.0`.
+history rather than a single moving tag. Releases were renumbered after `0.9.0`:
+the line restarted at `0.1.1`, so `0.1.x` is newer than `0.9.0`, and a consumer
+pinned to `^0.8` or `^0.9` never receives a later release. Move such a pin to
+`^0.1`.
 
 **What SemVer covers (the public API):**
 
