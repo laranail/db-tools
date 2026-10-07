@@ -143,6 +143,31 @@ matters wherever the path can come from a request. The docblock previously
 claimed path-traversal protection while only calling `realpath()`, which
 canonicalises a path rather than rejecting it.
 
+### `guard`
+
+```php
+'guard' => [
+    'memoize'       => env('DB_TOOLS_GUARD_MEMOIZE', true),
+    'probe_timeout' => (int) env('DB_TOOLS_GUARD_PROBE_TIMEOUT', 2),
+    'emit_events'   => env('DB_TOOLS_GUARD_EMIT_EVENTS', true),
+    'log_events'    => env('DB_TOOLS_GUARD_LOG_EVENTS', true),
+
+    'log_reminder_interval'  => (int) env('DB_TOOLS_GUARD_LOG_REMINDER_INTERVAL', 300),
+    'log_cache_store'        => env('DB_TOOLS_GUARD_LOG_CACHE_STORE'),
+    'log_unreachable_schema' => env('DB_TOOLS_GUARD_LOG_UNREACHABLE_SCHEMA', true),
+],
+```
+
+The [availability guard](tools/availability-guard.md) and its events. The first
+four are covered there; the `log_*` keys tune the default listener described in
+[Events](tools/events.md#logging-a-change-of-state):
+
+| Key | Default | Effect |
+|-----|---------|--------|
+| `log_reminder_interval` | `300` | Seconds between reminder warnings while a connection stays unavailable or not ready. `0` logs every check. |
+| `log_cache_store` | `null` | Cache store that remembers what was logged; `null` is the default store. Name one that does not depend on the database. |
+| `log_unreachable_schema` | `true` | Whether an unreachable database also logs a "Schema not ready" line. `false` leaves it to the "unavailable" line. |
+
 ### `migrations`
 
 ```php

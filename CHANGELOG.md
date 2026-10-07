@@ -5,6 +5,34 @@ All notable changes to `laranail/db-tools` are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- `Events\DatabaseAvailable` and `Events\SchemaReady`, the counterparts of `DatabaseUnavailable` and
+  `SchemaNotReady`. The guard fires `DatabaseAvailable` the first time in a process it finds a
+  connection reachable and on every transition back; `SchemaReadiness` fires `SchemaReady` for a
+  `ready` report. Both respect `guard.emit_events`.
+- `laranail.db-tools.guard.log_reminder_interval` (default `300` seconds, `0` logs every check),
+  `guard.log_cache_store` (default `null`, the default store) and `guard.log_unreachable_schema`
+  (default `true`).
+
+### Changed
+
+- **`Listeners\LogDatabaseIssues` logs a change of state, not every check.** It writes one warning
+  when a connection becomes unavailable or its schema not ready, one reminder per
+  `log_reminder_interval` while that lasts, and one `info` line on recovery. A health check probing
+  a dead database every 15 seconds used to write two warnings per probe, about 11,500 lines a day.
+  The throttle is held in the cache (`Cache::add` with a TTL, keyed by connection and state) and
+  falls back to an in-process guard when the cache store throws, which it does when it is the
+  database that is down. The first-line messages are unchanged; reminders read `still unavailable`
+  / `still not ready` and carry `since` and `duration_seconds`. The listener no longer throws,
+  including when the log sink fails. Set `log_reminder_interval` to `0` for the previous output.
+- An unreachable database still logs both the "unavailable" and the "Schema not ready" line at
+  onset, as before. Setting `guard.log_unreachable_schema` to `false` drops the schema line, which
+  only repeats the first. The default keeps the old behaviour so the log does not change shape on
+  upgrade.
+
 ## [0.1.4] - 2026-10-05
 
 ### Changed

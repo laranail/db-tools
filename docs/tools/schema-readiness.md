@@ -44,8 +44,10 @@ are pending (counting those couples to migration paths and is left to the applic
 
 ## Events
 
-Any non-`ready` report fires `Simtabi\Laranail\DbTools\Events\SchemaNotReady`, carrying the report.
-A default listener logs it (`config('laranail.db-tools.guard.log_events')`); toggle emission with
+Any non-`ready` report fires `Simtabi\Laranail\DbTools\Events\SchemaNotReady`, carrying the report,
+and a `ready` one fires `Simtabi\Laranail\DbTools\Events\SchemaReady`. A default listener logs the
+change of state, not every report (see [Events](events.md#logging-a-change-of-state);
+`config('laranail.db-tools.guard.log_events')`); toggle emission with
 `config('laranail.db-tools.guard.emit_events')`.
 
 ## CLI
