@@ -99,17 +99,18 @@ database every 15 seconds would otherwise write two warnings per probe, about
 // config/laranail/db-tools.php
 'guard' => [
     'log_reminder_interval'  => 300,     // seconds; 0 logs every check
-    'log_cache_store'        => 'file',  // null = the default store
+    'log_cache_store'        => 'file',  // the default; null = the app's default store
     'log_unreachable_schema' => false,   // the "unavailable" line already says it
 ],
 ```
 
 The listener remembers what it logged in the cache (`Cache::add` with a TTL),
 keyed by connection and state, so the throttle holds across requests and
-workers. When the cache store throws, because it is the database that is down,
-it falls back to an in-process guard and carries on. In PHP-FPM that fallback
-lasts one request, so set `log_cache_store` to a store that does not use the
-database if yours does. The listener never throws, not even when the log sink
+workers. The store is `file` by default, not the application's default store,
+because that is often the database: down during the outage, and a query per
+healthy request for the recovery check. If the store throws anyway, the listener
+falls back to an in-process guard and carries on; in PHP-FPM that lasts one
+request. The listener never throws, not even when the log sink
 fails as well.
 
 An unreachable database also yields a `down` schema report, so by default it logs

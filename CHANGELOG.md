@@ -5,7 +5,7 @@ All notable changes to `laranail/db-tools` are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.1.5] - 2026-10-07
 
 ### Added
 
@@ -14,8 +14,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   connection reachable and on every transition back; `SchemaReadiness` fires `SchemaReady` for a
   `ready` report. Both respect `guard.emit_events`.
 - `laranail.db-tools.guard.log_reminder_interval` (default `300` seconds, `0` logs every check),
-  `guard.log_cache_store` (default `null`, the default store) and `guard.log_unreachable_schema`
+  `guard.log_cache_store` (default `file`; `null` means the application's default store) and `guard.log_unreachable_schema`
   (default `true`).
+
+### Fixed
+
+- **`Console\Concerns\SupportsNamespacedNames` and `Console\Concerns\ReadsOptions` are back, as
+  deprecated forwarders** to `Simtabi\Laranail\Package\Tools\Commands\Concerns\SupportsNamespacedNames`
+  and `…\ReadsOptions`. 0.1.1 removed them, saying nothing outside this package could be using them.
+  That was wrong: consuming applications `use` the db-tools trait in their own commands to register
+  `vendor::pkg.command` names, and every such command fatals on load against 0.1.1 to 0.1.4.
+
+### Deprecated
+
+- `Console\Concerns\SupportsNamespacedNames` and `Console\Concerns\ReadsOptions`. Import the
+  `laranail/package-tools` traits instead. Removable no earlier than 0.2.0.
 
 ### Changed
 
@@ -774,4 +787,5 @@ was silently not happening.
 
 Initial public release.
 
-[Unreleased]: https://github.com/laranail/db-tools/compare/v0.1.2...HEAD
+[Unreleased]: https://github.com/laranail/db-tools/compare/v0.1.5...HEAD
+[0.1.5]: https://github.com/laranail/db-tools/compare/v0.1.4...v0.1.5
