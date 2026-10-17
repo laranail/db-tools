@@ -17,6 +17,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **MySQL backups and restores use Laravel's `unix_socket`.** The drivers read only `socket`, and
   even then passed it beside `--host`, so the client connected over TCP. A socket now means
   `--protocol=SOCKET --socket=…`, ignoring host and port as PDO does.
+- **A MySQL connection described by its socket alone can be backed up.** The config check still
+  required `host`, so a socket-only connection was refused before the socket was used. A socket now
+  stands in for `host`; `username`, `password` and `database` are still required.
 
 ### Changed
 
