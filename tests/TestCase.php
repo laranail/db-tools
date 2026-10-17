@@ -4,12 +4,31 @@ declare(strict_types=1);
 
 namespace Simtabi\Laranail\DbTools\Tests;
 
+use RuntimeException;
 use Orchestra\Testbench\TestCase as Orchestra;
 use Spatie\Sluggable\SluggableServiceProvider;
 use Simtabi\Laranail\DbTools\Providers\DbToolsServiceProvider;
 
 abstract class TestCase extends Orchestra
 {
+    /**
+     * A unique temp path ending in $suffix. tempnam() reserves the name by
+     * creating the file, so the bare file is removed here: appending a suffix
+     * to its result left that empty file behind on every run (47 per suite).
+     */
+    protected static function uniqueTempPath(string $prefix, string $suffix = ''): string
+    {
+        $base = tempnam(sys_get_temp_dir(), $prefix);
+
+        if ($base === false) {
+            throw new RuntimeException("Could not create a temp file with prefix [{$prefix}].");
+        }
+
+        @unlink($base);
+
+        return $base . $suffix;
+    }
+
     protected function getPackageProviders($app): array
     {
         // Spatie's provider is auto-discovered in a real app; Testbench needs it

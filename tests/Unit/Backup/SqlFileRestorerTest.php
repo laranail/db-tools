@@ -234,7 +234,7 @@ final class SqlFileRestorerTest extends TestCase
 
     private function writeTempSql(string $contents): string
     {
-        $path = tempnam(sys_get_temp_dir(), 'dbt-restorer-') . '.sql';
+        $path = self::uniqueTempPath('dbt-restorer-', '.sql');
         File::put($path, $contents);
         $this->tempFiles[] = $path;
 

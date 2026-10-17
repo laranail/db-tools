@@ -130,7 +130,7 @@ final class FieldGroupMacrosPerConnectionTest extends TestCase
     {
         parent::defineEnvironment($app);
 
-        $this->secondaryFile = tempnam(sys_get_temp_dir(), 'dbt-macros-') . '.sqlite';
+        $this->secondaryFile = self::uniqueTempPath('dbt-macros-', '.sqlite');
         touch($this->secondaryFile);
 
         $app['config']->set('database.connections.secondary', [
