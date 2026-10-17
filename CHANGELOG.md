@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Tests: the suite left 47 empty files in the system temp directory on every run. `tempnam()`
+  creates the file it names, and tests appended a suffix to its result and cleaned up only the
+  suffixed path. They now take paths from `TestCase::uniqueTempPath()`, the WAL test removes its
+  `-wal`/`-shm` sidecars, and `TempFilesAreCleanedTest` rejects the pattern.
+
 ## [0.1.6] - 2026-10-17
 
 ### Fixed
@@ -52,10 +59,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Tests: the suite left 47 empty files in the system temp directory on every run. `tempnam()`
-  creates the file it names, and tests appended a suffix to its result and cleaned up only the
-  suffixed path. They now take paths from `TestCase::uniqueTempPath()`, the WAL test removes its
-  `-wal`/`-shm` sidecars, and `TempFilesAreCleanedTest` rejects the pattern.
 - The MySQL drivers pass the password through a `0600` `--defaults-extra-file` that is deleted when
   the client exits, instead of `MYSQL_PWD`, which MySQL deprecated and which is readable from the
   process environment.
