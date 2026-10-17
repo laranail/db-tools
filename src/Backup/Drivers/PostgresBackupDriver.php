@@ -21,7 +21,8 @@ use Simtabi\Laranail\DbTools\Backup\Contracts\BackupDriverInterface;
  *
  * TLS reaches libpq through PGSSLMODE/PGSSLROOTCERT/PGSSLCERT/PGSSLKEY, from
  * the same `sslmode`/`sslrootcert`/`sslcert`/`sslkey` keys Laravel puts in the
- * PDO DSN. Restores leave owners and grants out (--no-owner --no-privileges),
+ * PDO DSN, and `hostaddr` reaches it as PGHOSTADDR, so a server reached through
+ * a tunnel is still verified against its real name. Restores leave owners and grants out (--no-owner --no-privileges),
  * so a non-superuser on a managed cluster can restore; archives keep them. A
  * pg_dump older than the server is refused up front, since it cannot dump a
  * newer server, and a pg_restore older than the archive's pg_dump is reported
@@ -218,7 +219,8 @@ class PostgresBackupDriver implements BackupDriverInterface
     }
 
     /**
-     * libpq environment: the password, and TLS from the connection config.
+     * libpq environment: the password, the address to dial when it differs
+     * from the name to verify (hostaddr), and TLS from the connection config.
      *
      * @return array<string, string>
      */
@@ -226,7 +228,7 @@ class PostgresBackupDriver implements BackupDriverInterface
     {
         $environment = ['PGPASSWORD' => (string) $config['password']];
 
-        foreach (['sslmode' => 'PGSSLMODE', 'sslrootcert' => 'PGSSLROOTCERT', 'sslcert' => 'PGSSLCERT', 'sslkey' => 'PGSSLKEY'] as $key => $variable) {
+        foreach (['hostaddr' => 'PGHOSTADDR', 'sslmode' => 'PGSSLMODE', 'sslrootcert' => 'PGSSLROOTCERT', 'sslcert' => 'PGSSLCERT', 'sslkey' => 'PGSSLKEY'] as $key => $variable) {
             $value = $config[$key] ?? null;
 
             if (is_string($value) && $value !== '') {

@@ -262,15 +262,16 @@ class MysqlBackupDriver implements BackupDriverInterface
      */
     private function connectionArguments(array $config, string $binary): array
     {
-        $arguments = [
-            '--host=' . ($config['host'] ?? '127.0.0.1'),
-            '--port=' . ($config['port'] ?? '3306'),
-            '--user=' . $config['username'],
-        ];
-
-        if (! empty($config['socket'])) {
-            $arguments[] = '--socket=' . $config['socket'];
-        }
+        // A socket means the socket, as it does for PDO, which ignores host
+        // and port once one is set. Passed alongside --host=127.0.0.1 the
+        // client would connect over TCP instead.
+        $arguments = ! empty($config['socket'])
+            ? ['--protocol=SOCKET', '--socket=' . $config['socket'], '--user=' . $config['username']]
+            : [
+                '--host=' . ($config['host'] ?? '127.0.0.1'),
+                '--port=' . ($config['port'] ?? '3306'),
+                '--user=' . $config['username'],
+            ];
 
         return [...$arguments, ...$this->tlsArguments($config, $binary)];
     }

@@ -505,6 +505,104 @@ final class ManagedBackupCommandsTest extends TestCase
         self::assertTrue((new PostgresBackupDriver)->backup($this->pgConfig(), $this->tempPath('.dump')));
     }
 
+    // ------------------------------------------------- tunnels and sockets
+
+    /**
+     * Through an SSH tunnel, laranail/db-console writes Postgres under
+     * verify-full as `host=<name>;hostaddr=127.0.0.1`: PDO hands libpq both
+     * keywords, so it dials the forward while it checks the certificate
+     * against the name. pg_dump must get the same split, not a --host that
+     * names neither.
+     */
+    public function test_a_hostaddr_in_the_host_reaches_libpq_as_pghostaddr(): void
+    {
+        $this->fakeProcesses(pgClient: 17, pgServer: 17);
+
+        (new PostgresBackupDriver)->backup($this->pgConfig([
+            'host'    => 'db.internal;hostaddr=127.0.0.1',
+            'port'    => 41000,
+            'sslmode' => 'verify-full',
+        ]), $this->tempPath('.dump'));
+
+        $dump = $this->ranCommand('pg_dump', exclude: '--version');
+
+        self::assertContains('--host=db.internal', $dump);
+        self::assertContains('--port=41000', $dump);
+
+        foreach (['pg_dump', 'psql'] as $binary) {
+            Process::assertRan(fn (PendingProcess $p): bool => $this->binaryOf($p) === $binary
+                && ($p->environment['PGHOSTADDR'] ?? null) === '127.0.0.1'
+                && ($p->environment['PGSSLMODE'] ?? null) === 'verify-full');
+        }
+    }
+
+    public function test_an_explicit_hostaddr_key_reaches_pg_restore(): void
+    {
+        $this->fakeProcesses(pgClient: 17, pgServer: 17);
+        $dump = $this->tempPath('.dump');
+        file_put_contents($dump, 'PGDMP');
+
+        (new PostgresBackupDriver)->restore($this->pgConfig(['hostaddr' => '10.0.0.5']), $dump);
+
+        self::assertContains('--host=db.internal', $this->ranCommand('pg_restore', exclude: '--version'));
+        Process::assertRan(fn (PendingProcess $p): bool => $this->binaryOf($p) === 'pg_restore'
+            && ($p->environment['PGHOSTADDR'] ?? null) === '10.0.0.5');
+    }
+
+    public function test_a_plain_postgres_host_sets_no_hostaddr(): void
+    {
+        $this->fakeProcesses(pgClient: 17, pgServer: 17);
+
+        (new PostgresBackupDriver)->backup($this->pgConfig(), $this->tempPath('.dump'));
+
+        Process::assertNotRan(fn (PendingProcess $p): bool => array_key_exists('PGHOSTADDR', $p->environment));
+    }
+
+    /**
+     * Laravel's key is unix_socket, and with it set PDO ignores host and port.
+     * mysqldump must use the socket too, not TCP to whatever host says.
+     */
+    public function test_mysql_backup_uses_laravels_unix_socket(): void
+    {
+        $this->fakeProcesses(self::MYSQL_HELP);
+
+        (new MysqlBackupDriver)->backup($this->mysqlConfig([
+            'host'        => '127.0.0.1',
+            'unix_socket' => '/var/run/mysqld/mysqld.sock',
+        ]), $this->tempPath('.sql'));
+
+        $dump = $this->ranCommand('mysqldump', exclude: '--help');
+
+        self::assertContains('--socket=/var/run/mysqld/mysqld.sock', $dump);
+        self::assertContains('--protocol=SOCKET', $dump);
+        self::assertNotContains('--host=127.0.0.1', $dump);
+    }
+
+    public function test_mysql_socket_key_still_works_and_now_means_the_socket(): void
+    {
+        $this->fakeProcesses(self::MYSQL_HELP);
+
+        (new MysqlBackupDriver)->backup($this->mysqlConfig(['socket' => '/tmp/mysql.sock']), $this->tempPath('.sql'));
+
+        $dump = $this->ranCommand('mysqldump', exclude: '--help');
+
+        self::assertContains('--socket=/tmp/mysql.sock', $dump);
+        self::assertContains('--protocol=SOCKET', $dump);
+    }
+
+    public function test_mysql_without_a_socket_connects_over_tcp(): void
+    {
+        $this->fakeProcesses(self::MYSQL_HELP);
+
+        (new MysqlBackupDriver)->backup($this->mysqlConfig(['unix_socket' => '']), $this->tempPath('.sql'));
+
+        $dump = $this->ranCommand('mysqldump', exclude: '--help');
+
+        self::assertContains('--host=db.internal', $dump);
+        self::assertContains('--port=3306', $dump);
+        self::assertEmpty(array_filter($dump, static fn (string $argument): bool => str_starts_with($argument, '--socket') || str_starts_with($argument, '--protocol')));
+    }
+
     // ---------------------------------------------------------- timeouts
 
     public function test_dumps_and_restores_outlive_laravels_sixty_second_default(): void
