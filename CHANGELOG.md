@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.6] - 2026-10-17
+
 ### Fixed
 
 - **Backups dump the server the application talks to.** `BackupManager` and the MySQL and
@@ -839,5 +841,6 @@ was silently not happening.
 
 Initial public release.
 
-[Unreleased]: https://github.com/laranail/db-tools/compare/v0.1.5...HEAD
+[Unreleased]: https://github.com/laranail/db-tools/compare/v0.1.6...HEAD
+[0.1.6]: https://github.com/laranail/db-tools/compare/v0.1.5...v0.1.6
 [0.1.5]: https://github.com/laranail/db-tools/compare/v0.1.4...v0.1.5
