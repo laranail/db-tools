@@ -54,7 +54,9 @@ mode `0600`, passed as `--defaults-extra-file` and deleted as soon as the client
 exits — never on the command line, and no longer through the deprecated
 `MYSQL_PWD` variable. The connection config must contain `host`, `username`,
 `password`, and `database` (directly or through `url`); `port` (default `3306`)
-and `socket` are optional. Writes via `--result-file`.
+and a socket are optional. The socket is Laravel's `unix_socket` (or `socket`);
+with one set the client connects through it (`--protocol=SOCKET`) and ignores
+host and port, exactly as PDO does. Writes via `--result-file`.
 
 Every dump runs with:
 
@@ -119,6 +121,10 @@ does:
 - **PostgreSQL TLS** goes to libpq through the environment: `sslmode`,
   `sslrootcert`, `sslcert` and `sslkey` become `PGSSLMODE`, `PGSSLROOTCERT`,
   `PGSSLCERT` and `PGSSLKEY` — the same keys Laravel puts in the PDO DSN.
+- **PostgreSQL `hostaddr`** becomes `PGHOSTADDR`: libpq dials that address and
+  still verifies the certificate against `host`. It can be a key of its own, or
+  follow the name in `host` as `db.example.com;hostaddr=127.0.0.1`, the form
+  PDO accepts and laranail/db-console writes for a server behind an SSH tunnel.
 
 ```php
 // config/database.php — DB_URL=postgresql://doadmin:…@db-….ondigitalocean.com:25060/defaultdb?sslmode=require

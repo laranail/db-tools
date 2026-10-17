@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **A Postgres server behind an SSH tunnel can be dumped with `sslmode=verify-full`.** A `hostaddr`,
+  given as its own key or after the name in `host` (`db.example.com;hostaddr=127.0.0.1`, the form
+  PDO accepts and laranail/db-console writes for a tunnelled server), reaches libpq as
+  `PGHOSTADDR`. `pg_dump`, `pg_restore` and `psql` dial the forward and still verify the
+  certificate against the real name. Before, `--host` got the whole string and the dump failed.
+- **MySQL backups and restores use Laravel's `unix_socket`.** The drivers read only `socket`, and
+  even then passed it beside `--host`, so the client connected over TCP. A socket now means
+  `--protocol=SOCKET --socket=…`, ignoring host and port as PDO does.
+
 ### Changed
 
 - Tests: the suite left 47 empty files in the system temp directory on every run. `tempnam()`
