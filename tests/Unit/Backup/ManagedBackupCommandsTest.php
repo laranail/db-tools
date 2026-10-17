@@ -590,6 +590,47 @@ final class ManagedBackupCommandsTest extends TestCase
         self::assertContains('--protocol=SOCKET', $dump);
     }
 
+    /**
+     * A socket is enough: PDO never reads host once one is set, so a config
+     * with only unix_socket must not be refused for its missing host.
+     */
+    public function test_mysql_backs_up_and_restores_through_a_socket_without_a_host(): void
+    {
+        $this->fakeProcesses(self::MYSQL_HELP);
+        $config = $this->mysqlConfig(['host' => null, 'unix_socket' => '/var/run/mysqld/mysqld.sock']);
+
+        (new MysqlBackupDriver)->backup($config, $this->tempPath('.sql'));
+
+        $dump = $this->ranCommand('mysqldump', exclude: '--help');
+        self::assertContains('--socket=/var/run/mysqld/mysqld.sock', $dump);
+        self::assertEmpty(array_filter($dump, static fn (string $argument): bool => str_starts_with($argument, '--host')));
+
+        $file = $this->tempPath('.sql');
+        file_put_contents($file, "SELECT 1;\n");
+        self::assertTrue((new MysqlBackupDriver)->restore($config, $file));
+        self::assertContains('--socket=/var/run/mysqld/mysqld.sock', $this->ranCommand('mysql', exclude: '--help'));
+    }
+
+    public function test_a_socket_does_not_excuse_a_missing_database(): void
+    {
+        $this->fakeProcesses(self::MYSQL_HELP);
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage("requires 'database'");
+
+        (new MysqlBackupDriver)->backup($this->mysqlConfig(['host' => null, 'socket' => '/tmp/mysql.sock', 'database' => '']), $this->tempPath('.sql'));
+    }
+
+    public function test_mysql_still_needs_a_host_when_there_is_no_socket(): void
+    {
+        $this->fakeProcesses(self::MYSQL_HELP);
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage("requires 'host'");
+
+        (new MysqlBackupDriver)->backup($this->mysqlConfig(['host' => null]), $this->tempPath('.sql'));
+    }
+
     public function test_mysql_without_a_socket_connects_over_tcp(): void
     {
         $this->fakeProcesses(self::MYSQL_HELP);

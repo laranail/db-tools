@@ -469,7 +469,11 @@ class MysqlBackupDriver implements BackupDriverInterface
      */
     private function validateConfig(array $config): void
     {
-        $required = ['host', 'username', 'password', 'database'];
+        // A socket replaces host and port (see connectionArguments()), so a
+        // connection described by its socket alone is complete.
+        $required = empty($config['socket'])
+            ? ['host', 'username', 'password', 'database']
+            : ['username', 'password', 'database'];
 
         foreach ($required as $field) {
             if (empty($config[$field])) {

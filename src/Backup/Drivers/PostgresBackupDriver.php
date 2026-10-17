@@ -21,12 +21,13 @@ use Simtabi\Laranail\DbTools\Backup\Contracts\BackupDriverInterface;
  *
  * TLS reaches libpq through PGSSLMODE/PGSSLROOTCERT/PGSSLCERT/PGSSLKEY, from
  * the same `sslmode`/`sslrootcert`/`sslcert`/`sslkey` keys Laravel puts in the
- * PDO DSN, and `hostaddr` reaches it as PGHOSTADDR, so a server reached through
- * a tunnel is still verified against its real name. Restores leave owners and grants out (--no-owner --no-privileges),
- * so a non-superuser on a managed cluster can restore; archives keep them. A
- * pg_dump older than the server is refused up front, since it cannot dump a
- * newer server, and a pg_restore older than the archive's pg_dump is reported
- * as such. The password still travels in PGPASSWORD.
+ * PDO DSN, and `hostaddr` reaches it as PGHOSTADDR, so a server reached
+ * through a tunnel is still verified against its real name. Restores leave
+ * owners and grants out (--no-owner --no-privileges), so a non-superuser on
+ * a managed cluster can restore; archives keep them. A pg_dump older than the
+ * server is refused up front, since it cannot dump a newer server, and a
+ * pg_restore older than the archive's pg_dump is reported as such. The
+ * password still travels in PGPASSWORD.
  */
 class PostgresBackupDriver implements BackupDriverInterface
 {
