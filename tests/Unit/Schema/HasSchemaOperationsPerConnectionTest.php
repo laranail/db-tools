@@ -117,7 +117,7 @@ final class HasSchemaOperationsPerConnectionTest extends TestCase
         // A file, not :memory:. Two in-memory SQLite connections would each get
         // their own blank database, which is enough here, but a file makes the
         // "wrote to the wrong database" failure legible when it happens.
-        $this->secondaryFile = tempnam(sys_get_temp_dir(), 'dbt-ops-') . '.sqlite';
+        $this->secondaryFile = self::uniqueTempPath('dbt-ops-', '.sqlite');
         touch($this->secondaryFile);
 
         $app['config']->set('database.connections.secondary', [

@@ -139,7 +139,7 @@ final class MysqlPostgresRoundTripTest extends TestCase
         ]);
         DB::connection($connection)->statement('CREATE VIEW rt_widget_names AS SELECT name FROM rt_widgets');
 
-        $backupPath = tempnam(sys_get_temp_dir(), 'dbt-server-backup-') . $suffix;
+        $backupPath = self::uniqueTempPath('dbt-server-backup-', $suffix);
         $this->tempFiles[] = $backupPath;
 
         $manager = new BackupManager;

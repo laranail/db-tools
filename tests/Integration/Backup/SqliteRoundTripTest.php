@@ -22,7 +22,7 @@ final class SqliteRoundTripTest extends TestCase
         // A real, file-based SQLite database (not :memory:) so the file-copy
         // backup path can actually read and write a file. SQLite's connector
         // requires the file to pre-exist, so create it before connecting.
-        $this->dbPath = tempnam(sys_get_temp_dir(), 'dbt-sqlite-') . '.sqlite';
+        $this->dbPath = self::uniqueTempPath('dbt-sqlite-', '.sqlite');
         touch($this->dbPath);
 
         config()->set('database.connections.roundtrip', [
@@ -38,9 +38,12 @@ final class SqliteRoundTripTest extends TestCase
     {
         DB::purge('roundtrip');
 
+        // The WAL test leaves -wal and -shm sidecars beside both files.
         foreach ([$this->dbPath, $this->backupPath] as $file) {
-            if ($file !== '' && is_file($file)) {
-                @unlink($file);
+            foreach (['', '-wal', '-shm'] as $sidecar) {
+                if ($file !== '' && is_file($file . $sidecar)) {
+                    @unlink($file . $sidecar);
+                }
             }
         }
 
@@ -49,7 +52,7 @@ final class SqliteRoundTripTest extends TestCase
 
     public function test_file_copy_backup_and_restore_round_trip(): void
     {
-        $this->backupPath = tempnam(sys_get_temp_dir(), 'dbt-backup-') . '.sqlite';
+        $this->backupPath = self::uniqueTempPath('dbt-backup-', '.sqlite');
 
         $manager = new BackupManager;
 
@@ -76,7 +79,7 @@ final class SqliteRoundTripTest extends TestCase
     {
         config()->set('laranail.db-tools.backup.gzip', true);
 
-        $this->backupPath = tempnam(sys_get_temp_dir(), 'dbt-backup-') . '.sqlite.gz';
+        $this->backupPath = self::uniqueTempPath('dbt-backup-', '.sqlite.gz');
 
         $manager = new BackupManager;
 
@@ -113,7 +116,7 @@ final class SqliteRoundTripTest extends TestCase
         DB::connection('roundtrip')->table('widgets')->insert(['id' => 1, 'name' => 'before backup']);
 
         $manager = new BackupManager;
-        $this->backupPath = tempnam(sys_get_temp_dir(), 'dbt-wal-') . '.sqlite';
+        $this->backupPath = self::uniqueTempPath('dbt-wal-', '.sqlite');
         $manager->backup($this->backupPath, 'roundtrip');
 
         // Writes after the backup, which live in the WAL rather than the main file.

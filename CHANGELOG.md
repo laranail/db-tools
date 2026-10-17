@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Tests: the suite left 47 empty files in the system temp directory on every run. `tempnam()`
+  creates the file it names, and tests appended a suffix to its result and cleaned up only the
+  suffixed path. They now take paths from `TestCase::uniqueTempPath()`, the WAL test removes its
+  `-wal`/`-shm` sidecars, and `TempFilesAreCleanedTest` rejects the pattern.
+
 ## [0.1.6] - 2026-10-17
 
 ### Fixed

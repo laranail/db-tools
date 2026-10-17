@@ -67,7 +67,10 @@ final class DocumentedExamplesTest extends TestCase
     #[DataProvider('documentedModels')]
     public function test_a_documented_model_example_composes(string $file, string $source): void
     {
-        $path = tempnam(sys_get_temp_dir(), 'dbt-doc-') . '.php';
+        // tempnam() creates the bare file; remove it, or it outlives the run.
+        $base = (string) tempnam(sys_get_temp_dir(), 'dbt-doc-');
+        @unlink($base);
+        $path = $base . '.php';
         file_put_contents($path, $source);
 
         try {
