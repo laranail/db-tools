@@ -97,6 +97,7 @@ argument syntax (`CastMoney::class.':EUR'`).
 'backup' => [
     'gzip' => false,
     'exclude' => [],
+    'timeout' => (int) env('DB_TOOLS_BACKUP_TIMEOUT', 3600),
     'binaries' => [
         'mysqldump'  => null,
         'mysql'      => null,
@@ -109,6 +110,7 @@ argument syntax (`CastMoney::class.':EUR'`).
 
 - `gzip` — when `true`, drivers gzip their dumps and append `.gz`.
 - `exclude` — table names omitted from dumps.
+- `timeout` — seconds a dump or restore may run; `0` removes the limit.
 - `binaries` — absolute paths to the CLI tools when they are not on `PATH`;
   `null` means "rely on `PATH`".
 

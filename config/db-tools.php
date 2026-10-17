@@ -129,12 +129,22 @@ return [
     | gzip      — compress dumps with gzip (drivers append ".gz").
     | exclude   — table names omitted from dumps.
     | binaries  — optional absolute paths to the CLI tools; null = rely on PATH.
+    | timeout   — seconds a dump or restore may run; 0 = no limit. Laravel's
+    |             process default of 60s killed any larger dump.
     |
     */
 
     'backup' => [
-        'gzip'     => false,
-        'exclude'  => [],
+        'gzip'    => false,
+        'exclude' => [],
+        'timeout' => (int) env('DB_TOOLS_BACKUP_TIMEOUT', 3600),
+        'mysql'   => [
+            // Dump stored routines and events too (mysqldump --routines --events).
+            'routines' => false,
+            // Remove DEFINER= clauses on restore, so a non-SUPER user can
+            // replay views and triggers. Objects then belong to the restoring user.
+            'strip_definers' => true,
+        ],
         'binaries' => [
             'mysqldump'  => null,
             'mysql'      => null,

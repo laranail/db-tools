@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace Simtabi\Laranail\DbTools\Backup\Concerns;
 
 use RuntimeException;
+use Illuminate\Process\PendingProcess;
 use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\Process;
 
 /**
  * Shared backup/restore option resolution: optional binary paths, gzip toggle
@@ -26,6 +28,20 @@ trait ResolvesBackupOptions
         $configured = Config::get("laranail.db-tools.backup.binaries.{$name}");
 
         return is_string($configured) && $configured !== '' ? $configured : $name;
+    }
+
+    /**
+     * A process for a dump or restore, bounded by
+     * config('laranail.db-tools.backup.timeout') seconds; 0 lifts the limit.
+     *
+     * Laravel's default is 60 seconds, which killed any dump or restore that
+     * took longer, so a production-sized database could never be backed up.
+     */
+    protected function backupProcess(): PendingProcess
+    {
+        $timeout = (int) Config::get('laranail.db-tools.backup.timeout', 3600);
+
+        return $timeout > 0 ? Process::timeout($timeout) : Process::forever();
     }
 
     /**

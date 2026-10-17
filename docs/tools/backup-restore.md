@@ -62,23 +62,29 @@ Every dump runs with:
 |---|---|
 | `--single-transaction` | A consistent InnoDB snapshot without `LOCK TABLES`. |
 | `--no-tablespaces` | Tablespace statements need `PROCESS`, which managed users lack. |
-| `--routines --triggers` | Stored routines and triggers come with the schema. |
+| `--triggers` | Triggers come with the schema. |
+| `--routines --events` | Only with `backup.mysql.routines => true`. A binlogged managed server refuses a stored function from a non-`SUPER` user (error 1418) unless `log_bin_trust_function_creators` is on, so they are opt-in, as in `mysqldump` itself. |
 | `--set-gtid-purged=OFF` | Only when the client's `--help` lists it (MySQL's does, MariaDB's does not). A GTID server otherwise writes `SET @@GLOBAL.GTID_PURGED`, which needs `SUPER` to replay. |
 
 ### PostgreSQL
 
-Shells out to `pg_dump` with `--format=custom --no-password --no-owner
---no-privileges`, so the archive names no roles the target may not have. The
+Shells out to `pg_dump` with `--format=custom --no-password`. The archive keeps
+owners and grants, so a restore with any other tool keeps them too; this
+driver's restore leaves them out instead (see [Restoring](#restoring)). The
 password is passed via the `PGPASSWORD` environment variable. Requires `host`,
 `username`, `password`, `database` (directly or through `url`); `port` (default
 `5432`) and `schema` are optional. Writes via `--file`.
 
-Before `pg_dump` or `pg_restore` runs, the driver compares the client's major
-version (`--version`) with the server's (`SHOW server_version_num`, through
-`psql`) and throws when the client is older: `pg_dump` 15 cannot dump a
-PostgreSQL 18 server. The message names both versions and the
-`backup.binaries.*` key to point at a newer client. If either version cannot be
-read, the check steps aside and the tool reports what stopped it.
+Before `pg_dump` runs, the driver compares its major version (`--version`) with
+the server's (`SHOW server_version_num`, through `psql`, bounded to 30 seconds
+with `PGCONNECT_TIMEOUT=10`) and throws when the client is older: `pg_dump` 15
+cannot dump a PostgreSQL 18 server. The message names both versions and the
+`backup.binaries.pg_dump` key to point at a newer client. If either version
+cannot be read, the check steps aside and `pg_dump` reports what stopped it.
+
+`pg_restore` is not held to the server's version: it reads any archive an equal
+or older `pg_dump` wrote, into any server. An archive from a newer `pg_dump`
+fails with a message saying so and naming `backup.binaries.pg_restore`.
 
 ## Connection URLs and managed databases
 
@@ -104,8 +110,12 @@ does:
   Without an explicit mode, a CA means `--ssl-mode=VERIFY_IDENTITY`, as mysqlnd
   verifies by default; `ATTR_SSL_VERIFY_SERVER_CERT => false` means `REQUIRED`
   without the CA. libpq spellings (`require`, `verify-full`, …) are accepted, and
-  an unrecognised mode throws rather than falling back to plaintext. MariaDB's
-  client, which has no `--ssl-mode`, gets `--ssl` and `--ssl-verify-server-cert`.
+  an unrecognised mode throws rather than falling back to plaintext. `REQUIRED`
+  never passes the CA, because the MySQL client would verify against it. MariaDB's
+  client, which has no `--ssl-mode`, gets `--ssl --ssl-verify-server-cert`, or
+  `--ssl --skip-ssl-verify-server-cert` for `REQUIRED` (MariaDB 11.4+ verifies by
+  default). Which client is installed is read from its `--help`; when that cannot
+  run, the backup fails with the reason rather than guessing.
 - **PostgreSQL TLS** goes to libpq through the environment: `sslmode`,
   `sslrootcert`, `sslcert` and `sslkey` become `PGSSLMODE`, `PGSSLROOTCERT`,
   `PGSSLCERT` and `PGSSLKEY` — the same keys Laravel puts in the PDO DSN.
@@ -135,6 +145,15 @@ The MySQL and PostgreSQL drivers honour the
 - `backup.binaries.*` — absolute paths to the CLI tools (`mysqldump`, `mysql`,
   `pg_dump`, `pg_restore`, `psql`) when they are not on `PATH`; `null` means
   "rely on `PATH`".
+- `backup.mysql.routines` (default `false`) — also dump stored routines and
+  events.
+- `backup.mysql.strip_definers` (default `true`) — remove `DEFINER=` clauses on
+  restore so a non-`SUPER` user can replay views and triggers; the objects then
+  run as the restoring user. Set `false` on a self-hosted server whose
+  `SQL SECURITY DEFINER` objects must keep their definer.
+- `backup.timeout` (env `DB_TOOLS_BACKUP_TIMEOUT`, default `3600`) — seconds a
+  dump or restore may run before it is killed; `0` removes the limit. Laravel's
+  own process default is 60 seconds, which no production-sized dump fits in.
 
 ### SQLite
 
@@ -158,10 +177,14 @@ delegates to that driver, so the restore mechanism matches the dump format.
   --single-transaction --exit-on-error`: objects belong to the restoring user, and
   a failure rolls the whole restore back.
 - **MySQL** streams the dump through the `mysql` client line by line, so a large
-  dump is never held in memory, and strips `DEFINER=user@host` clauses on the
+  dump is never held in memory, and (unless `backup.mysql.strip_definers` is
+  `false`) strips `DEFINER=user@host` clauses on the
   way: only `SUPER` may create an object owned by another account (error 1227 on
   a managed server). `INSERT` lines are passed through untouched, so row data
   that happens to contain the text is never rewritten.
+- **PostgreSQL plain `.sql` dumps** replay through `psql` with
+  `--set=ON_ERROR_STOP=1`, so the first failing statement stops the restore and
+  it reports failure. Without it psql carries on and exits 0.
 - **SQLite** uses `SqlFileRestorer` for a plain `.sql` file, or a file copy
   otherwise.
 

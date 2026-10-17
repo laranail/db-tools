@@ -7,6 +7,7 @@ namespace Simtabi\Laranail\DbTools\Backup\Drivers;
 use Generator;
 use Throwable;
 use RuntimeException;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Process;
 use Simtabi\Laranail\DbTools\Backup\Concerns\ResolvesBackupOptions;
 use Simtabi\Laranail\DbTools\Backup\Support\BackupConnectionConfig;
@@ -122,9 +123,17 @@ class MysqlBackupDriver implements BackupDriverInterface
                 '--single-transaction',
                 // Tablespace statements need PROCESS; managed users lack it.
                 '--no-tablespaces',
-                '--routines',
                 '--triggers',
             ];
+
+            // Stored routines and events restore only where the user may
+            // create them: a binlogged managed server refuses a function from
+            // a non-SUPER user (1418) unless log_bin_trust_function_creators is
+            // on. So they are opt-in, as they are in mysqldump itself.
+            if ((bool) Config::get('laranail.db-tools.backup.mysql.routines', false)) {
+                $command[] = '--routines';
+                $command[] = '--events';
+            }
 
             // A GTID server makes mysqldump emit SET @@GLOBAL.GTID_PURGED,
             // which needs SUPER to replay. MariaDB's client has no such option
@@ -140,7 +149,7 @@ class MysqlBackupDriver implements BackupDriverInterface
             $command[] = $config['database'];
             $command[] = '--result-file=' . $dumpPath;
 
-            $result = Process::run($command);
+            $result = $this->backupProcess()->run($command);
 
             if (! $result->successful()) {
                 throw new RuntimeException('MySQL backup failed: ' . $result->errorOutput());
@@ -212,7 +221,7 @@ class MysqlBackupDriver implements BackupDriverInterface
                 throw new RuntimeException("Unable to read MySQL backup file: {$sqlPath}");
             }
 
-            $result = Process::input($this->linesWithoutDefiners($handle, $sqlPath))->run($command);
+            $result = $this->backupProcess()->input($this->linesWithoutDefiners($handle, $sqlPath))->run($command);
 
             if (! $result->successful()) {
                 throw new RuntimeException('MySQL restore failed: ' . $result->errorOutput());
@@ -301,11 +310,12 @@ class MysqlBackupDriver implements BackupDriverInterface
                 return [];
             }
 
-            // Verification was switched off: passing the CA would switch it
-            // back on in the client and fail where the application connects.
-            if ($verify === false) {
-                $ca = $capath = null;
-            }
+        }
+
+        // REQUIRED encrypts without verifying. Handed a CA, the MySQL client
+        // verifies anyway, failing where the application connects.
+        if ($mode === 'REQUIRED') {
+            $ca = $capath = null;
         }
 
         if ($this->clientSupports($binary, '--ssl-mode')) {
@@ -315,8 +325,9 @@ class MysqlBackupDriver implements BackupDriverInterface
             $arguments = match ($mode) {
                 'DISABLED'  => ['--skip-ssl'],
                 'PREFERRED' => [],
-                'REQUIRED'  => ['--ssl'],
-                default     => ['--ssl', '--ssl-verify-server-cert'],
+                // MariaDB 11.4+ verifies by default; REQUIRED must not.
+                'REQUIRED' => ['--ssl', '--skip-ssl-verify-server-cert'],
+                default    => ['--ssl', '--ssl-verify-server-cert'],
             };
         }
 
@@ -379,12 +390,20 @@ class MysqlBackupDriver implements BackupDriverInterface
     private function clientSupports(string $binary, string $option): bool
     {
         if (! array_key_exists($binary, $this->clientHelp)) {
+            // A failed probe is not cached as "supports nothing": that would
+            // send a MySQL 8 client MariaDB's --ssl, which it rejects, and
+            // drop --set-gtid-purged. Fail with the reason instead.
             try {
                 $result = Process::run([$binary, '--help']);
-                $this->clientHelp[$binary] = $result->successful() ? $result->output() : '';
-            } catch (Throwable) {
-                $this->clientHelp[$binary] = '';
+            } catch (Throwable $e) {
+                throw new RuntimeException("Could not run [{$binary} --help] to detect its options: {$e->getMessage()}", 0, $e);
             }
+
+            if (! $result->successful()) {
+                throw new RuntimeException("Could not run [{$binary} --help] to detect its options: " . trim($result->errorOutput()));
+            }
+
+            $this->clientHelp[$binary] = $result->output();
         }
 
         return str_contains($this->clientHelp[$binary], $option);
@@ -431,8 +450,10 @@ class MysqlBackupDriver implements BackupDriverInterface
      */
     private function linesWithoutDefiners($handle, string $path): Generator
     {
+        $strip = (bool) Config::get('laranail.db-tools.backup.mysql.strip_definers', true);
+
         while (($line = fgets($handle)) !== false) {
-            yield self::stripDefiner($line);
+            yield $strip ? self::stripDefiner($line) : $line;
         }
 
         if (! feof($handle)) {

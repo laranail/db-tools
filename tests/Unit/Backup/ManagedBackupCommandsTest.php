@@ -122,9 +122,40 @@ final class ManagedBackupCommandsTest extends TestCase
 
         $dump = $this->ranCommand('mysqldump', exclude: '--help');
 
-        foreach (['--single-transaction', '--no-tablespaces', '--routines', '--triggers', '--set-gtid-purged=OFF'] as $flag) {
+        foreach (['--single-transaction', '--no-tablespaces', '--triggers', '--set-gtid-purged=OFF'] as $flag) {
             self::assertContains($flag, $dump, "mysqldump must be run with {$flag}");
         }
+
+        // Routines are opt-in: a non-SUPER user on a binlogged server cannot
+        // restore a stored function (1418), and mysqldump leaves them out too.
+        self::assertNotContains('--routines', $dump);
+        self::assertNotContains('--events', $dump);
+    }
+
+    public function test_routines_and_events_are_dumped_when_enabled(): void
+    {
+        config()->set('laranail.db-tools.backup.mysql.routines', true);
+        $this->fakeProcesses(self::MYSQL_HELP);
+
+        (new MysqlBackupDriver)->backup($this->mysqlConfig(), $this->tempPath('.sql'));
+
+        $dump = $this->ranCommand('mysqldump', exclude: '--help');
+
+        self::assertContains('--routines', $dump);
+        self::assertContains('--events', $dump);
+    }
+
+    public function test_a_failed_help_probe_fails_instead_of_guessing_the_client(): void
+    {
+        Process::fake([
+            '*--help*' => Process::result(errorOutput: 'mysqldump: unknown variable in ~/.my.cnf', exitCode: 7),
+            '*'        => '',
+        ]);
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('unknown variable in ~/.my.cnf');
+
+        (new MysqlBackupDriver)->backup($this->mysqlConfig(), $this->tempPath('.sql'));
     }
 
     public function test_set_gtid_purged_is_only_passed_to_a_client_that_knows_it(): void
@@ -230,6 +261,36 @@ final class ManagedBackupCommandsTest extends TestCase
         self::assertNotContains('--ssl-ca=/etc/ssl/do-ca.crt', $dump);
     }
 
+    public function test_an_explicit_required_mode_never_hands_the_client_a_ca(): void
+    {
+        $this->fakeProcesses(self::MYSQL_HELP);
+
+        // The shape a provider URL produces: ?ssl-mode=REQUIRED beside a CA.
+        (new MysqlBackupDriver)->backup($this->mysqlConfig([
+            'ssl-mode' => 'REQUIRED',
+            'options'  => [1009 => '/etc/ssl/do-ca.crt', 1014 => false],
+        ]), $this->tempPath('.sql'));
+
+        $dump = $this->ranCommand('mysqldump', exclude: '--help');
+
+        self::assertContains('--ssl-mode=REQUIRED', $dump);
+        self::assertNotContains('--ssl-ca=/etc/ssl/do-ca.crt', $dump);
+    }
+
+    public function test_mariadb_required_mode_encrypts_without_verifying(): void
+    {
+        $this->fakeProcesses(self::MARIADB_HELP);
+
+        (new MysqlBackupDriver)->backup($this->mysqlConfig(['ssl-mode' => 'REQUIRED']), $this->tempPath('.sql'));
+
+        $dump = $this->ranCommand('mysqldump', exclude: '--help');
+
+        // MariaDB 11.4+ verifies by default, which REQUIRED must not do.
+        self::assertContains('--ssl', $dump);
+        self::assertContains('--skip-ssl-verify-server-cert', $dump);
+        self::assertNotContains('--ssl-verify-server-cert', $dump);
+    }
+
     public function test_mariadb_client_gets_its_own_tls_flags(): void
     {
         $this->fakeProcesses(self::MARIADB_HELP);
@@ -304,6 +365,28 @@ final class ManagedBackupCommandsTest extends TestCase
         self::assertStringNotContainsString('DEFINER=`doadmin`', $sql);
     }
 
+    public function test_definers_are_kept_when_stripping_is_switched_off(): void
+    {
+        config()->set('laranail.db-tools.backup.mysql.strip_definers', false);
+        $restored = null;
+
+        Process::fake([
+            '*--help*' => self::MYSQL_HELP,
+            '*'        => function (PendingProcess $process) use (&$restored): string {
+                $restored = implode('', iterator_to_array($process->input, false));
+
+                return '';
+            },
+        ]);
+
+        $dump = $this->tempPath('.sql');
+        file_put_contents($dump, "CREATE DEFINER=`reporting`@`%` VIEW `v` AS SELECT 1;\n");
+
+        (new MysqlBackupDriver)->restore($this->mysqlConfig(), $dump);
+
+        self::assertStringContainsString('DEFINER=`reporting`@`%`', (string) $restored);
+    }
+
     public function test_mysql_restore_uses_the_defaults_file_and_tls(): void
     {
         $this->fakeProcesses(self::MYSQL_HELP);
@@ -345,7 +428,7 @@ final class ManagedBackupCommandsTest extends TestCase
         });
     }
 
-    public function test_pg_dump_leaves_ownership_and_grants_out_of_the_archive(): void
+    public function test_pg_dump_keeps_ownership_and_grants_in_the_archive(): void
     {
         $this->fakeProcesses(pgClient: 17, pgServer: 17);
 
@@ -353,8 +436,10 @@ final class ManagedBackupCommandsTest extends TestCase
 
         $dump = $this->ranCommand('pg_dump', exclude: '--version');
 
-        self::assertContains('--no-owner', $dump);
-        self::assertContains('--no-privileges', $dump);
+        // Restore leaves them out; dropping them from the archive too would
+        // lose them for anyone restoring with another tool.
+        self::assertNotContains('--no-owner', $dump);
+        self::assertNotContains('--no-privileges', $dump);
     }
 
     public function test_pg_restore_is_atomic_and_owner_agnostic(): void
@@ -388,14 +473,27 @@ final class ManagedBackupCommandsTest extends TestCase
             && ! in_array('--version', (array) $p->command, true));
     }
 
-    public function test_an_older_pg_restore_than_the_server_fails_before_restoring(): void
+    public function test_pg_restore_is_not_held_to_the_server_version(): void
     {
-        $this->fakeProcesses(pgClient: 16, pgServer: 17);
+        // A pg_dump 15 archive restored into a PostgreSQL 17 cluster with
+        // pg_restore 15 works; only the archive's version limits pg_restore.
+        $this->fakeProcesses(pgClient: 15, pgServer: 17);
+        $dump = $this->tempPath('.dump');
+        file_put_contents($dump, 'PGDMP');
+
+        self::assertTrue((new PostgresBackupDriver)->restore($this->pgConfig(), $dump));
+    }
+
+    public function test_an_archive_newer_than_pg_restore_says_so(): void
+    {
+        Process::fake([
+            '*' => Process::result(errorOutput: 'pg_restore: error: unsupported version (1.16) in file header', exitCode: 1),
+        ]);
         $dump = $this->tempPath('.dump');
         file_put_contents($dump, 'PGDMP');
 
         $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage('pg_restore 16');
+        $this->expectExceptionMessage('written by a newer pg_dump than this pg_restore');
 
         (new PostgresBackupDriver)->restore($this->pgConfig(), $dump);
     }
@@ -405,6 +503,46 @@ final class ManagedBackupCommandsTest extends TestCase
         $this->fakeProcesses(pgClient: 18, pgServer: 16);
 
         self::assertTrue((new PostgresBackupDriver)->backup($this->pgConfig(), $this->tempPath('.dump')));
+    }
+
+    // ---------------------------------------------------------- timeouts
+
+    public function test_dumps_and_restores_outlive_laravels_sixty_second_default(): void
+    {
+        $this->fakeProcesses(self::MYSQL_HELP, pgClient: 17, pgServer: 17);
+
+        (new MysqlBackupDriver)->backup($this->mysqlConfig(), $this->tempPath('.sql'));
+        (new PostgresBackupDriver)->backup($this->pgConfig(), $this->tempPath('.dump'));
+
+        foreach (['mysqldump', 'pg_dump'] as $binary) {
+            Process::assertRan(fn (PendingProcess $p): bool => $this->binaryOf($p) === $binary
+                && ! in_array('--version', (array) $p->command, true)
+                && ! in_array('--help', (array) $p->command, true)
+                && $p->timeout === 3600);
+        }
+    }
+
+    public function test_a_zero_timeout_lifts_the_limit(): void
+    {
+        config()->set('laranail.db-tools.backup.timeout', 0);
+        $this->fakeProcesses(pgClient: 17, pgServer: 17);
+
+        (new PostgresBackupDriver)->backup($this->pgConfig(), $this->tempPath('.dump'));
+
+        Process::assertRan(fn (PendingProcess $p): bool => $this->binaryOf($p) === 'pg_dump'
+            && ! in_array('--version', (array) $p->command, true)
+            && $p->timeout === null);
+    }
+
+    public function test_a_plain_sql_restore_stops_at_the_first_failed_statement(): void
+    {
+        $this->fakeProcesses(pgClient: 17, pgServer: 17);
+        $dump = $this->tempPath('.sql');
+        file_put_contents($dump, "SELECT 1;\n");
+
+        (new PostgresBackupDriver)->restore($this->pgConfig(), $dump);
+
+        self::assertContains('--set=ON_ERROR_STOP=1', $this->ranCommand('psql', exclude: '--tuples-only'));
     }
 
     // ------------------------------------------------------------ helpers

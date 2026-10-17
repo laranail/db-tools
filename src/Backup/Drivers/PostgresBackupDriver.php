@@ -21,10 +21,11 @@ use Simtabi\Laranail\DbTools\Backup\Contracts\BackupDriverInterface;
  *
  * TLS reaches libpq through PGSSLMODE/PGSSLROOTCERT/PGSSLCERT/PGSSLKEY, from
  * the same `sslmode`/`sslrootcert`/`sslcert`/`sslkey` keys Laravel puts in the
- * PDO DSN. Archives carry no owners or grants, so a non-superuser on a managed
- * cluster can restore them, and a client older than the server is refused up
- * front: pg_dump cannot dump a newer server, and pg_restore cannot read the
- * archive a newer pg_dump wrote.
+ * PDO DSN. Restores leave owners and grants out (--no-owner --no-privileges),
+ * so a non-superuser on a managed cluster can restore; archives keep them. A
+ * pg_dump older than the server is refused up front, since it cannot dump a
+ * newer server, and a pg_restore older than the archive's pg_dump is reported
+ * as such. The password still travels in PGPASSWORD.
  */
 class PostgresBackupDriver implements BackupDriverInterface
 {
@@ -58,10 +59,8 @@ class PostgresBackupDriver implements BackupDriverInterface
             '--file=' . $dumpPath,
             '--format=custom',
             '--no-password',
-            // Ownership and grants name roles that may not exist where the
-            // archive is restored, and only a superuser may assign them.
-            '--no-owner',
-            '--no-privileges',
+            // Owners and grants stay in the archive, so a restore with another
+            // tool keeps them; this driver's restore leaves them out instead.
         ];
 
         if (! empty($config['schema'])) {
@@ -74,7 +73,7 @@ class PostgresBackupDriver implements BackupDriverInterface
 
         // Execute with password in environment variable (secure). The env
         // must be set on the pending process *before* run() executes it.
-        $result = Process::env($this->environment($config))->run($command);
+        $result = $this->backupProcess()->env($this->environment($config))->run($command);
 
         if (! $result->successful()) {
             throw new RuntimeException('PostgreSQL backup failed: ' . $result->errorOutput());
@@ -126,14 +125,25 @@ class PostgresBackupDriver implements BackupDriverInterface
             if ($this->isPlainSqlPath($path)) {
                 $command = $this->psqlCommand($config, $restorePath);
             } else {
-                $this->assertClientIsNotOlderThanServer('pg_restore', $config);
+                // pg_restore's limit is the archive, not the server: it reads
+                // any archive an equal or older pg_dump wrote, into any server.
                 $command = $this->pgRestoreCommand($config, $restorePath);
             }
 
-            $result = Process::env($this->environment($config))->run($command);
+            $result = $this->backupProcess()->env($this->environment($config))->run($command);
 
             if (! $result->successful()) {
-                throw new RuntimeException('PostgreSQL restore failed: ' . $result->errorOutput());
+                $error = $result->errorOutput();
+
+                if (str_contains($error, 'unsupported version') && str_contains($error, 'file header')) {
+                    throw new RuntimeException(
+                        'PostgreSQL restore failed: the archive was written by a newer pg_dump than this pg_restore. '
+                        . 'Install newer PostgreSQL client tools, or point laranail.db-tools.backup.binaries.pg_restore '
+                        . 'at one. ' . $error,
+                    );
+                }
+
+                throw new RuntimeException('PostgreSQL restore failed: ' . $error);
             }
         } finally {
             if ($tempPath !== null && is_file($tempPath)) {
@@ -200,6 +210,9 @@ class PostgresBackupDriver implements BackupDriverInterface
             '--username=' . $config['username'],
             '--dbname=' . $config['database'],
             '--no-password',
+            // psql carries on past a failed statement and still exits 0, so a
+            // half-applied restore used to be reported as a success.
+            '--set=ON_ERROR_STOP=1',
             '--file=' . $path,
         ];
     }
@@ -254,7 +267,7 @@ class PostgresBackupDriver implements BackupDriverInterface
             $client,
             $server,
             $config['host'] ?? '127.0.0.1',
-            $tool === 'pg_dump' ? 'dump' : 'restore into',
+            'dump',
         ));
     }
 
@@ -289,7 +302,11 @@ class PostgresBackupDriver implements BackupDriverInterface
         ];
 
         try {
-            $result = Process::env($this->environment($config))->run($command);
+            // A probe, not the job: an unreachable host must not stall the
+            // backup for Laravel's 60 seconds before pg_dump times out itself.
+            $result = Process::timeout(30)
+                ->env([...$this->environment($config), 'PGCONNECT_TIMEOUT' => '10'])
+                ->run($command);
         } catch (Throwable) {
             return null;
         }
