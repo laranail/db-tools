@@ -10,6 +10,7 @@ use Simtabi\Laranail\DbTools\Support\ConnectionContext;
 use Simtabi\Laranail\DbTools\Backup\Drivers\MysqlBackupDriver;
 use Simtabi\Laranail\DbTools\Backup\Drivers\SqliteBackupDriver;
 use Simtabi\Laranail\DbTools\Backup\Drivers\PostgresBackupDriver;
+use Simtabi\Laranail\DbTools\Backup\Support\BackupConnectionConfig;
 use Simtabi\Laranail\DbTools\Backup\Contracts\BackupDriverInterface;
 use Simtabi\Laranail\DbTools\Backup\Contracts\BackupManagerInterface;
 
@@ -132,6 +133,10 @@ class BackupManager implements BackupManagerInterface
     /**
      * Get database connection configuration
      *
+     * `url` is resolved here, before the driver is chosen, because its scheme
+     * can name a different driver than the `driver` key — exactly as it does
+     * when Laravel opens the PDO connection.
+     *
      * @param string|null $connection Connection name (null for default)
      *
      * @return array Connection configuration
@@ -148,6 +153,6 @@ class BackupManager implements BackupManagerInterface
             throw new InvalidArgumentException("Database connection '{$connectionName}' not found");
         }
 
-        return $config;
+        return BackupConnectionConfig::resolve($config);
     }
 }

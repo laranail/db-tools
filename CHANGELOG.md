@@ -5,6 +5,58 @@ All notable changes to `laranail/db-tools` are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+- **Backups dump the server the application talks to.** `BackupManager` and the MySQL and
+  PostgreSQL drivers resolved `host ?? '127.0.0.1'` and ignored `url`, so a connection configured
+  through a managed provider's `DB_URL` dumped localhost, or nothing. The config now goes through
+  Laravel's `ConfigurationUrlParser` first, so `url` wins and its scheme picks the driver, exactly as
+  it does for PDO.
+- **TLS reaches the CLI tools.** MySQL: the connection's `Pdo\Mysql::ATTR_SSL_*` options (and an
+  explicit `ssl-mode`, as a provider URL carries it) become `--ssl-mode`, `--ssl-ca`, `--ssl-capath`,
+  `--ssl-cert`, `--ssl-key` and `--ssl-cipher`; a CA verifies the server identity unless
+  `ATTR_SSL_VERIFY_SERVER_CERT` is `false`, and an unrecognised mode throws instead of downgrading.
+  MariaDB's client, which has no `--ssl-mode`, gets `--ssl --ssl-verify-server-cert`, or `--ssl
+  --skip-ssl-verify-server-cert` for `REQUIRED` (MariaDB 11.4+ verifies by default), and `REQUIRED`
+  never hands the MySQL client a CA it would verify against. PostgreSQL:
+  `sslmode`, `sslrootcert`, `sslcert` and `sslkey` become `PGSSLMODE`, `PGSSLROOTCERT`, `PGSSLCERT`
+  and `PGSSLKEY`.
+- **mysqldump takes a dump a managed server accepts back**: `--single-transaction`,
+  `--no-tablespaces`, `--triggers`, and `--set-gtid-purged=OFF` when the client supports it.
+  Routines and events are opt-in (`backup.mysql.routines`), since a non-SUPER user on a binlogged
+  server cannot restore a stored function. MySQL restores strip `DEFINER=` clauses (row data is left
+  alone), which a non-SUPER user cannot replay (error 1227); `backup.mysql.strip_definers => false`
+  keeps them. **Behaviour change:** restored views and triggers belong to the restoring user.
+- **A failed `--help` probe no longer guesses the client.** It used to be cached as "supports
+  nothing", which sent a MySQL 8 client MariaDB's `--ssl` and dropped `--set-gtid-purged`; the
+  backup now fails with the probe's error.
+- **MySQL restores stream the dump** through the client line by line instead of reading the whole
+  file into memory.
+- **pg_restore restores with `--no-owner --no-privileges --single-transaction --exit-on-error`**,
+  so a non-superuser can restore and a failure rolls back instead of leaving a half-restored
+  database. The archive itself keeps owners and grants.
+- **Dumps and restores were killed after 60 seconds**, Laravel's process default, so a
+  production-sized database could not be backed up or restored. They now run under
+  `backup.timeout` (env `DB_TOOLS_BACKUP_TIMEOUT`, default 3600 seconds; `0` removes the limit).
+- **A plain `.sql` PostgreSQL restore reported success after failed statements.** psql carries on
+  past an error and exits 0; it now runs with `--set=ON_ERROR_STOP=1`. **Behaviour change:** a
+  restore that used to half-apply and report success now stops at the first error and throws.
+- **A pg_dump older than the server is refused before it runs**, naming both versions and
+  `backup.binaries.pg_dump`; the server-version probe is bounded (30 seconds,
+  `PGCONNECT_TIMEOUT=10`). pg_restore is held to the archive, not the server: an archive from a newer
+  pg_dump fails with a message saying so.
+
+### Changed
+
+- The MySQL drivers pass the password through a `0600` `--defaults-extra-file` that is deleted when
+  the client exits, instead of `MYSQL_PWD`, which MySQL deprecated and which is readable from the
+  process environment.
+- CI: the real MySQL and PostgreSQL backup round trips (`tests/Integration/Backup`, group `backups`)
+  now run in the `drivers` job with `--fail-on-skipped`, against a connection described by `url`
+  alone. Until now their env vars were never set, so they always skipped.
+
 ## [0.1.5] - 2026-10-07
 
 ### Added

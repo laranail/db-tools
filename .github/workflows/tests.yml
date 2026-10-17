@@ -93,3 +93,31 @@ jobs:
       - name: MariaDB 11.4
         env: { DB_CONNECTION: mariadb, DB_DATABASE: db_tools_test, DB_PORT: '3307', DB_USERNAME: root, DB_PASSWORD: secret }
         run: vendor/bin/pest --no-coverage --colors=never --group=drivers
+      # The backup drivers refuse a pg_dump older than the server, and the
+      # runner image ships PostgreSQL 16 client tools against a 17 server.
+      - name: PostgreSQL 17 client tools
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq postgresql-common
+          sudo /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y
+          sudo apt-get install -y -qq postgresql-client-17
+          echo /usr/lib/postgresql/17/bin >> "$GITHUB_PATH"
+      # Real mysqldump/mysql and pg_dump/pg_restore round trips. These tests
+      # skip themselves when a server or binary is missing, so --fail-on-skipped
+      # is what makes a missing env var or client a red build instead of a pass.
+      - name: Backup round trips · mysql 8.4 · pgsql 17
+        env:
+          DB_MYSQL_HOST: 127.0.0.1
+          DB_MYSQL_PORT: '3306'
+          DB_MYSQL_DATABASE: db_tools_test
+          DB_MYSQL_USERNAME: root
+          DB_MYSQL_PASSWORD: secret
+          DB_PGSQL_HOST: 127.0.0.1
+          DB_PGSQL_PORT: '5432'
+          DB_PGSQL_DATABASE: db_tools_test
+          DB_PGSQL_USERNAME: db_tools
+          DB_PGSQL_PASSWORD: secret
+        run: |
+          mysqldump --version
+          pg_dump --version
+          vendor/bin/pest --no-coverage --colors=never --group=backups --fail-on-skipped
