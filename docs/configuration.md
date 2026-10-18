@@ -58,7 +58,7 @@ The primary-key type for the package's key-aware features. One of `BIGINT`,
 
 - the [`HasUuidsOrIntegerIds`](tools/traits.md) model trait,
 - the `BlueprintMacros` `id()` / `foreignId()` / `morphs()` overrides,
-- the [`configuredMorphs()` / `configuredNullableMorphs()`](tools/macros.md#configuredmorphs) macros,
+- the [`configuredMorphs()` / `configuredNullableMorphs()`](tools/macros.md#configuredmorphs--configurednullablemorphs) macros,
 - and the polymorphic columns in the soft-delete history table.
 
 The two boolean flags are convenience shortcuts: when either is `true` it takes
@@ -192,6 +192,51 @@ The override is read through `config()` and never `env()`: `config:cache` is
 routine on exactly the servers where this matters, and `env()` returns null once
 configuration is cached, which would shut the escape hatch for the one operator
 who needs it.
+
+
+### `readiness`
+
+```php
+'readiness' => [
+    'required_tables' => ['migrations'],
+    'middleware' => [
+        'enabled'        => true,
+        'cache_store'    => 'file',
+        'cache_key'      => 'db-tools.schema_ready',
+        'cache_ttl'      => 60,
+        'header_status'  => 'X-Schema-Status',
+        'header_message' => 'X-Schema-Message',
+    ],
+],
+```
+
+| Key | Default | |
+|---|---|---|
+| `required_tables` | `['migrations']` | Tables `SchemaReadiness` checks when a caller passes none. |
+| `middleware.enabled` | `true` | Registers `EnsureSchemaIsReady` on the global HTTP stack. It never blocks a request. |
+| `middleware.cache_store` | `file` | Where the readiness answer is cached. Keep it off the database. |
+| `middleware.cache_key` | `db-tools.schema_ready` | Cache key for that answer. |
+| `middleware.cache_ttl` | `60` | Seconds the answer is cached. |
+| `middleware.header_status` | `X-Schema-Status` | Header stamped when the schema is not ready. |
+| `middleware.header_message` | `X-Schema-Message` | Header carrying the reason. |
+
+See [Schema readiness](tools/schema-readiness.md).
+
+### `seeding`
+
+```php
+'seeding' => [
+    'files_path'   => env('DB_TOOLS_SEED_FILES_PATH'),
+    'faker_locale' => env('DB_TOOLS_FAKER_LOCALE', 'en_US'),
+],
+```
+
+| Key | Default | |
+|---|---|---|
+| `files_path` | `null` (env `DB_TOOLS_SEED_FILES_PATH`) | Directory the seeders read data files from. |
+| `faker_locale` | `en_US` (env `DB_TOOLS_FAKER_LOCALE`) | Locale for Faker-backed seeders. `fakerphp/faker` is a suggest; without it the trait throws a catchable exception. |
+
+See [Seeding](tools/seeding.md).
 
 ---
 [← Docs index](../README.md#documentation)
