@@ -7,8 +7,10 @@ namespace Simtabi\Laranail\DbTools\Backup\Drivers;
 use RuntimeException;
 use Illuminate\Support\Facades\File;
 use Simtabi\Laranail\DbTools\Backup\SqlFileRestorer;
+use Simtabi\Laranail\DbTools\Backup\Support\BackupPreflight;
 use Simtabi\Laranail\DbTools\Backup\Concerns\ResolvesBackupOptions;
 use Simtabi\Laranail\DbTools\Backup\Contracts\BackupDriverInterface;
+use Simtabi\Laranail\DbTools\Backup\Contracts\BackupDriverPreflightInterface;
 
 /**
  * Class SqliteBackupDriver
@@ -18,12 +20,21 @@ use Simtabi\Laranail\DbTools\Backup\Contracts\BackupDriverInterface;
  * file-copy backup back over the database. Simple and efficient for
  * file-based databases.
  */
-class SqliteBackupDriver implements BackupDriverInterface
+class SqliteBackupDriver implements BackupDriverInterface, BackupDriverPreflightInterface
 {
     use ResolvesBackupOptions;
 
     /** SQLite's write-ahead-log sidecars, which travel with the database file. */
     private const array WAL_EXTENSIONS = ['-wal', '-shm'];
+
+    /**
+     * A SQLite backup copies the file, so no client tool is needed. Whether
+     * the file exists is the backup's own check.
+     */
+    public function preflight(array $config): BackupPreflight
+    {
+        return BackupPreflight::ready('sqlite', 'file copy', null, null, 'SQLite backups copy the database file; no client tool is needed.');
+    }
 
     /**
      * Create a SQLite backup by copying the database file

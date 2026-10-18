@@ -7,12 +7,15 @@ namespace Simtabi\Laranail\DbTools\Backup;
 use RuntimeException;
 use InvalidArgumentException;
 use Simtabi\Laranail\DbTools\Support\ConnectionContext;
+use Simtabi\Laranail\DbTools\Backup\Support\BackupPreflight;
 use Simtabi\Laranail\DbTools\Backup\Drivers\MysqlBackupDriver;
 use Simtabi\Laranail\DbTools\Backup\Drivers\SqliteBackupDriver;
 use Simtabi\Laranail\DbTools\Backup\Drivers\PostgresBackupDriver;
 use Simtabi\Laranail\DbTools\Backup\Support\BackupConnectionConfig;
 use Simtabi\Laranail\DbTools\Backup\Contracts\BackupDriverInterface;
 use Simtabi\Laranail\DbTools\Backup\Contracts\BackupManagerInterface;
+use Simtabi\Laranail\DbTools\Backup\Contracts\BackupDriverPreflightInterface;
+use Simtabi\Laranail\DbTools\Backup\Contracts\BackupManagerPreflightInterface;
 
 /**
  * Class BackupManager
@@ -20,7 +23,7 @@ use Simtabi\Laranail\DbTools\Backup\Contracts\BackupManagerInterface;
  * Manages database backup operations using a driver pattern.
  * Automatically registers default drivers and allows custom driver registration.
  */
-class BackupManager implements BackupManagerInterface
+class BackupManager implements BackupManagerInterface, BackupManagerPreflightInterface
 {
     /**
      * Registered backup drivers
@@ -67,6 +70,23 @@ class BackupManager implements BackupManagerInterface
         $driver = $this->resolveDriver($config['driver']);
 
         return $driver->backup($config, $path);
+    }
+
+    /**
+     * Whether a backup of the connection could run now, without dumping it:
+     * the client tool the driver needs, and its version against the server's
+     * where that matters. Null when the connection's driver cannot preflight.
+     *
+     * @throws InvalidArgumentException If the connection does not exist
+     * @throws RuntimeException If no driver supports the database
+     */
+    public function preflight(?string $connection = null): ?BackupPreflight
+    {
+        $config = $this->getConnectionConfig($connection);
+        $config['connection'] = ConnectionContext::for($connection)->key();
+        $driver = $this->resolveDriver($config['driver']);
+
+        return $driver instanceof BackupDriverPreflightInterface ? $driver->preflight($config) : null;
     }
 
     /**

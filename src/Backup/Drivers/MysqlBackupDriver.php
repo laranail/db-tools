@@ -9,9 +9,11 @@ use Throwable;
 use RuntimeException;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Process;
+use Simtabi\Laranail\DbTools\Backup\Support\BackupPreflight;
 use Simtabi\Laranail\DbTools\Backup\Concerns\ResolvesBackupOptions;
 use Simtabi\Laranail\DbTools\Backup\Support\BackupConnectionConfig;
 use Simtabi\Laranail\DbTools\Backup\Contracts\BackupDriverInterface;
+use Simtabi\Laranail\DbTools\Backup\Contracts\BackupDriverPreflightInterface;
 
 /**
  * Class MysqlBackupDriver
@@ -27,7 +29,7 @@ use Simtabi\Laranail\DbTools\Backup\Contracts\BackupDriverInterface;
  * options the application connects with, and DEFINER clauses stripped on the
  * way back in, since only SUPER may name another account as definer.
  */
-class MysqlBackupDriver implements BackupDriverInterface
+class MysqlBackupDriver implements BackupDriverInterface, BackupDriverPreflightInterface
 {
     use ResolvesBackupOptions;
 
@@ -88,6 +90,39 @@ class MysqlBackupDriver implements BackupDriverInterface
         $identifier = '(?:`(?:[^`]|``)*`|\'(?:[^\']|\'\')*\'|[^\s@*`\']+)';
 
         return (string) preg_replace("/\\bDEFINER\\s*=\\s*{$identifier}\\s*@\\s*{$identifier}/i", '', $line);
+    }
+
+    /**
+     * Whether mysqldump could back this connection up now: it runs. Unlike
+     * pg_dump, mysqldump dumps servers newer than itself, so no version is
+     * compared. Nothing is dumped.
+     *
+     * @throws RuntimeException If the configuration is invalid
+     */
+    public function preflight(array $config): BackupPreflight
+    {
+        $config = BackupConnectionConfig::resolve($config);
+        $this->validateConfig($config);
+
+        $binary = $this->binary('mysqldump');
+
+        try {
+            $result = Process::run([$binary, '--version']);
+        } catch (Throwable) {
+            return BackupPreflight::missing('mysqldump', $binary);
+        }
+
+        if (! $result->successful()) {
+            return BackupPreflight::missing('mysqldump', $binary);
+        }
+
+        // MariaDB prints "Ver 10.19 Distrib 10.11.6-MariaDB"; MySQL "Ver 8.0.44".
+        $output = trim($result->output());
+        $version = preg_match('/Distrib\s+(\d+)/', $output, $m) === 1 || preg_match('/Ver\s+(\d+)/', $output, $m) === 1
+            ? (int) $m[1]
+            : null;
+
+        return BackupPreflight::ready('mysqldump', $binary, $version, null, 'mysqldump runs: ' . strtok($output, "\n"));
     }
 
     /**

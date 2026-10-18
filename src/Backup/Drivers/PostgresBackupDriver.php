@@ -7,9 +7,12 @@ namespace Simtabi\Laranail\DbTools\Backup\Drivers;
 use Throwable;
 use RuntimeException;
 use Illuminate\Support\Facades\Process;
+use Simtabi\Laranail\DbTools\Backup\Enums\PreflightStatus;
+use Simtabi\Laranail\DbTools\Backup\Support\BackupPreflight;
 use Simtabi\Laranail\DbTools\Backup\Concerns\ResolvesBackupOptions;
 use Simtabi\Laranail\DbTools\Backup\Support\BackupConnectionConfig;
 use Simtabi\Laranail\DbTools\Backup\Contracts\BackupDriverInterface;
+use Simtabi\Laranail\DbTools\Backup\Contracts\BackupDriverPreflightInterface;
 
 /**
  * Class PostgresBackupDriver
@@ -29,7 +32,7 @@ use Simtabi\Laranail\DbTools\Backup\Contracts\BackupDriverInterface;
  * pg_restore older than the archive's pg_dump is reported as such. The
  * password still travels in PGPASSWORD.
  */
-class PostgresBackupDriver implements BackupDriverInterface
+class PostgresBackupDriver implements BackupDriverInterface, BackupDriverPreflightInterface
 {
     use ResolvesBackupOptions;
 
@@ -169,6 +172,20 @@ class PostgresBackupDriver implements BackupDriverInterface
     }
 
     /**
+     * Whether pg_dump could back this connection up now: it runs, and it is
+     * not older than the server. Nothing is dumped.
+     *
+     * @throws RuntimeException If the configuration is invalid
+     */
+    public function preflight(array $config): BackupPreflight
+    {
+        $config = BackupConnectionConfig::resolve($config);
+        $this->validateConfig($config);
+
+        return $this->inspectClient('pg_dump', $config);
+    }
+
+    /**
      * Build the pg_restore command for a custom-format dump.
      *
      * @return array<int, string>
@@ -243,46 +260,81 @@ class PostgresBackupDriver implements BackupDriverInterface
     /**
      * Refuse to run a client tool older than the server it would talk to.
      *
-     * Either version being unknown skips the check: the tool itself then runs
-     * and reports whatever stopped the probe (no psql, no route, bad password).
+     * Either version being unknown skips the check, and so does a tool that
+     * will not run: the tool itself then runs and reports whatever stopped
+     * the probe (no psql, no route, bad password, not installed).
      *
      * @throws RuntimeException If the client's major version is older
      */
     private function assertClientIsNotOlderThanServer(string $tool, array $config): void
     {
-        $client = $this->clientMajorVersion($this->binary($tool));
+        $preflight = $this->inspectClient($tool, $config);
 
-        if ($client === null) {
-            return;
+        if ($preflight->status === PreflightStatus::Outdated) {
+            throw new RuntimeException($preflight->message);
         }
-
-        $server = $this->serverMajorVersion($config);
-
-        if ($server === null || $client >= $server) {
-            return;
-        }
-
-        throw new RuntimeException(sprintf(
-            '%1$s %2$d is older than the PostgreSQL %3$d server at %4$s, and cannot %5$s it. '
-            . 'Install the PostgreSQL %3$d (or newer) client tools, or point '
-            . 'laranail.db-tools.backup.binaries.%1$s at one.',
-            $tool,
-            $client,
-            $server,
-            $config['host'] ?? '127.0.0.1',
-            'dump',
-        ));
     }
 
-    private function clientMajorVersion(string $binary): ?int
+    /**
+     * @param array<string, mixed> $config an already resolved, validated config
+     */
+    private function inspectClient(string $tool, array $config): BackupPreflight
+    {
+        $binary = $this->binary($tool);
+        $probe = $this->clientMajorVersion($binary);
+
+        if ($probe === false) {
+            return BackupPreflight::missing($tool, $binary);
+        }
+
+        $client = $probe;
+        $server = $client === null ? null : $this->serverMajorVersion($config);
+        $host = $config['host'] ?? '127.0.0.1';
+
+        if ($client !== null && $server !== null && $client < $server) {
+            return new BackupPreflight(
+                PreflightStatus::Outdated,
+                $tool,
+                $binary,
+                $client,
+                $server,
+                sprintf(
+                    '%1$s %2$d is older than the PostgreSQL %3$d server at %4$s, and cannot %5$s it. '
+                    . 'Install the PostgreSQL %3$d (or newer) client tools, or point '
+                    . 'laranail.db-tools.backup.binaries.%1$s at one.',
+                    $tool,
+                    $client,
+                    $server,
+                    $host,
+                    'dump',
+                ),
+            );
+        }
+
+        return BackupPreflight::ready($tool, $binary, $client, $server, match (true) {
+            $client === null => "{$tool} runs, but its version could not be read.",
+            $server === null => "{$tool} {$client} runs; the server's version could not be read, so it was not compared.",
+            default          => "{$tool} {$client} can dump the PostgreSQL {$server} server at {$host}.",
+        });
+    }
+
+    /**
+     * The client's major version; null when it runs but prints no version
+     * this can read, false when it does not run at all.
+     */
+    private function clientMajorVersion(string $binary): int|false|null
     {
         try {
             $result = Process::run([$binary, '--version']);
         } catch (Throwable) {
-            return null;
+            return false;
         }
 
-        if (! $result->successful() || preg_match('/PostgreSQL\)?\s+(\d+)/', $result->output(), $m) !== 1) {
+        if (! $result->successful()) {
+            return false;
+        }
+
+        if (preg_match('/PostgreSQL\)?\s+(\d+)/', $result->output(), $m) !== 1) {
             return null;
         }
 
