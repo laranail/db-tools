@@ -40,8 +40,8 @@ jobs:
         uses: actions/cache@v6
         with:
           path: ${{ steps.composer-cache.outputs.dir }}
-          key: composer-${{ runner.os }}-${{ matrix.php }}-${{ hashFiles('**/composer.json') }}
-          restore-keys: composer-${{ runner.os }}-${{ matrix.php }}-
+          key: composer-${{ runner.os }}-security-${{ hashFiles('**/composer.json') }}
+          restore-keys: composer-${{ runner.os }}-security-
 
       - name: Drop cached laranail archives
         # laranail/* resolve through a single MOVING v0.1.0 tag, so composer's dist

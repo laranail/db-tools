@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **The README sent vulnerability reports to the community inbox.** It now names
+  `security@simtabi.com`, as `SECURITY.md` does, and links the organisation's Code of Conduct
+  instead of a file this repository no longer has.
+- **The install instructions could not work.** The package is not on Packagist; the README and
+  `docs/installation.md` now give the VCS repositories a consumer adds. The requirements list
+  matched none of `composer.json`'s constraints, and the README claimed no dependency on other
+  Laranail packages while requiring `laranail/package-tools`.
+- **A release with no CHANGELOG section was published with a "See CHANGELOG" stub.** The release
+  workflow now fails instead.
+- The `configuredMorphs()` link in `docs/configuration.md` pointed at an anchor that does not exist.
+
+### Changed
+
+- `docs/configuration.md` documents the `readiness` and `seeding` blocks, and the README indexes
+  every guide and reference page.
+- CI: `tests.yml` runs with a read-only token; the `security` cache key no longer reads a matrix
+  the job does not have.
+- The untagged 0.2.0–0.9.0 sections are filed under "Internal history (not published)", after
+  `0.1.0`, and the released versions have compare links.
+
 ## [0.1.8] - 2026-10-18
 
 ### Added
@@ -47,7 +69,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   stands in for `host`; `username`, `password` and `database` are still required.
 
 ### Changed
-
 
 - Tests: the suite left 47 empty files in the system temp directory on every run. `tempnam()`
   creates the file it names, and tests appended a suffix to its result and cleaned up only the
@@ -265,7 +286,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Both were `protected`/internal concerns on `final` commands, so nothing outside
   this package could have been using them; they are listed for completeness.
 
-## [0.9.0] - 2026-08-26
+## [0.1.0] - 2026-07-11
+
+Initial public release.
+
+## Internal history (not published)
+
+These were tagged during development, before the line was reset to `0.1.x`, and the tags have
+since been withdrawn. None of them is installable; the work they describe ships inside the `0.1.x`
+releases above. They are kept for provenance.
+
+## v0.9.0 - 2026-08-26
 
 Built on `laranail/package-tools` rather than beside it.
 
@@ -310,7 +341,7 @@ Built on `laranail/package-tools` rather than beside it.
   by reading the provider. Grepping proves how a registration was written, not what the framework
   ended up holding.
 
-## [0.8.0] - 2026-08-14
+## v0.8.0 - 2026-08-14
 
 The database scaffolding every consumer was re-inventing, taken into the package
 that should have held it. Nothing here is a rewrite: it is a consuming
@@ -382,7 +413,7 @@ coverage gap they all shared.
   importing it moves to
   `Simtabi\Laranail\DbTools\Seeding\Concerns\InteractsWithSeedFiles`.
 
-## [0.7.0] - 2026-07-28
+## v0.7.0 - 2026-07-28
 
 A correctness sweep over the whole package, plus a structural fix for the bug
 class behind it. Most entries here are cases where the code returned a
@@ -680,7 +711,7 @@ was silently not happening.
   `chmod` was kept as defence in depth and the test is labelled a regression
   guard rather than a fix, since it passes against the old code too.
 
-## [0.6.0] - 2026-07-28
+## v0.6.0 - 2026-07-28
 
 ### Added
 - **`EnsureSchemaIsReady` HTTP middleware.** On an instance whose database is not fully migrated
@@ -701,7 +732,7 @@ was silently not happening.
   request and is cheap; disable with `laranail.db-tools.readiness.middleware.enabled = false` if you
   do not want it. Apps that registered their own copy should drop it and rely on the package's.
 
-## [0.5.2] - 2026-07-28
+## v0.5.2 - 2026-07-28
 
 ### Fixed
 - **`extra.branch-alias` was stale, and `^0.4` consumers may have received 0.5.x code.** The
@@ -770,7 +801,7 @@ was silently not happening.
   and the floor `symfony/uid` already imposes transitively. No code change — the declared
   range now states what was already true.
 
-## [0.5.1] - 2026-07-28
+## v0.5.1 - 2026-07-28
 
 ### Changed
 - `brick/money` now allows `^0.13 || ^0.14` (was `^0.13`). The cast uses only
@@ -784,7 +815,7 @@ was silently not happening.
 - CI: `actions/checkout` 7.0.0 → 7.0.1 and `softprops/action-gh-release` 3.0.1 → 3.0.2,
   both SHA-pinned.
 
-## [0.5.0] - 2026-07-28
+## v0.5.0 - 2026-07-28
 
 ### Fixed
 - **The availability probe no longer leaks its connect timeout into application config.**
@@ -825,20 +856,20 @@ was silently not happening.
 - **Breaking (interface):** `SchemaReadinessInterface` gains `flush()`. Implementors outside
   this package must add it. No change for callers of the shipped `SchemaReadiness`.
 
-## [0.4.2] - 2026-07-24
+## v0.4.2 - 2026-07-24
 
 ### Fixed
 - The availability probe opens exactly one connection and reuses it: no `DB::purge()` (which
   would close a live PDO and wipe a `:memory:` SQLite database) and no cloned connection.
   A healthy check now costs a single connection rather than two.
 
-## [0.4.1] - 2026-07-24
+## v0.4.1 - 2026-07-24
 
 ### Fixed
 - The availability probe reuses the real connection instead of registering a throwaway
   `__db_tools_probe__` connection in config.
 
-## [0.4.0] - 2026-07-23
+## v0.4.0 - 2026-07-23
 
 ### Changed
 - **Breaking:** package configuration is namespaced under `laranail.db-tools`. Read every
@@ -850,7 +881,7 @@ was silently not happening.
   `config('laranail.db-tools.*')`, and move any published `config/db-tools.php` to
   `config/laranail/db-tools.php`. See [docs/configuration.md](docs/configuration.md).
 
-## [0.3.0] - 2026-07-23
+## v0.3.0 - 2026-07-23
 
 ### Added
 - **Boot-safety layer.** `suspend()` / `resume()` / `isSuspended()` on the availability
@@ -873,7 +904,7 @@ was silently not happening.
 - Config: `guard.probe_timeout`, `guard.emit_events`, `guard.log_events`,
   `readiness.required_tables`, `boot_without_database.drivers`.
 
-## [0.2.0] - 2026-07-22
+## v0.2.0 - 2026-07-22
 
 ### Added
 - **Availability guard** (`src/Guard/`): a boot-safe `DatabaseGuard` implementing
@@ -884,12 +915,13 @@ was silently not happening.
 - `DbTools::guard()/isAvailable()/tableExists()/whenAvailable()` accessors and `DbToolsFacade`
   `@method` hints; `db-tools.guard.memoize` config.
 
-## [0.1.0] - 2026-07-11
-
-Initial public release.
-
 [Unreleased]: https://github.com/laranail/db-tools/compare/v0.1.8...HEAD
 [0.1.8]: https://github.com/laranail/db-tools/compare/v0.1.7...v0.1.8
 [0.1.7]: https://github.com/laranail/db-tools/compare/v0.1.6...v0.1.7
 [0.1.6]: https://github.com/laranail/db-tools/compare/v0.1.5...v0.1.6
 [0.1.5]: https://github.com/laranail/db-tools/compare/v0.1.4...v0.1.5
+[0.1.4]: https://github.com/laranail/db-tools/compare/v0.1.3...v0.1.4
+[0.1.3]: https://github.com/laranail/db-tools/compare/v0.1.2...v0.1.3
+[0.1.2]: https://github.com/laranail/db-tools/compare/v0.1.1...v0.1.2
+[0.1.1]: https://github.com/laranail/db-tools/compare/v0.1.0...v0.1.1
+[0.1.0]: https://github.com/laranail/db-tools/releases/tag/v0.1.0

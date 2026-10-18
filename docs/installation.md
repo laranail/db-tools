@@ -4,17 +4,34 @@ Install `laranail/db-tools` and let Laravel auto-discover it.
 
 ## Requirements
 
-- PHP `^8.4 || ^8.5`
-- Laravel `^13.0` — depends only on `illuminate/database` + `illuminate/support`
-- `ramsey/uuid ^4.7`, `symfony/uid ^7.0` (for UUID/ULID/NanoID traits)
-- `spatie/laravel-sluggable ^3.6` (for the `HasSlug` trait)
-- `brick/money ^0.10` (for the `CastMoney` cast)
+- PHP `^8.4.1 || ^8.5`
+- Laravel `^13.0` (`laravel/framework`)
+- `laranail/package-tools ^0.1`, which builds the service provider
+- `ramsey/uuid ^4.7`, `symfony/uid ^7.0 || ^8.0` (for UUID/ULID/NanoID traits)
+- `spatie/laravel-sluggable ^4.0` (for the `HasSlug` trait)
+- `brick/money ^0.13 || ^0.14 || ^0.15` (for the `CastMoney` cast)
 
 ## Install
 
-```bash
-composer require laranail/db-tools
+`laranail/db-tools` is not on Packagist; it resolves through VCS repositories. Composer reads
+`repositories` only from the root package, so your application lists both db-tools and
+`laranail/package-tools`:
+
+```json
+"repositories": [
+    { "type": "vcs", "url": "https://github.com/laranail/db-tools" },
+    { "type": "vcs", "url": "https://github.com/laranail/package-tools" },
+    { "type": "composer", "url": "https://repo.packagist.org", "exclude": ["laranail/*"] },
+    { "packagist.org": false }
+]
 ```
+
+```bash
+composer require laranail/db-tools:^0.1
+```
+
+The `exclude` line stops a copy of a `laranail/*` package on Packagist from winning over the VCS
+one.
 
 ## Auto-discovery
 

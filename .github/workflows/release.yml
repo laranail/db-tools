@@ -58,8 +58,11 @@ jobs:
             f && /^## \[/ {exit}
             f {print}
           ' CHANGELOG.md > release-notes.md
+          # Every release carries its own notes; a missing section is a release
+          # mistake to fix in CHANGELOG.md, not something to paper over.
           if [ ! -s release-notes.md ]; then
-            echo "See [CHANGELOG.md](https://github.com/laranail/db-tools/blob/main/CHANGELOG.md) for details." > release-notes.md
+            echo "::error::CHANGELOG.md has no '## [$version]' section; add it before tagging v$version." >&2
+            exit 1
           fi
 
       - name: Create GitHub release
