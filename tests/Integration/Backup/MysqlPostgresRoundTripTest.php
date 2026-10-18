@@ -4,12 +4,9 @@ declare(strict_types=1);
 
 namespace Simtabi\Laranail\DbTools\Tests\Integration\Backup;
 
-use Throwable;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Schema;
 use PHPUnit\Framework\Attributes\Group;
 use Simtabi\Laranail\DbTools\Tests\TestCase;
-use Simtabi\Laranail\DbTools\Backup\BackupManager;
+use Simtabi\Laranail\DbTools\Tests\Integration\Backup\Concerns\RunsBackupRoundTrips;
 
 /**
  * Real MySQL and PostgreSQL backup/restore round-trips.
@@ -30,19 +27,7 @@ use Simtabi\Laranail\DbTools\Backup\BackupManager;
 #[Group('backups')]
 final class MysqlPostgresRoundTripTest extends TestCase
 {
-    /** @var array<int, string> */
-    private array $tempFiles = [];
-
-    protected function tearDown(): void
-    {
-        foreach ($this->tempFiles as $file) {
-            if (is_file($file)) {
-                @unlink($file);
-            }
-        }
-
-        parent::tearDown();
-    }
+    use RunsBackupRoundTrips;
 
     public function test_mysql_round_trip_or_skip(): void
     {
@@ -98,73 +83,5 @@ final class MysqlPostgresRoundTripTest extends TestCase
             env("{$prefix}_PORT", $port),
             env("{$prefix}_DATABASE", 'db_tools_test'),
         );
-    }
-
-    private function binaryOnPath(string $name): bool
-    {
-        $which = shell_exec('command -v ' . escapeshellarg($name) . ' 2>/dev/null');
-
-        return is_string($which) && trim($which) !== '';
-    }
-
-    /**
-     * @param array<string, mixed> $config
-     */
-    private function serverReachable(string $name, array $config): bool
-    {
-        config()->set("database.connections.{$name}", $config);
-        DB::purge($name);
-
-        try {
-            DB::connection($name)->getPdo();
-
-            return true;
-        } catch (Throwable) {
-            return false;
-        }
-    }
-
-    private function runRoundTrip(string $connection, string $suffix): void
-    {
-        DB::connection($connection)->statement('DROP VIEW IF EXISTS rt_widget_names');
-        Schema::connection($connection)->dropIfExists('rt_widgets');
-        Schema::connection($connection)->create('rt_widgets', function ($t): void {
-            $t->integer('id');
-            $t->string('name');
-        });
-
-        DB::connection($connection)->table('rt_widgets')->insert([
-            'id'   => 1,
-            'name' => 'original-row',
-        ]);
-        DB::connection($connection)->statement('CREATE VIEW rt_widget_names AS SELECT name FROM rt_widgets');
-
-        $backupPath = self::uniqueTempPath('dbt-server-backup-', $suffix);
-        $this->tempFiles[] = $backupPath;
-
-        $manager = new BackupManager;
-
-        self::assertTrue($manager->backup($backupPath, $connection));
-        self::assertFileExists($backupPath);
-
-        DB::connection($connection)->statement('DROP VIEW rt_widget_names');
-        DB::connection($connection)->table('rt_widgets')->delete();
-        self::assertSame(0, DB::connection($connection)->table('rt_widgets')->count());
-
-        self::assertTrue($manager->restore($backupPath, $connection));
-
-        self::assertSame(1, DB::connection($connection)->table('rt_widgets')->count());
-        self::assertSame(
-            'original-row',
-            DB::connection($connection)->table('rt_widgets')->where('id', 1)->value('name'),
-        );
-        self::assertSame(
-            'original-row',
-            DB::connection($connection)->table('rt_widget_names')->value('name'),
-            'The view must come back too.',
-        );
-
-        DB::connection($connection)->statement('DROP VIEW IF EXISTS rt_widget_names');
-        Schema::connection($connection)->dropIfExists('rt_widgets');
     }
 }
