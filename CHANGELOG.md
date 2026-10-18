@@ -7,7 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **`BackupManager::preflight()`** says whether a backup of a connection could run now, without
+  dumping: a `BackupPreflight` with `PreflightStatus` `Ready`, `Missing` (the client will not run) or
+  `Outdated` (pg_dump older than the server), the binary it would run, both major versions and the
+  fix. Drivers opt in through `BackupDriverPreflightInterface`, the manager through
+  `BackupManagerPreflightInterface`, so existing implementations of `BackupDriverInterface` and
+  `BackupManagerInterface` are unaffected. A missing or old client was otherwise only found when a
+  backup ran, which for laranail/db-console is when a drop is refused.
+
 ### Changed
+
+- The PostgreSQL driver's check that refuses a pg_dump older than the server now goes through the
+  same preflight. Its behaviour and message are unchanged.
 
 - CI: a `backups-tls` job runs the real MySQL and PostgreSQL round trips against servers that refuse
   plaintext (MySQL `require_secure_transport=ON`, PostgreSQL hostssl-only), as restricted users, with

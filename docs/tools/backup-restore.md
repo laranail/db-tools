@@ -237,12 +237,50 @@ Only `.sql` and `.dump` files are importable. A live SQLite database file
 the running database file in place, which is out of scope for a dump import;
 `handleImport()` throws a `RuntimeException` for those.
 
+## Preflight: will a backup run?
+
+`BackupManager::preflight(?string $connection = null)` says whether a backup of
+the connection could run now, without dumping anything. It returns a
+`BackupPreflight`, or `null` when the connection's driver cannot preflight:
+
+| Field | Meaning |
+|---|---|
+| `status` | `PreflightStatus::Ready`, `Missing` (the tool will not run) or `Outdated` (the tool is older than the server) |
+| `tool`, `binary` | the tool the backup runs (`pg_dump`, `mysqldump`) and the path or name it would run |
+| `clientVersion`, `serverVersion` | major versions, `null` where they could not be read |
+| `message` | what was found, and the fix |
+
+```php
+$preflight = app(BackupManager::class)->preflight('pgsql');
+
+if (! $preflight?->isReady()) {
+    logger()->warning($preflight->message);
+}
+```
+
+Each driver checks what can stop its own dump:
+
+- **PostgreSQL**: `pg_dump` runs, and its major is at least the server's.
+  `pg_dump` cannot dump a newer server, so `backup()` refuses that client
+  up front with the same message. A server whose version cannot be read is not
+  compared.
+- **MySQL / MariaDB**: `mysqldump` runs. It dumps servers newer than itself, so
+  no version is compared.
+- **SQLite**: always ready; the backup copies the file.
+
+A dump client is easy to have and still miss: a host whose `PATH` lacks it, or
+an old client earlier on `PATH` than a new one. A process keeps the `PATH` it
+started with, so a shell, worker or IDE started before the fix still runs the
+old one. Run the preflight from the process that will take the backups.
+
 ## Custom drivers
 
 `registerDriver()` appends a driver implementing `BackupDriverInterface`
 (`backup(array $config, string $path): bool` + `supports(string $driver): bool`)
 and returns `$this`, so you can register additional or override database
-support.
+support. A driver that also implements `BackupDriverPreflightInterface`
+(`preflight(array $config): BackupPreflight`) takes part in the preflight;
+one that does not makes `preflight()` return `null`.
 
 ```php
 $manager->registerDriver(new MyCustomBackupDriver());
@@ -256,12 +294,16 @@ public function backup(string $path, ?string $connection = null): bool;
 public function restore(string $path, ?string $connection = null): bool;
 public function supportsDriver(string $driver): bool;
 
-// BackupManager (concrete)
+// BackupManager (concrete), also BackupManagerPreflightInterface
 public function registerDriver(BackupDriverInterface $driver): static;
+public function preflight(?string $connection = null): ?BackupPreflight;
 
 // BackupDriverInterface
 public function backup(array $config, string $path): bool;
 public function supports(string $driver): bool;
+
+// BackupDriverPreflightInterface (optional, per driver)
+public function preflight(array $config): BackupPreflight;
 ```
 
 ---
