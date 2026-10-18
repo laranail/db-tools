@@ -121,3 +121,111 @@ jobs:
           mysqldump --version
           pg_dump --version
           vendor/bin/pest --no-coverage --colors=never --group=backups --fail-on-skipped
+
+  # The round trips above run against servers that accept plaintext, so the
+  # TLS settings the drivers hand mysqldump/mysql and libpq were never tested
+  # against a server that requires them. These servers refuse plaintext the
+  # way a managed provider's do: MySQL with require_secure_transport=ON,
+  # PostgreSQL with hostssl-only pg_hba. Both present a certificate for
+  # db.backups-tls.test, and the users are restricted, never root or a
+  # superuser. TlsRoundTripTest also dumps with a CA that signed nothing,
+  # which only a dump that verifies the server refuses.
+  backups-tls:
+    name: backups over TLS · mysql 8.4 · pgsql 17
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+      - uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # 2.40.0
+        with:
+          php-version: '8.4'
+          extensions: 'dom, curl, libxml, mbstring, zip, fileinfo, pdo, pdo_sqlite, pdo_pgsql, pdo_mysql'
+          coverage: none
+          tools: composer:v2
+      - name: Install dependencies
+        env:
+          COMPOSER_AUTH: '{"github-oauth":{"github.com":"${{ secrets.GITHUB_TOKEN }}"}}'
+        run: composer update --prefer-stable --prefer-dist --no-interaction --no-progress
+      - name: PostgreSQL 17 client tools
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq postgresql-common
+          sudo /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y
+          sudo apt-get install -y -qq postgresql-client-17
+          echo /usr/lib/postgresql/17/bin >> "$GITHUB_PATH"
+      - name: Name the runner db.backups-tls.test
+        run: echo '127.0.0.1 db.backups-tls.test' | sudo tee -a /etc/hosts
+      - name: Generate a CA, a server certificate, and a CA that signed nothing
+        run: |
+          set -euo pipefail
+          tls="$RUNNER_TEMP/tls"
+          mkdir -p "$tls/mysql" "$tls/pgsql"
+          cd "$tls"
+          openssl req -x509 -newkey rsa:2048 -nodes -days 1 -subj '/CN=db-tools backups-tls CA' -keyout ca.key -out ca.pem
+          openssl req -x509 -newkey rsa:2048 -nodes -days 1 -subj '/CN=db-tools unrelated CA' -keyout wrong-ca.key -out wrong-ca.pem
+          openssl req -newkey rsa:2048 -nodes -subj '/CN=db.backups-tls.test' -keyout server.key -out server.csr
+          printf 'subjectAltName=DNS:db.backups-tls.test\n' > san.ext
+          openssl x509 -req -in server.csr -CA ca.pem -CAkey ca.key -CAcreateserial -days 1 -extfile san.ext -out server.pem
+          cp ca.pem server.pem server.key mysql/
+          cp ca.pem server.pem server.key pgsql/
+          # TCP only through hostssl; the socket stays open to create the user.
+          printf '%s\n' 'local all all trust' 'hostnossl all all all reject' 'hostssl all all all scram-sha-256' > pgsql/pg_hba.conf
+          # Both images run their server as uid 999, and PostgreSQL refuses a
+          # key that is not private to that user.
+          chmod 0644 mysql/* pgsql/*
+          chmod 0600 pgsql/server.key
+          sudo chown -R 999:999 mysql pgsql
+      - name: Start the servers
+        run: |
+          set -euo pipefail
+          tls="$RUNNER_TEMP/tls"
+          docker run -d --name mysql-tls -p 3306:3306 -v "$tls/mysql:/etc/db-tls:ro" \
+            -e MYSQL_ROOT_PASSWORD=secret -e MYSQL_DATABASE=db_tools_test mysql:8.4 \
+            --require-secure-transport=ON \
+            --ssl-ca=/etc/db-tls/ca.pem --ssl-cert=/etc/db-tls/server.pem --ssl-key=/etc/db-tls/server.key
+          docker run -d --name pgsql-tls -p 5432:5432 -v "$tls/pgsql:/etc/db-tls:ro" \
+            -e POSTGRES_PASSWORD=secret postgres:17 \
+            -c ssl=on -c ssl_ca_file=/etc/db-tls/ca.pem \
+            -c ssl_cert_file=/etc/db-tls/server.pem -c ssl_key_file=/etc/db-tls/server.key \
+            -c hba_file=/etc/db-tls/pg_hba.conf
+          wait_for() {
+            for _ in $(seq 1 60); do
+              if docker exec "$1" sh -c "$2" > /dev/null 2>&1; then return 0; fi
+              sleep 2
+            done
+            echo "$1 never answered: $2"
+            docker logs "$1" 2>&1 | tail -n 30
+            return 1
+          }
+          wait_for mysql-tls 'mysqladmin ping -h 127.0.0.1 -uroot -psecret --silent'
+          wait_for pgsql-tls 'pg_isready -h 127.0.0.1 -U postgres'
+      - name: Create restricted users (no root, no superuser)
+        run: |
+          set -euo pipefail
+          # Over the socket, which require_secure_transport counts as secure.
+          docker exec -i mysql-tls mysql -uroot -psecret <<'SQL'
+          CREATE USER 'backup_user'@'%' IDENTIFIED BY 'secret';
+          GRANT SELECT, INSERT, UPDATE, DELETE, CREATE, DROP, ALTER, INDEX, REFERENCES, CREATE VIEW, SHOW VIEW, TRIGGER, LOCK TABLES, EVENT, CREATE ROUTINE, ALTER ROUTINE, EXECUTE ON db_tools_test.* TO 'backup_user'@'%';
+          SQL
+          docker exec pgsql-tls psql -v ON_ERROR_STOP=1 -U postgres \
+            -c "CREATE ROLE backup_user WITH LOGIN PASSWORD 'secret' NOSUPERUSER" \
+            -c "CREATE DATABASE db_tools_test OWNER backup_user"
+      - name: Backup round trips over TLS
+        env:
+          DB_TLS_HOST: db.backups-tls.test
+          DB_TLS_CA: ${{ runner.temp }}/tls/ca.pem
+          DB_TLS_WRONG_CA: ${{ runner.temp }}/tls/wrong-ca.pem
+          DB_TLS_MYSQL_PORT: '3306'
+          DB_TLS_PGSQL_PORT: '5432'
+          DB_TLS_DATABASE: db_tools_test
+          DB_TLS_USERNAME: backup_user
+          DB_TLS_PASSWORD: secret
+        run: |
+          mysqldump --version
+          pg_dump --version
+          vendor/bin/pest --no-coverage --colors=never --group=backups-tls --fail-on-skipped
+      - name: Server logs
+        if: failure()
+        run: for server in mysql-tls pgsql-tls; do echo "::group::$server"; docker logs "$server" 2>&1 | tail -n 50; echo '::endgroup::'; done
