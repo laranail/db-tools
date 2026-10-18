@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- CI: a `backups-tls` job runs the real MySQL and PostgreSQL round trips against servers that refuse
+  plaintext (MySQL `require_secure_transport=ON`, PostgreSQL hostssl-only), as restricted users, with
+  `verify-full`/`VERIFY_IDENTITY` settings in the connection. It also dumps with a CA that signed
+  nothing, which only a dump that verifies the server refuses: mysql's client and libpq default to
+  opportunistic TLS, so a passing round trip alone could not show the drivers apply the TLS settings.
+
 ## [0.1.7] - 2026-10-17
 
 ### Fixed
@@ -24,6 +32,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   stands in for `host`; `username`, `password` and `database` are still required.
 
 ### Changed
+
 
 - Tests: the suite left 47 empty files in the system temp directory on every run. `tempnam()`
   creates the file it names, and tests appended a suffix to its result and cleaned up only the
