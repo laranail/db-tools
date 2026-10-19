@@ -12,6 +12,7 @@ use Simtabi\Laranail\DbTools\Tests\TestCase;
 use Simtabi\Laranail\DbTools\Guard\DatabaseGuard;
 use Simtabi\Laranail\DbTools\Schema\SchemaStatus;
 use Simtabi\Laranail\DbTools\Events\SchemaNotReady;
+use Simtabi\Laranail\Package\Tools\Testing\TestCredentials;
 use Simtabi\Laranail\DbTools\Schema\Contracts\SchemaReadinessInterface;
 use Simtabi\Laranail\DbTools\Guard\Contracts\DatabaseAvailabilityInterface;
 
@@ -135,7 +136,7 @@ final class SchemaReadinessTest extends TestCase
             'port'     => 1,
             'database' => 'nope',
             'username' => 'nope',
-            'password' => 'nope',
+            'password' => TestCredentials::password(),
             'options'  => [PDO::ATTR_TIMEOUT => 1],
         ]);
     }

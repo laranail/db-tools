@@ -8,6 +8,7 @@ use Override;
 use Illuminate\Database\Eloquent\Model;
 use Simtabi\Laranail\DbTools\Tests\TestCase;
 use Simtabi\Laranail\DbTools\Concerns\HasMergedHidden;
+use Simtabi\Laranail\Package\Tools\Testing\TestCredentials;
 
 class MergedHiddenBase extends Model
 {
@@ -50,9 +51,9 @@ final class HasMergedHiddenTest extends TestCase
     {
         $model = new MergedHiddenChild([
             'email'             => 'ada@example.com',
-            'password'          => 'secret',
-            'remember_token'    => 'token',
-            'two_factor_secret' => 'totp',
+            'password'          => TestCredentials::password('hidden'),
+            'remember_token'    => TestCredentials::secret('remember'),
+            'two_factor_secret' => TestCredentials::secret('authenticator'),
         ]);
 
         self::assertSame(['email' => 'ada@example.com'], $model->toArray());

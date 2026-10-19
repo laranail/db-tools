@@ -14,6 +14,7 @@ use Simtabi\Laranail\DbTools\Tests\TestCase;
 use Simtabi\Laranail\DbTools\Guard\DatabaseGuard;
 use Illuminate\Database\Events\ConnectionEstablished;
 use Simtabi\Laranail\DbTools\Events\DatabaseUnavailable;
+use Simtabi\Laranail\Package\Tools\Testing\TestCredentials;
 use Simtabi\Laranail\DbTools\Guard\Contracts\DatabaseAvailabilityInterface;
 use Simtabi\Laranail\DbTools\Schema\Contracts\DatabaseSchemaInspectorInterface;
 use Simtabi\Laranail\DbTools\Schema\Contracts\DatabaseConnectionTesterInterface;
@@ -244,7 +245,7 @@ final class DatabaseGuardTest extends TestCase
             'port'     => 1,
             'database' => 'nope',
             'username' => 'nope',
-            'password' => 'nope',
+            'password' => TestCredentials::password(),
             'options'  => [PDO::ATTR_TIMEOUT => 1],
         ]);
 
@@ -257,7 +258,7 @@ final class DatabaseGuardTest extends TestCase
             'port'     => 3306,
             'database' => 'nope',
             'username' => 'nope',
-            'password' => 'nope',
+            'password' => TestCredentials::password(),
         ]);
     }
 }

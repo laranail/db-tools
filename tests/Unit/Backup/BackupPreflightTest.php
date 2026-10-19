@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Process;
 use Simtabi\Laranail\DbTools\Tests\TestCase;
 use Simtabi\Laranail\DbTools\Backup\BackupManager;
 use Simtabi\Laranail\DbTools\Backup\Enums\PreflightStatus;
+use Simtabi\Laranail\Package\Tools\Testing\TestCredentials;
 use Simtabi\Laranail\DbTools\Backup\Drivers\MysqlBackupDriver;
 use Simtabi\Laranail\DbTools\Backup\Drivers\SqliteBackupDriver;
 use Simtabi\Laranail\DbTools\Backup\Drivers\PostgresBackupDriver;
@@ -159,7 +160,7 @@ final class BackupPreflightTest extends TestCase
             'port'     => '5432',
             'database' => 'app',
             'username' => 'app',
-            'password' => 'secret',
+            'password' => TestCredentials::password('backup'),
         ];
     }
 
@@ -174,7 +175,7 @@ final class BackupPreflightTest extends TestCase
             'port'     => '3306',
             'database' => 'app',
             'username' => 'app',
-            'password' => 'secret',
+            'password' => TestCredentials::password('backup'),
         ];
     }
 }
