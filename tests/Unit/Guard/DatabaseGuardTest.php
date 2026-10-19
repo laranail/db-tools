@@ -245,7 +245,7 @@ final class DatabaseGuardTest extends TestCase
             'port'     => 1,
             'database' => 'nope',
             'username' => 'nope',
-            'password' => TestCredentials::password('unreachable-db'),
+            'password' => TestCredentials::password(),
             'options'  => [PDO::ATTR_TIMEOUT => 1],
         ]);
 
@@ -258,7 +258,7 @@ final class DatabaseGuardTest extends TestCase
             'port'     => 3306,
             'database' => 'nope',
             'username' => 'nope',
-            'password' => TestCredentials::password('unreachable-db'),
+            'password' => TestCredentials::password(),
         ]);
     }
 }

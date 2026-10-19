@@ -51,8 +51,8 @@ final class ManagedBackupCommandsTest extends TestCase
             'port'     => '3306',
             'database' => 'local',
             'username' => 'root',
-            'password' => TestCredentials::password('local-connection'),
-            'url'      => 'mysql://doadmin:' . rawurlencode(TestCredentials::password('managed-cluster')) . '@db-mysql.example.com:25060/defaultdb?ssl-mode=REQUIRED',
+            'password' => TestCredentials::password('local'),
+            'url'      => sprintf('mysql://doadmin:%s@db-mysql.example.com:25060/defaultdb?ssl-mode=REQUIRED', rawurlencode(TestCredentials::password('managed'))),
         ]);
         $this->fakeProcesses(self::MYSQL_HELP);
 
@@ -76,8 +76,8 @@ final class ManagedBackupCommandsTest extends TestCase
             'host'     => '127.0.0.1',
             'database' => 'local',
             'username' => 'root',
-            'password' => TestCredentials::password('local-connection'),
-            'url'      => 'postgresql://doadmin:' . rawurlencode(TestCredentials::password('managed-cluster')) . '@db-pg.example.com:25060/defaultdb?sslmode=require',
+            'password' => TestCredentials::password('local'),
+            'url'      => sprintf('postgresql://doadmin:%s@db-pg.example.com:25060/defaultdb?sslmode=require', rawurlencode(TestCredentials::password('managed'))),
         ]);
         $this->fakeProcesses(pgClient: 17, pgServer: 17);
 
@@ -98,8 +98,8 @@ final class ManagedBackupCommandsTest extends TestCase
             'host'     => '127.0.0.1',
             'database' => 'local',
             'username' => 'root',
-            'password' => TestCredentials::password('local-connection'),
-            'url'      => 'mysql://doadmin:' . rawurlencode(TestCredentials::password('managed-cluster')) . '@db-mysql.example.com:25060/defaultdb',
+            'password' => TestCredentials::password('local'),
+            'url'      => sprintf('mysql://doadmin:%s@db-mysql.example.com:25060/defaultdb', rawurlencode(TestCredentials::password('managed'))),
         ]);
         $this->fakeProcesses(self::MYSQL_HELP);
         $dump = $this->tempPath('.sql');
@@ -195,7 +195,7 @@ final class ManagedBackupCommandsTest extends TestCase
         // A generated password, with the characters the defaults file must escape (", \) and the
         // one an unquoted value would truncate at (#) appended.
         $escapable = 'p"a\\ss#word';
-        $generated = TestCredentials::password('defaults-file');
+        $generated = TestCredentials::password('defaults');
 
         (new MysqlBackupDriver)->backup($this->mysqlConfig(['password' => $generated . $escapable]), $this->tempPath('.sql'));
 
@@ -430,7 +430,7 @@ final class ManagedBackupCommandsTest extends TestCase
                 && ($p->environment['PGSSLROOTCERT'] ?? null) === '/etc/ssl/do-ca.crt'
                 && ($p->environment['PGSSLCERT'] ?? null) === '/etc/ssl/client.crt'
                 && ($p->environment['PGSSLKEY'] ?? null) === '/etc/ssl/client.key'
-                && ($p->environment['PGPASSWORD'] ?? null) === TestCredentials::password('backup-config');
+                && ($p->environment['PGPASSWORD'] ?? null) === TestCredentials::password('backup');
         });
     }
 
@@ -747,7 +747,7 @@ final class ManagedBackupCommandsTest extends TestCase
             'port'     => '3306',
             'database' => 'app',
             'username' => 'app',
-            'password' => TestCredentials::password('backup-config'),
+            'password' => TestCredentials::password('backup'),
         ], $overrides);
     }
 
@@ -764,7 +764,7 @@ final class ManagedBackupCommandsTest extends TestCase
             'port'     => '5432',
             'database' => 'app',
             'username' => 'app',
-            'password' => TestCredentials::password('backup-config'),
+            'password' => TestCredentials::password('backup'),
         ], $overrides);
     }
 

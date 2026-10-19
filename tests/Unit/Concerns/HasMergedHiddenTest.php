@@ -51,9 +51,9 @@ final class HasMergedHiddenTest extends TestCase
     {
         $model = new MergedHiddenChild([
             'email'             => 'ada@example.com',
-            'password'          => TestCredentials::password('hidden-password'),
-            'remember_token'    => TestCredentials::secret('remember-token'),
-            'two_factor_secret' => TestCredentials::secret('two-factor-secret'),
+            'password'          => TestCredentials::password('hidden'),
+            'remember_token'    => TestCredentials::secret('remember'),
+            'two_factor_secret' => TestCredentials::secret('authenticator'),
         ]);
 
         self::assertSame(['email' => 'ada@example.com'], $model->toArray());

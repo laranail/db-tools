@@ -160,7 +160,7 @@ final class BackupPreflightTest extends TestCase
             'port'     => '5432',
             'database' => 'app',
             'username' => 'app',
-            'password' => TestCredentials::password('backup-config'),
+            'password' => TestCredentials::password('backup'),
         ];
     }
 
@@ -175,7 +175,7 @@ final class BackupPreflightTest extends TestCase
             'port'     => '3306',
             'database' => 'app',
             'username' => 'app',
-            'password' => TestCredentials::password('backup-config'),
+            'password' => TestCredentials::password('backup'),
         ];
     }
 }

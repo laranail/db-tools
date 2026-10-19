@@ -136,7 +136,7 @@ final class SchemaReadinessTest extends TestCase
             'port'     => 1,
             'database' => 'nope',
             'username' => 'nope',
-            'password' => TestCredentials::password('unreachable-db'),
+            'password' => TestCredentials::password(),
             'options'  => [PDO::ATTR_TIMEOUT => 1],
         ]);
     }
