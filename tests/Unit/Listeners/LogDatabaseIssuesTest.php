@@ -18,6 +18,7 @@ use Simtabi\Laranail\DbTools\Support\IssueLogThrottle;
 use Simtabi\Laranail\DbTools\Events\DatabaseUnavailable;
 use Simtabi\Laranail\DbTools\Listeners\LogDatabaseIssues;
 use Simtabi\Laranail\DbTools\Schema\SchemaReadinessReport;
+use Simtabi\Laranail\Package\Tools\Testing\TestCredentials;
 use Simtabi\Laranail\DbTools\Schema\Contracts\SchemaReadinessInterface;
 use Simtabi\Laranail\DbTools\Guard\Contracts\DatabaseAvailabilityInterface;
 
@@ -242,7 +243,7 @@ final class LogDatabaseIssuesTest extends TestCase
             'port'     => 1,
             'database' => 'nope',
             'username' => 'nope',
-            'password' => 'nope',
+            'password' => TestCredentials::password('unreachable-db'),
             'options'  => [PDO::ATTR_TIMEOUT => 1],
         ]);
         $app['config']->set('cache.stores.down_db', [

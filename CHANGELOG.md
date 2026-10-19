@@ -22,6 +22,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **Test credentials are generated at run time.** Passwords, secrets and connection-URL
+  passwords in the tests come from `TestCredentials` instead of literals, which secret scanning
+  reported as leaks. A guard test fails on any literal left behind; deliberate fixed values carry
+  a `@credential-literal-exempt` marker and a reason. The `laranail/package-tools` floor is now
+  `^0.1.9`, the release that ships these helpers.
 - `docs/configuration.md` documents the `readiness` and `seeding` blocks, and the README indexes
   every guide and reference page.
 - CI: `tests.yml` runs with a read-only token; the `security` cache key no longer reads a matrix

@@ -9,6 +9,7 @@ use Illuminate\Process\PendingProcess;
 use Illuminate\Support\Facades\Process;
 use Simtabi\Laranail\DbTools\Tests\TestCase;
 use Simtabi\Laranail\DbTools\Backup\BackupManager;
+use Simtabi\Laranail\Package\Tools\Testing\TestCredentials;
 use Simtabi\Laranail\DbTools\Backup\Drivers\MysqlBackupDriver;
 use Simtabi\Laranail\DbTools\Backup\Drivers\PostgresBackupDriver;
 
@@ -50,8 +51,8 @@ final class ManagedBackupCommandsTest extends TestCase
             'port'     => '3306',
             'database' => 'local',
             'username' => 'root',
-            'password' => 'local-secret',
-            'url'      => 'mysql://doadmin:s3cret@db-mysql.example.com:25060/defaultdb?ssl-mode=REQUIRED',
+            'password' => TestCredentials::password('local-connection'),
+            'url'      => 'mysql://doadmin:' . rawurlencode(TestCredentials::password('managed-cluster')) . '@db-mysql.example.com:25060/defaultdb?ssl-mode=REQUIRED',
         ]);
         $this->fakeProcesses(self::MYSQL_HELP);
 
@@ -75,8 +76,8 @@ final class ManagedBackupCommandsTest extends TestCase
             'host'     => '127.0.0.1',
             'database' => 'local',
             'username' => 'root',
-            'password' => 'local-secret',
-            'url'      => 'postgresql://doadmin:s3cret@db-pg.example.com:25060/defaultdb?sslmode=require',
+            'password' => TestCredentials::password('local-connection'),
+            'url'      => 'postgresql://doadmin:' . rawurlencode(TestCredentials::password('managed-cluster')) . '@db-pg.example.com:25060/defaultdb?sslmode=require',
         ]);
         $this->fakeProcesses(pgClient: 17, pgServer: 17);
 
@@ -97,8 +98,8 @@ final class ManagedBackupCommandsTest extends TestCase
             'host'     => '127.0.0.1',
             'database' => 'local',
             'username' => 'root',
-            'password' => 'local-secret',
-            'url'      => 'mysql://doadmin:s3cret@db-mysql.example.com:25060/defaultdb',
+            'password' => TestCredentials::password('local-connection'),
+            'url'      => 'mysql://doadmin:' . rawurlencode(TestCredentials::password('managed-cluster')) . '@db-mysql.example.com:25060/defaultdb',
         ]);
         $this->fakeProcesses(self::MYSQL_HELP);
         $dump = $this->tempPath('.sql');
@@ -191,11 +192,16 @@ final class ManagedBackupCommandsTest extends TestCase
             },
         ]);
 
-        (new MysqlBackupDriver)->backup($this->mysqlConfig(['password' => 'p"a\\ss#word']), $this->tempPath('.sql'));
+        // A generated password, with the characters the defaults file must escape (", \) and the
+        // one an unquoted value would truncate at (#) appended.
+        $escapable = 'p"a\\ss#word';
+        $generated = TestCredentials::password('defaults-file');
+
+        (new MysqlBackupDriver)->backup($this->mysqlConfig(['password' => $generated . $escapable]), $this->tempPath('.sql'));
 
         self::assertStringStartsWith('--defaults-extra-file=', $seen['first'], 'The defaults file must be the first option or the client ignores it.');
         self::assertSame(0600, $seen['mode']);
-        self::assertSame("[client]\npassword=\"p\\\"a\\\\ss#word\"\n", $seen['content']);
+        self::assertSame("[client]\npassword=\"" . $generated . "p\\\"a\\\\ss#word\"\n", $seen['content']);
         self::assertArrayNotHasKey('MYSQL_PWD', $seen['env']);
         self::assertFileDoesNotExist($seen['file']);
     }
@@ -424,7 +430,7 @@ final class ManagedBackupCommandsTest extends TestCase
                 && ($p->environment['PGSSLROOTCERT'] ?? null) === '/etc/ssl/do-ca.crt'
                 && ($p->environment['PGSSLCERT'] ?? null) === '/etc/ssl/client.crt'
                 && ($p->environment['PGSSLKEY'] ?? null) === '/etc/ssl/client.key'
-                && ($p->environment['PGPASSWORD'] ?? null) === 'secret';
+                && ($p->environment['PGPASSWORD'] ?? null) === TestCredentials::password('backup-config');
         });
     }
 
@@ -741,7 +747,7 @@ final class ManagedBackupCommandsTest extends TestCase
             'port'     => '3306',
             'database' => 'app',
             'username' => 'app',
-            'password' => 'secret',
+            'password' => TestCredentials::password('backup-config'),
         ], $overrides);
     }
 
@@ -758,7 +764,7 @@ final class ManagedBackupCommandsTest extends TestCase
             'port'     => '5432',
             'database' => 'app',
             'username' => 'app',
-            'password' => 'secret',
+            'password' => TestCredentials::password('backup-config'),
         ], $overrides);
     }
 
