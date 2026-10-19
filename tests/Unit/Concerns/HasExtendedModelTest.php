@@ -27,7 +27,6 @@ class ExtendedModelBase extends Model
     #[Override]
     protected function casts(): array
     {
-        // @credential-literal-exempt: a cast name, not a credential
         return ['password' => 'hashed'];
     }
 }

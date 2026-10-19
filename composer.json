@@ -45,7 +45,7 @@
         "ramsey/uuid": "^4.7",
         "spatie/laravel-sluggable": "^4.0",
         "symfony/uid": "^7.0 || ^8.0",
-        "laranail/package-tools": "^0.1.9"
+        "laranail/package-tools": "^0.1.10"
     },
     "require-dev": {
         "larastan/larastan": "^3.0",
