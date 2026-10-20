@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.9] - 2026-10-20
+
 ### Fixed
 
 - **The README sent vulnerability reports to the community inbox.** It now names
@@ -921,7 +923,8 @@ was silently not happening.
 - `DbTools::guard()/isAvailable()/tableExists()/whenAvailable()` accessors and `DbToolsFacade`
   `@method` hints; `db-tools.guard.memoize` config.
 
-[Unreleased]: https://github.com/laranail/db-tools/compare/v0.1.8...HEAD
+[Unreleased]: https://github.com/laranail/db-tools/compare/v0.1.9...HEAD
+[0.1.9]: https://github.com/laranail/db-tools/compare/v0.1.8...v0.1.9
 [0.1.8]: https://github.com/laranail/db-tools/compare/v0.1.7...v0.1.8
 [0.1.7]: https://github.com/laranail/db-tools/compare/v0.1.6...v0.1.7
 [0.1.6]: https://github.com/laranail/db-tools/compare/v0.1.5...v0.1.6
