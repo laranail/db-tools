@@ -45,7 +45,7 @@
         "ramsey/uuid": "^4.7",
         "spatie/laravel-sluggable": "^4.0",
         "symfony/uid": "^7.0 || ^8.0",
-        "laranail/package-tools": "^0.1.10"
+        "laranail/package-tools": "^0.1.15"
     },
     "require-dev": {
         "larastan/larastan": "^3.0",
@@ -79,6 +79,21 @@
             "aliases": {
                 "DbTools": "Simtabi\\Laranail\\DbTools\\Facades\\DbToolsFacade"
             }
+        },
+        "laranail": {
+            "test-db": {
+                "connections": [
+                    "pgsql",
+                    "mysql",
+                    "mariadb"
+                ],
+                "group": "drivers",
+                "args": [
+                    "--no-coverage"
+                ],
+                "project": "db_tools",
+                "principal": "admin"
+            }
         }
     },
     "scripts": {
@@ -97,7 +112,8 @@
         "rector": "vendor/bin/rector process --dry-run",
         "rector-fix": "vendor/bin/rector process",
         "composer-audit": "@composer audit",
-        "format": "@pint-fix"
+        "format": "@pint-fix",
+        "test-db": "laranail-test-db"
     },
     "config": {
         "sort-packages": true,
