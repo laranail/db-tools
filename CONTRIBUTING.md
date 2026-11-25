@@ -25,6 +25,13 @@ composer test
    composer test     # vendor/bin/pest
    composer audit    # composer audit (security)
    ```
+   The `drivers` group also runs on PostgreSQL, MySQL and MariaDB:
+   ```bash
+   composer test-db  # vendor/bin/laranail-test-db: dbpantry's fixture, one database per run
+   ```
+   It needs a dbpantry checkout (`DBPANTRY_DIR`, or `simtabi/packages/dbpantry` above this
+   package) with `MDB_PUBLISH=direct`. The `backups` round trips (both engines at once, with
+   `mysqldump` and `pg_dump`) and the TLS job run in CI only.
 4. Use [Conventional Commits](https://www.conventionalcommits.org/).
 
 ## Coding standards
