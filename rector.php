@@ -13,6 +13,5 @@ return RectorConfig::configure()
         SetList::CODE_QUALITY,
         SetList::DEAD_CODE,
         SetList::TYPE_DECLARATION,
-        SetList::EARLY_RETURN,
     ])
     ->withImportNames(removeUnusedImports: true);
